@@ -1,0 +1,260 @@
+---
+description: Regression Testing Rules [MANDATORY ENFORCEMENT]
+globs: 
+alwaysApply: false
+---
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Regression Testing Rules [MANDATORY ENFORCEMENT]
+
+## Core Testing Principles
+
+1. ALL tests MUST be executed after ANY code change.
+2. Test results MUST be documented and reviewed before merging code.
+3. NO code can be merged that causes test failures.
+4. The development team is RESPONSIBLE for executing all tests.
+5. The Executive Secretary (ES) MUST verify that ALL tests have been run.
+
+## Acceptance Criteria Validation [CRITICAL]
+
+For ALL user stories, the following procedure MUST be followed:
+
+1. Each acceptance criterion MUST have corresponding test implementation
+2. Tests MUST use the GIVEN-WHEN-THEN format to match acceptance criteria
+3. Tests MUST be placed in the correct directory structure:
+   - `/tests/acceptance/US-{ID}/` for acceptance tests
+   - `/tests/unit/US-{ID}/` for unit tests
+   - `/tests/integration/US-{ID}/` for integration tests
+4. Each test file MUST be named according to the feature it tests:
+   - `test_{feature}.js` for JavaScript tests
+   - `test_{feature}.php` for PHP tests
+   - `{feature}.feature` for Behat/Cucumber tests
+
+## User Story Testing Process [MANDATORY]
+
+When validating user stories against acceptance criteria:
+
+1. ES MUST coordinate with SET to identify all user stories requiring testing
+2. SET MUST verify each acceptance criterion has corresponding test implementation
+3. SET MUST run all tests corresponding to the user story:
+   ```bash
+   # For specific user story testing
+   npm run test:acceptance -- --story=US-{ID}
+   npm run test:unit -- --story=US-{ID}
+   npm run test:integration -- --story=US-{ID}
+   ```
+4. ES MUST review test results and verify ALL acceptance criteria pass
+5. Any failed tests MUST be documented with:
+   - Which acceptance criterion failed
+   - Description of the failure
+   - Impact on user story completion
+   - Required actions to fix
+
+## Test Result Documentation [REQUIRED]
+
+Test results MUST be documented in the following format:
+
+```
+User Story: US-{ID}
+Date: YYYY-MM-DD
+Tester: [Name]
+
+Acceptance Criteria Status:
+1. [Criterion 1]: PASS/FAIL
+   - Test file: path/to/test-file
+   - Notes: [Any observations]
+
+2. [Criterion 2]: PASS/FAIL
+   - Test file: path/to/test-file
+   - Notes: [Any observations]
+
+Overall Status: PASS/FAIL
+Required Actions: [List of actions if any tests failed]
+```
+
+## Sprint Acceptance Testing [CRITICAL]
+
+Before closing any Sprint:
+
+1. ES MUST verify ALL user stories have test coverage for EVERY acceptance criterion
+2. SET MUST run the full test suite:
+   ```bash
+   npm run test:all
+   ```
+3. ES MUST review test results and identify any failures
+4. Any failed tests MUST block Sprint closure until resolved
+5. ES MUST provide a complete Sprint test report covering all user stories
+
+## Test Coverage Requirements
+
+1. Unit tests: Minimum 80% code coverage
+2. Integration tests: All critical paths tested
+3. Acceptance tests: 100% of acceptance criteria covered
+
+## PHPCS Test Requirements [MANDATORY]
+
+1. ALL code MUST pass PHPCS tests before being considered complete
+2. PHPCS MUST be run with appropriate exclusions as defined in code-quality-standards.mdc
+3. ES and SET MUST verify PHPCS tests pass for all user story implementations
+4. PHPCS errors MUST be fixed BEFORE acceptance criteria are considered met
+
+## Failure Response Protocol [REQUIRED]
+
+When tests fail:
+
+1. ES MUST immediately notify all relevant team members
+2. SET MUST prioritize fixing test failures over new development
+3. ES MUST track all test failures until resolved
+4. After fixes, ALL tests must be rerun to verify no regressions
+5. ES MUST document the resolution process
+
+## Enforcement Guidelines
+
+1. These rules are NON-NEGOTIABLE and MUST be followed for ALL development work
+2. ES has AUTHORITY to block any merge or deployment that violates these rules
+3. ANY exception to these rules requires documented approval
+4. ALL team members are responsible for adherence to these rules
+
+## User Story Sign-Off Process [MANDATORY]
+
+1. No user story can be marked as complete without:
+   - Passing ALL tests related to acceptance criteria
+   - Passing ALL PHPCS tests
+   - Complete test documentation
+   - ES verification and sign-off
+
+2. ES MUST verify completion using this checklist:
+   - [ ] All acceptance criteria have test implementations
+   - [ ] All tests pass successfully
+   - [ ] PHPCS tests pass with no errors
+   - [ ] Test documentation is complete
+   - [ ] Performance metrics meet requirements
+
+3. If ANY item fails, the user story CANNOT be considered complete
+
+## Purpose
+Ensure that all user stories, including those from previous sprints, continue to pass unit testing and behavior testing as new features are developed. This rule enforces a combined testing process (TDD with PHPUnit, BDD with Behat) to maintain software quality and prevent regressions.
+
+## Core Principle [NON-NEGOTIABLE]
+**The development team is solely responsible for executing all tests after every code change.**
+- This responsibility is never passed to the user
+- Tests must be run proactively without being asked
+- Every code change requires full regression testing
+- No exceptions or delays are permitted
+
+## Process
+1. **Behavior-Driven Development (BDD) with Behat**
+   - Write feature files using Gherkin syntax (`.feature`) based on User Stories and Acceptance Criteria.
+   - These feature files describe system behavior in natural language (Given/When/Then).
+   - Implement step definitions in PHP to map Gherkin steps to executable code that interacts with the application.
+   - Run Behat tests to verify acceptance criteria are met.
+
+2. **Test-Driven Development (TDD) with PHPUnit**
+   - Write failing unit tests with PHPUnit before writing implementation code.
+   - Implement the minimum code required to make the unit tests pass.
+   - Refactor code while ensuring all unit tests continue to pass.
+
+3. **Regression Testing [MANDATORY AFTER ALL CHANGES]**
+   - **REQUIRED TIMING**: Execute full test suite after EVERY code change
+   - **SCOPE**: Run ALL tests (not just tests for new feature)
+   - **RESPONSIBILITY**: Software Engineering Team (SET) MUST execute tests automatically
+   - **PROACTIVE EXECUTION**: Tests are run without being prompted or requested
+   - **REPORTING**: Test results must be reported clearly after each execution
+
+4. **Automated Testing Pipeline**
+   - Integrate both Behat (BDD) and PHPUnit (TDD) tests into the CI/CD pipeline.
+   - All tests (Behat scenarios and PHPUnit tests) must run automatically on every commit.
+   - Test suites should cover all user stories, current and previous.
+   - Any test failures (Behat or PHPUnit) must block the build/deployment and be addressed immediately.
+
+5. **Test Coverage**
+   - Aim for 100% acceptance criteria coverage with Behat scenarios.
+   - Maintain high unit test coverage (e.g., >80%) with PHPUnit.
+   - Regularly review test coverage reports (PHPUnit coverage, Behat scenario results).
+   - Track which tests verify which acceptance criteria.
+
+6. **Results Documentation [REQUIRED]**
+   - Document test execution results after every code change
+   - Include timestamp of test execution
+   - List all tests executed and their pass/fail status
+   - Document coverage of acceptance criteria
+   - Flag any failures or concerns immediately
+   - Include test execution in every implementation report
+
+## Test Execution Sequence [MUST FOLLOW]
+After ANY code change:
+1. Run new feature-specific unit tests
+2. Run new feature-specific Behat tests
+3. Run the ENTIRE test suite (all previous unit tests)
+4. Run ALL Behat feature tests (including from previous sprints)
+5. Document test results in standardized format
+6. Report any failures immediately and fix before proceeding
+
+## Tools
+- **BDD**: Behat (using Gherkin syntax)
+- **TDD**: PHPUnit
+- **Automation**: CI/CD pipeline (e.g., GitHub Actions, Jenkins)
+
+## Role Responsibilities [STRICT ENFORCEMENT]
+
+### Executive Secretary (ES)
+- Ensure regression testing process is followed after every change
+- Verify SET has executed and reported test results
+- Block further development if tests are not executed
+- Maintain testing documentation requirements
+- Confirm all test results are communicated clearly
+
+### Software Engineering Team (SET)
+- Execute ALL tests after EVERY code change without exception
+- Report test results proactively without being prompted
+- Fix any failing tests before moving to new development
+- Maintain test infrastructure and ensure tests are reliable
+- Never delegate testing responsibility to the user
+- Document test execution results in standardized format
+
+### Copy/Technical Writer (CTW)
+- Write/refine feature files (Gherkin)
+- Update documentation based on test results
+- Ensure acceptance criteria are properly tested
+- Document testing processes and standards
+
+## Testing Report Template [REQUIRED AFTER EVERY CHANGE]
+```
+## Test Execution Report
+
+### Change Summary
+- [Brief description of code changes made]
+
+### Test Execution Details
+- Timestamp: [Date and time tests were executed]
+- Executor: [Name/role of person who ran the tests]
+
+### Unit Tests
+- New tests: [Number of new tests] - Pass: [x] Fail: [y]
+- Regression tests: [Number of existing tests] - Pass: [x] Fail: [y]
+- Coverage: [Percentage of code covered]
+
+### BDD Tests
+- New feature scenarios: [Number] - Pass: [x] Fail: [y]
+- Regression scenarios: [Number] - Pass: [x] Fail: [y]
+- Acceptance criteria coverage: [x]%
+
+### Issues Found
+- [List any test failures or issues]
+- [Actions taken to address issues]
+
+### Verification
+- [ ] All new tests pass
+- [ ] All regression tests pass
+- [ ] All acceptance criteria covered
+- [ ] No regressions introduced
+```
+
+## Review
+- Regularly review Behat scenarios and PHPUnit tests for clarity and effectiveness.
+- Use sprint retrospectives to improve the testing process.
+- Ensure the team understands and follows both BDD and TDD practices.
+- Periodically audit test execution compliance. 
