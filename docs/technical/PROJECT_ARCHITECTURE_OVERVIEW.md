@@ -1,12 +1,29 @@
-# MACF Project Architecture Overview
+# Project Architecture Overview
 
-## Introduction
-
-This document provides a high-level overview of the Multi-Agent Communications Framework (MACF) project's architecture. It is intended for both AI and human developers to understand the key components, their interactions, and the guiding design principles of the framework.
-
-This is a living document and will be updated incrementally as the MACF project evolves.
+This document provides a high-level overview of the project's architecture. It is intended to be a living document, updated as major architectural components are added or changed.
 
 ## Core Components
+
+*   **[Component Name Placeholder]**
+    *   **Purpose**:
+    *   **Key Files/Directories**:
+    *   **Primary Interactions**:
+
+## Key Architectural Decisions
+
+*   **[Decision Title Placeholder]**
+    *   **Date**: YYYY-MM-DD
+    *   **Rationale**:
+    *   **Impacted Components**:
+
+## Technology Stack
+
+*   **[Category, e.g., Backend Framework]**: [Technology, e.g., WordPress]
+*   **[Category, e.g., Frontend Library]**: [Technology, e.g., React]
+
+## Data Flow Overview
+
+*(Placeholder for a brief description or diagram link regarding data flow)*
 
 ## Key Services/Modules
 
