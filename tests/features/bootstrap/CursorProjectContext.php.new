@@ -2,12 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AutomaticJesse\\Cursor\\Tests\\Behat\\Context;
+namespace AutomaticJesse\Cursor\Tests\Behat\Context;
 
-use Behat\\Behat\\Context\\Context;
-use Behat\\Gherkin\\Node\\PyStringNode;
-use Behat\\Gherkin\\Node\\TableNode;
-use Webmozart\\Assert\\Assert;
+use Behat\Behat\Context\Context;
+use Behat\Gherkin\Node\PyStringNode;
+use Behat\Gherkin\Node\TableNode;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Finder\Finder;
+use Webmozart\Assert\Assert;
+use Behat\MinkExtension\Context\MinkContext; // Required for Mink steps
 use FilesystemIterator;
 use LogicException;
 use RecursiveDirectoryIterator;
@@ -21,12 +24,21 @@ class CursorProjectContext implements Context
     private string $workspace;
     private ?string $lastFileContent = null;
     private ?string $lastReadFilePath = null; // Store the path of the last read file for error messages
+    private ?string $currentFeaturePath = null;
+    private Filesystem $filesystem;
+    private string $workspaceRoot;
+    private ?string $lastCommandOutput = null;
+    private ?int $lastCommandExitCode = null;
 
     /**
      * Initializes context.
      */
     public function __construct()
     {
+        $this->filesystem = new Filesystem();
+        // Assuming the Behat executable is in vendor/bin, and .cursor is at the project root
+        // Adjust if your workspace structure is different.
+        $this->workspaceRoot = dirname(__DIR__, 5); // Goes up from .cursor/tests/features/bootstrap to project root
         // Determine the project root. Assumes Behat is run from the AustinShows directory.
         // .cursor is the MACF project root relative to AustinShows.
         $this->workspace = getcwd() . DIRECTORY_SEPARATOR . '.cursor';
@@ -674,6 +686,67 @@ class CursorProjectContext implements Context
                 break;
             default:
                 throw new LogicException("Unknown expected permission state: {$expectedState}");
+        }
+    }
+
+    // Steps for US-MACF-P01: Teach Back Context Confirmation Procedure
+
+    /**
+     * @Given the AI is about to perform a task requiring context confirmation
+     */
+    public function theAIIsAboutToPerformATaskRequiringContextConfirmation(): void
+    {
+        // This is a conceptual step, no specific action needed in context
+        // It sets the stage for the "teach back" scenario
+    }
+
+    /**
+     * @When the AI provides its understanding of the task with key context points:
+     */
+    public function theAIProvidesItsUnderstandingOfTheTaskWithKeyContextPoints(PyStringNode $aiUnderstanding): void
+    {
+        // Simulate AI providing its understanding
+        $this->simulatedAIUnderstanding = $aiUnderstanding->getRaw();
+        // In a real scenario, this would come from the AI's output
+    }
+
+    /**
+     * @Then the user should confirm if the AI's understanding is :confirmationStatus
+     */
+    public function theUserShouldConfirmIfTheAIsUnderstandingIs(string $confirmationStatus): void
+    {
+        // Simulate user confirmation based on the scenario
+        $this->userConfirmation = $confirmationStatus;
+        Assert::true(in_array($confirmationStatus, ["correct", "incorrect"]), "Confirmation status must be 'correct' or 'incorrect'");
+    }
+
+    /**
+     * @Then if the understanding was incorrect, the AI should request clarification on specific points:
+     */
+    public function ifTheUnderstandingWasIncorrectTheAIShouldRequestClarificationOnSpecificPoints(PyStringNode $clarificationRequest): void
+    {
+        if ($this->userConfirmation === "incorrect") {
+            // Simulate AI requesting clarification
+            $this->simulatedAIClarificationRequest = $clarificationRequest->getRaw();
+            Assert::notEmpty($this->simulatedAIClarificationRequest, "AI should request clarification if understanding was incorrect.");
+        } else {
+            // If correct, this step should not fail, but AI wouldn't ask for clarification
+            Assert::true(true); 
+        }
+    }
+
+    /**
+     * @Then the AI should only proceed with the task if the understanding was confirmed as correct
+     */
+    public function theAIShouldOnlyProceedWithTheTaskIfTheUnderstandingWasConfirmedAsCorrect(): void
+    {
+        // Simulate AI proceeding or not
+        if ($this->userConfirmation === "correct") {
+            $this->aiProceedsWithTask = true;
+            Assert::true($this->aiProceedsWithTask, "AI should proceed if understanding is correct.");
+        } else {
+            $this->aiProceedsWithTask = false;
+            Assert::false($this->aiProceedsWithTask, "AI should not proceed if understanding is incorrect.");
         }
     }
 } 

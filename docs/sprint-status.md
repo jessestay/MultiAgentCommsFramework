@@ -31,6 +31,14 @@
     *   **Status:** To Do
     *   **Summary:** (To be detailed)
 
+5.  **`US-MACF-P01`: Formalize and Test Teach Back Context Confirmation Procedure**
+    *   **Status:** To Do
+    *   **Summary:** This story will codify the "Teach Back Context Confirmation" procedure into a formal, testable rule within the MACF to improve clarity and shared understanding for task delegation.
+    *   **Key Files (Expected):**
+        *   `.cursor/rules/068-WORKFLOW-teach-back-confirmation.mdc`
+        *   `.cursor/docs/user-stories/sprint-2/US-MACF-P01/`
+        *   `.cursor/tests/features/US-MACF-P01/`
+
 ## User Stories in Sprint 2
 
 | ID        | Title                                                              | Status    | Notes |
@@ -38,6 +46,7 @@
 | US-CRS-F01 | Create Reusable Behat Steps for Common WordPress Admin Actions     | To Do     |       |
 | US-CRS-F02 | Develop Reusable Behat Steps for Basic UI Interactions             | To Do     |       |
 | US-CRS-F03 | Establish a Base Behat Test Context with Mink Integration          | To Do     |       |
+| US-MACF-P01 | Formalize and Test Teach Back Context Confirmation Procedure       | To Do     |       |
 
 ## User Stories in Sprint 1 (Completed)
 

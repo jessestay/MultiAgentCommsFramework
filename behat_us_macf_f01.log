@@ -1,0 +1,6 @@
+
+In ArrayNode.php line 327:
+                                                                                                                                                                                                                                
+  Unrecognized option "filesystem" under "testwork.mink.sessions.default". Available options are "appium", "browser_stack", "browserkit_http", "goutte", "sahi", "sauce_labs", "selenium", "selenium2", "selenium4", "zombie".  
+                                                                                                                                                                                                                                
+

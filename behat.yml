@@ -1,0 +1,17 @@
+default:
+  suites:
+    macf_file_operations:
+      paths:
+        - "%paths.base%/tests/features/US-MACF-F01"
+      contexts:
+        - AutomaticJesse\Cursor\Tests\Behat\Context\CursorProjectContext
+  formatters:
+    progress: ~
+  extensions:
+    Behat\MinkExtension:
+      base_url: http://localhost # Placeholder, not used by these file operation tests
+      sessions:
+        default:
+          filesystem: ~ # Add filesystem session for steps that might need it for file paths
+
+bootstrap: tests/features/bootstrap # Path relative to paths.base (which is .cursor) 
