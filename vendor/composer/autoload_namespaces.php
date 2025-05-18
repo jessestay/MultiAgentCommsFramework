@@ -6,4 +6,5 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'Behat\\MinkExtension' => array($vendorDir . '/friends-of-behat/mink-extension/src'),
 );

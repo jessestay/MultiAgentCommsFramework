@@ -10,78 +10,27 @@
 
 namespace Behat\Gherkin\Keywords;
 
-use Behat\Gherkin\Node\StepNode;
-
 /**
- * Keywords dumper that loads keywords from the Gherkin lexer.
+ * File initializable keywords holder.
+ *
+ * $keywords = new Behat\Gherkin\Keywords\CachedArrayKeywords($file);
  *
  * @author Konstantin Kudryashov <ever.zet@gmail.com>
  */
-class CachedArrayKeywords implements Keywords
+class CachedArrayKeywords extends ArrayKeywords
 {
-    private static $keywords;
-    private $path;
+    public static function withDefaultKeywords(): self
+    {
+        return new self(__DIR__ . '/../../i18n.php');
+    }
 
     /**
-     * Initializes keywords.
+     * Initializes holder with file.
      *
-     * @param string $path Path to a i18n file
+     * @param string $file Cached array path
      */
-    public function __construct($path = null)
+    public function __construct($file)
     {
-        $this->path = $path;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getKeywords($language)
-    {
-        $this->loadKeywords();
-
-        return isset(self::$keywords[$language]) ? self::$keywords[$language] : null;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getKeywordsAst($language)
-    {
-        if (!isset(self::$keywords[$language])) {
-            return null;
-        }
-
-        return $this->prepareKeywordsAst(self::$keywords[$language]);
-    }
-
-    private function loadKeywords()
-    {
-        if (null === self::$keywords) {
-            require __DIR__ . '/../../i18n.php';
-
-            self::$keywords = $GLOBALS['BEHAT_GHERKIN_I18N'];
-            unset($GLOBALS['BEHAT_GHERKIN_I18N']);
-        }
-    }
-
-    /**
-     * Prepares keywords list to be used in AST.
-     *
-     * @param string $keywordsString
-     *
-     * @return array
-     */
-    private function prepareKeywordsAst($keywordsString)
-    {
-        $keywords = array();
-        foreach (explode('|', $keywordsString) as $keyword) {
-            if ('*' === $keyword) {
-                continue;
-            }
-
-            $keywords[] = $keyword;
-        }
-
-        return $keywords;
+        parent::__construct(require $file);
     }
 }

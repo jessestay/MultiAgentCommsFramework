@@ -12,7 +12,7 @@ Feature: US-ACCEL-01 Implement Smart Test Subset Execution Strategy
     Then SET runs only the unit tests for `file_A.php`
     And these subset tests pass
     And LATER, before committing the change to `file_A.php`
-    Then SET MUST execute the full test suite (e.g., `npm run test:full-suite`)
+    Then SET MUST execute the full test suite
     And ALL tests in the full suite MUST pass
 
   Scenario: ES Rejects Test Subset Proposal for a Risky Change
@@ -27,5 +27,5 @@ Feature: US-ACCEL-01 Implement Smart Test Subset Execution Strategy
     Given SET has made a change to `component_C.js`
     And SET initially ran and passed a targeted test subset approved by ES
     When SET is about to commit the changes to `component_C.js`
-    Then SET MUST execute the full test suite as per `rule:032-TESTING-golden-test`
-    And all tests in the full suite MUST pass for the commit to proceed. 
+    Then SET MUST execute the full test suite as per rule "032-TESTING-golden-test"
+    And ALL tests in the full suite MUST pass for the commit to proceed. 

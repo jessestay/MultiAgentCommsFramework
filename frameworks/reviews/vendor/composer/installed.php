@@ -3,7 +3,7 @@
         'name' => 'austinshows/review-framework',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '509bd041deca490daddb0af68382fec08fb5464c',
+        'reference' => '1f966ea054bb97c668def3d8397f83d7074c0664',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'austinshows/review-framework' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '509bd041deca490daddb0af68382fec08fb5464c',
+            'reference' => '1f966ea054bb97c668def3d8397f83d7074c0664',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
