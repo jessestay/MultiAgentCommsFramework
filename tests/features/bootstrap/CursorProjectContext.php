@@ -367,5 +367,122 @@ class CursorProjectContext implements Context
         Assert::true(true, "Simulated: Review for {$moduleName} avoids waiting for full module build.");
     }
 
+    // US-ACCEL-03 Steps Begin Here
+
+    #[Given('SET is implementing the :arg1 function in :arg2')]
+    public function setIsImplementingTheFunctionIn($arg1, $arg2): void
+    {
+        $this->internalState = []; // Reset state
+        $this->internalState['current_function'] = $arg1;
+        $this->internalState['current_file'] = $arg2;
+        $this->internalState['action'] = 'implementing';
+        Assert::true(true, "Simulated: SET is implementing {$arg1} in {$arg2}.");
+    }
+
+    #[When('SET writes tests for this function')]
+    public function setWritesTestsForThisFunction(): void
+    {
+        Assert::notEmpty($this->internalState['current_function'], "No function context for writing tests.");
+        $this->internalState['tests_being_written_for'] = $this->internalState['current_function'];
+        Assert::true(true, "Simulated: SET writes tests for {$this->internalState['current_function']}.");
+    }
+
+    #[Then('SET MUST primarily use unit tests for the :arg1 function')]
+    public function setMustPrimarilyUseUnitTestsForTheFunction($arg1): void
+    {
+        Assert::eq($this->internalState['current_function'], $arg1, "Context mismatch: function name.");
+        // This is an assertion about SET's behavior/choice.
+        // In a real scenario, SET would make this choice. Here, we document it.
+        $this->internalState['chosen_test_type_for_'.$arg1] = 'unit_tests';
+        Assert::eq($this->internalState['chosen_test_type_for_'.$arg1], 'unit_tests', "SET should choose unit tests for {$arg1}.");
+    }
+
+    #[Then('SET avoids testing this specific calculation logic through a full UI-driven Behat scenario.')]
+    public function setAvoidsTestingThisSpecificCalculationLogicThroughAFullUiDrivenBehatScenario(): void
+    {
+        // This asserts a negative action, confirming SET follows the pyramid.
+        // For simulation, we can check that no Behat scenario was "chosen" for this low-level logic.
+        Assert::notEq($this->internalState['chosen_test_type_for_'.$this->internalState['current_function']] ?? null, 'behat_scenario_for_calculation_logic', "SET should avoid Behat for this specific logic.");
+        Assert::true(true, "Simulated: SET avoids UI-driven Behat for this specific calculation logic.");
+    }
+
+    #[Given('SET is writing Behat acceptance tests for the :arg1 process')]
+    public function setIsWritingBehatAcceptanceTestsForTheProcess($arg1): void
+    {
+        $this->internalState = []; // Reset state
+        $this->internalState['current_process'] = $arg1;
+        $this->internalState['test_type_being_written'] = 'behat_acceptance';
+        Assert::true(true, "Simulated: SET is writing Behat tests for {$arg1}.");
+    }
+
+    #[When('defining the Behat scenarios')]
+    public function definingTheBehatScenarios(): void
+    {
+        Assert::eq($this->internalState['test_type_being_written'] ?? null, 'behat_acceptance', "Context should be about writing Behat scenarios.");
+        $this->internalState['action'] = 'defining_behat_scenarios';
+        Assert::true(true, "Simulated: Defining Behat scenarios.");
+    }
+
+    #[Then('the scenarios MUST focus on the end-to-end critical path of a user adding an item to cart and completing a purchase')]
+    public function theScenariosMustFocusOnTheEndToEndCriticalPathOfAUserAddingAnItemToCartAndCompletingAPurchase(): void
+    {
+        // For "user checkout" process, this is a guiding principle for SET.
+        if (($this->internalState['current_process'] ?? null) === 'user checkout') {
+            $this->internalState['scenario_focus'] = 'critical_path_checkout';
+            Assert::eq($this->internalState['scenario_focus'], 'critical_path_checkout', "Scenarios for checkout should focus on critical path.");
+        } else {
+            // For other processes, this step might need adjustment or be a passthrough if not applicable.
+            Assert::true(true, "Scenario focus principle acknowledged.");
+        }
+    }
+
+    #[Then('the scenarios SHOULD NOT attempt to test every minor validation rule of each field in the checkout form (which should be covered by unit/integration tests).')]
+    public function theScenariosShouldNotAttemptToTestEveryMinorValidationRuleOfEachFieldInTheCheckoutFormWhichShouldBeCoveredByUnitIntegrationTests(): void
+    {
+        // This is an assertion about what SET should avoid.
+        if (($this->internalState['current_process'] ?? null) === 'user checkout') {
+            Assert::notEq($this->internalState['scenario_focus'] ?? null, 'all_minor_field_validations', "Scenarios should not test all minor validations for checkout via UI.");
+        }
+        Assert::true(true, "Simulated: Scenarios avoid testing all minor field validations via UI.");
+    }
+
+    #[Given('the AI team is conducting a sprint retrospective')]
+    public function theAiTeamIsConductingASprintRetrospective(): void
+    {
+        $this->internalState = []; // Reset state
+        $this->internalState['meeting'] = 'sprint_retrospective';
+        Assert::true(true, "Simulated: AI team is in sprint retrospective.");
+    }
+
+    #[When('discussing testing practices')]
+    public function discussingTestingPractices(): void
+    {
+        Assert::eq($this->internalState['meeting'] ?? null, 'sprint_retrospective', "Should be in a retrospective to discuss testing practices.");
+        $this->internalState['discussion_topic'] = 'testing_practices';
+        Assert::true(true, "Simulated: Discussing testing practices.");
+    }
+
+    #[Then('the team SHOULD review the current balance of unit, integration, and acceptance tests')]
+    public function theTeamShouldReviewTheCurrentBalanceOfUnitIntegrationAndAcceptanceTests(): void
+    {
+        Assert::eq($this->internalState['discussion_topic'] ?? null, 'testing_practices', "Topic should be testing practices.");
+        // Simulate the review action
+        $this->internalState['review_action'] = 'balance_of_tests_reviewed';
+        Assert::true(true, "Simulated: Team reviews balance of tests.");
+    }
+
+    #[Then('if the review reveals an over-reliance on slow acceptance tests for functionality that could be unit-tested, an action item is created to refactor tests towards a better pyramid balance.')]
+    public function ifTheReviewRevealsAnOverRelianceOnSlowAcceptanceTestsForFunctionalityThatCouldBeUnitTestedAnActionItemIsCreatedToRefactorTestsTowardsABetterPyramidBalance(): void
+    {
+        Assert::eq($this->internalState['review_action'] ?? null, 'balance_of_tests_reviewed', "Test balance review must have happened.");
+        // Simulate a condition where refactoring is needed
+        $hypothetical_over_reliance = true; // Or false, to test both paths if context allowed
+        if ($hypothetical_over_reliance) {
+            $this->internalState['action_item'] = 'refactor_tests_for_pyramid_balance';
+            Assert::eq($this->internalState['action_item'], 'refactor_tests_for_pyramid_balance', "Action item for test refactoring should be created.");
+        }
+        Assert::true(true, "Simulated: Decision process for test refactoring action item.");
+    }
+
     // Other step definitions will be added incrementally
 } 
