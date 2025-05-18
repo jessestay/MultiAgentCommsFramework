@@ -437,7 +437,7 @@ class CursorProjectContext implements Context
     }
 
     #[Then('the scenarios SHOULD NOT attempt to test every minor validation rule of each field in the checkout form (which should be covered by unit/integration tests).')]
-    public function theScenariosShouldNotAttemptToTestEveryMinorValidationRuleOfEachFieldInTheCheckoutFormWhichShouldBeCoveredByUnitIntegrationTests2(): void
+    public function theScenariosShouldNotAttemptToTestEveryMinorValidationRuleOfEachFieldInTheCheckoutFormWhichShouldBeCoveredByUnitIntegrationTests(): void
     {
         // This is an assertion about what SET should avoid.
         if (($this->internalState['current_process'] ?? null) === 'user checkout') {
