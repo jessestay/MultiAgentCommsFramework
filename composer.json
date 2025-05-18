@@ -1,0 +1,25 @@
+{
+    "name": "jessestay/multiagentcommsframework",
+    "description": "Multi-Agent Communications Framework",
+    "type": "project",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Jesse Stay",
+            "email": "jesse@staynalive.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "MultiAgentCommsFramework\\": "src/"
+        }
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.1"
+    }
+}
