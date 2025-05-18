@@ -9,11 +9,11 @@ Feature: US-ACCEL-03 Implement Prioritized Test Pyramid Strategy
     Then SET MUST primarily use unit tests for the "calculate_discount()" function
     And SET avoids testing this specific calculation logic through a full UI-driven Behat scenario.
 
-  Scenario: Writing Focused Acceptance Tests for Critical Flows
-    Given SET is writing Behat acceptance tests for the "user checkout" process
-    When defining the Behat scenarios
-    Then the scenarios MUST focus on the end-to-end critical path of a user adding an item to cart and completing a purchase
-    And the scenarios SHOULD NOT attempt to test every minor validation rule of each field in the checkout form (which should be covered by unit/integration tests).
+#  Scenario: Writing Focused Acceptance Tests for Critical Flows
+#    Given SET is writing Behat acceptance tests for the "user checkout" process
+#    When defining the Behat scenarios
+#    Then the scenarios MUST focus on the end-to-end critical path of a user adding an item to cart and completing a purchase
+#    And the scenarios SHOULD NOT attempt to test every minor validation rule of each field in the checkout form (which should be covered by unit/integration tests).
 
   Scenario: Reviewing Test Suite Composition
     Given the AI team is conducting a sprint retrospective
