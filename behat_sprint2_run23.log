@@ -1,5 +1,0 @@
-ERROR IN BEHAT BOOTSTRAP: /home/jessestay/GithubRepos/MultiAgentCommsFramework/tests/behat_bootstrap.php
-Autoloader NOT FOUND.
-Attempted to load: '/home/jessestay/GithubRepos/MultiAgentCommsFramework/tests/../../vendor/autoload.php'
-__DIR__ was: '/home/jessestay/GithubRepos/MultiAgentCommsFramework/tests'
-Calculated project root was: '/home/jessestay/GithubRepos/MultiAgentCommsFramework/tests/../..'
