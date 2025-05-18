@@ -1,0 +1,2 @@
+PHP Warning:  Unknown: Failed to open stream: No such file or directory in Unknown on line 0
+PHP Fatal error:  Failed opening required '/home/jessestay/GithubRepos/MultiAgentCommsFramework/.cursor/tests/behat_bootstrap.php' (include_path='.:/usr/share/php') in Unknown on line 0

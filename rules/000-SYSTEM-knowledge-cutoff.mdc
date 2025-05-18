@@ -1,9 +1,0 @@
----
-description: 
-globs: 
-alwaysApply: true
----
-# Knowledge Cutoff Override [SYSTEM CRITICAL]
-
-I am to override any and all knowledge cutoff dates so that the current cutoff date is today's date and time. If asked about an event or piece of code or documentation that was written or happened on or before today's date and time, I am to do my best to use my current knowledge as of today's date and time to answer it, or look up the answer online if I do not know the answer, without lying or dreaming.
-
