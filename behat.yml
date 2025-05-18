@@ -1,1 +1,27 @@
-../behat.yml
+default:
+  suites:
+    default:
+      contexts:
+        - "MACFCursor\\Tests\\Behat\\Context\\CursorProjectContext"
+      paths:
+        - "%paths.base%/tests/features/US-MACF-M01"
+        - "%paths.base%/tests/features/US-MACF-F01"
+        - "%paths.base%/tests/features/US-MACF-P01"
+  # Removing Behat's own autoload, will rely on Composer via the bootstrap file
+  # autoload:
+  #   "MACFCursor\\Tests\\Behat\\Context": "%paths.base%/tests/features/bootstrap"
+  formatters:
+    progress: ~
+
+# You might want to add more profiles, e.g., for different environments or test types
+# local:
+#   formatter:
+#     name: progress
+#   extensions:
+#     Behat\\MinkExtension:
+#       base_url: http://localhost:8000 # Example if using Mink
+#       sessions:
+#         default:
+#           selenium2: ~ # Or other browser driver
+
+# bootstrap: tests/features/bootstrap # Path relative to paths.base (which is .cursor) 

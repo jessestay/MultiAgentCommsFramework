@@ -1,8 +1,0 @@
-  
-In UninitializedContextEnvironment.php line 45:
-                                                                                                                 
-  `AutomaticJesse\Cursor\Tests\Behat\Context\CursorProjectContext` context class not found and can not be used.  
-                                                                                                                 
-
-behat [-s|--suite SUITE] [-f|--format FORMAT] [-o|--out OUT] [--format-settings FORMAT-SETTINGS] [--print-absolute-paths] [--init] [--lang LANG] [--name NAME] [--tags TAGS] [--role ROLE] [--narrative NARRATIVE] [--story-syntax] [-d|--definitions DEFINITIONS] [--snippets-for [SNIPPETS-FOR]] [--snippets-type SNIPPETS-TYPE] [--append-snippets] [--no-snippets] [--strict] [--print-unused-definitions] [--order ORDER] [--rerun] [--rerun-only] [--stop-on-failure] [--dry-run] [--allow-no-tests] [--] [<paths>]
-

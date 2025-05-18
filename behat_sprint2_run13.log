@@ -1,6 +1,0 @@
-
-In ArrayNode.php line 304:
-                                                                                                                                                                                                                                                                                                                                                                                                   
-  Unrecognized option "bootstrap" under "testwork". Available options are "argument", "autoload", "calls", "cli", "contexts", "definitions", "environments", "events", "exceptions", "filesystem", "formatters", "gherkin", "gherkin_translations", "helper_container", "hooks", "ordering", "path_options", "snippets", "specifications", "suites", "testers", "transformations", "translation".  
-                                                                                                                                                                                                                                                                                                                                                                                                   
-
