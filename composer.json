@@ -25,6 +25,7 @@
         "behat/behat": "^3.14",
         "friends-of-behat/mink-extension": "^1.0 || ^2.0",
         "behat/transliterator": "^1.0",
-        "webmozart/assert": "^1.11"
+        "webmozart/assert": "^1.11",
+        "phpunit/phpunit": "^9.5"
     }
 }
