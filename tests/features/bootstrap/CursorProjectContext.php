@@ -524,7 +524,7 @@ class CursorProjectContext implements Context
         // This step can be reused by other roles, so we check current action context
         $expectedTemplateType = $arg1;
         $this->internalState['template_to_use'] = $expectedTemplateType;
-        Assert::assertArrayHasKey($expectedTemplateType, $this->internalState['handoff_templates'] ?? [], "Template '{$expectedTemplateType}' not defined.");
+        Assert::keyExists($this->internalState['handoff_templates'] ?? [], $expectedTemplateType, "Template '{$expectedTemplateType}' not defined.");
         Assert::true(true, "Simulated: ES (or current role) MUST use the '{$expectedTemplateType}' template.");
     }
 
@@ -560,7 +560,7 @@ class CursorProjectContext implements Context
     public function theFilesAuth_ControllerphpAndUser_ModelphpWereModified(): void
     {
         $this->internalState['modified_files'] = ['auth_controller.php', 'user_model.php'];
-        Assert::assertContains('auth_controller.php', $this->internalState['modified_files']);
+        Assert::inArray('auth_controller.php', $this->internalState['modified_files'], "File auth_controller.php should be in modified list.");
     }
 
     #[Given('the new function `authenticate_user()` in `auth_controller.php` needs documentation')]
@@ -600,7 +600,7 @@ class CursorProjectContext implements Context
     #[When('SET prepares a message to ES about the blocker')]
     public function setPreparesAMessageToEsAboutTheBlocker(): void
     {
-        Assert::keyExists('blocker_reason', $this->internalState, "No blocker context for message to ES.");
+        Assert::keyExists($this->internalState, 'blocker_reason', "No blocker context for message to ES.");
         $this->internalState['handoff_message_being_prepared_for'] = 'ES';
         $this->internalState['action'] = 'preparing_blocker_SET_to_ES';
         Assert::true(true, "Simulated: SET prepares blocker message to ES.");
