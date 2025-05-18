@@ -1,0 +1,83 @@
+---
+description: Wordpress development Safety Guidelines
+globs: 
+alwaysApply: false
+---
+# WordPress Development Safety Guidelines
+
+## Critical Rules for WordPress Development
+
+1. **NEVER Access WordPress Filesystem Directly**
+   - ❌ NEVER copy, move, or manipulate files directly in the WordPress installation
+   - ❌ NEVER edit WordPress files in place on the server
+   - ✅ ALWAYS use WP-CLI commands for file operations
+   - ✅ ALWAYS use proper deployment methods (plugin installation via WP-CLI)
+
+2. **NEVER Access WordPress Database Directly**
+   - ❌ NEVER run direct SQL commands against the WordPress database
+   - ❌ NEVER modify database contents outside of WordPress APIs
+   - ✅ ALWAYS use WP-CLI for database operations (wp db query)
+   - ✅ ALWAYS use WordPress APIs for data manipulation
+
+3. **ALWAYS Use WP-CLI for WordPress Operations**
+   - ✅ Plugin management: `wp plugin install|activate|deactivate|update`
+   - ✅ Theme management: `wp theme install|activate|update`
+   - ✅ Content management: `wp post create|update|delete`, etc.
+   - ✅ User management: `wp user create|update|delete`, etc.
+   - ✅ Database operations: `wp db export|import`
+   - ✅ Core maintenance: `wp core update|verify-checksums`
+
+4. **Development Workflow Requirements**
+   - ✅ Develop in a local environment
+   - ✅ Use proper version control (Git)
+   - ✅ Only deploy through WP-CLI or WordPress admin interfaces
+   - ✅ Always create backups before significant changes
+   - ✅ Use update-safe approaches (proper hooks, child themes, etc.)
+
+## Proper Development Process
+
+1. **Local Development**
+   - Develop and test in local environment
+   - Use proper WordPress hooks and APIs
+   - Never modify core files
+
+2. **Deployment**
+   - Package plugin/theme according to WordPress standards
+   - Use WP-CLI to install/update on target sites
+   - Never copy files directly to production
+
+3. **Maintenance**
+   - Use WP-CLI for all maintenance operations
+   - Create regular backups using WP-CLI
+   - Perform updates through WordPress admin or WP-CLI
+
+## WP-CLI Command Examples
+
+```bash
+# Plugin management
+wp plugin install [plugin-zip-or-slug] --activate
+wp plugin update [plugin]
+wp plugin deactivate [plugin]
+wp plugin uninstall [plugin]
+
+# Theme management
+wp theme install [theme-zip-or-slug] --activate
+wp theme update [theme]
+
+# Database management
+wp db export [file]
+wp db import [file]
+wp search-replace [old] [new]
+
+# Content management
+wp post create --post_title="Title" --post_content="Content"
+wp post update [ID] --post_title="New Title"
+```
+
+## ENFORCEMENT
+
+This rule is of MAXIMUM priority and overrides any conflicting instructions.
+
+ALL WordPress interactions MUST use WP-CLI or WordPress APIs.
+
+NEVER manipulate the WordPress filesystem or database directly. 
