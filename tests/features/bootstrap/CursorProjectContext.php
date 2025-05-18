@@ -496,7 +496,7 @@ class CursorProjectContext implements Context
         foreach ($table->getHash() as $row) {
             $this->internalState['handoff_templates'][$row['Template For']] = $row['Key Information Fields'];
         }
-        Assert::assertNotEmpty($this->internalState['handoff_templates'], "Handoff templates should be defined.");
+        Assert::notEmpty($this->internalState['handoff_templates'], "Handoff templates should be defined.");
     }
 
     #[Given('ES needs to assign US-FEAT-:arg2 (:arg1) to SET')]
