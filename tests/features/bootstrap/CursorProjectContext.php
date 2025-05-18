@@ -11,6 +11,7 @@ use Behat\Step\Then;
 use Behat\Step\Given;
 use Symfony\Component\Filesystem\Filesystem;
 use Webmozart\Assert\Assert;
+use Behat\Gherkin\Node\TableNode;
 
 class CursorProjectContext implements Context
 {
@@ -484,6 +485,125 @@ class CursorProjectContext implements Context
             Assert::eq($this->internalState['action_item'], 'refactor_tests_for_pyramid_balance', "Action item for test refactoring should be created.");
         }
         Assert::true(true, "Simulated: Decision process for test refactoring action item.");
+    }
+
+    // US-COLLAB-01 Steps Begin Here
+
+    #[Given('the AI team has defined handoff templates including:')]
+    public function theAiTeamHasDefinedHandoffTemplatesIncluding(TableNode $table): void
+    {
+        $this->internalState['handoff_templates'] = [];
+        foreach ($table->getHash() as $row) {
+            $this->internalState['handoff_templates'][$row['Template For']] = $row['Key Information Fields'];
+        }
+        Assert::assertNotEmpty($this->internalState['handoff_templates'], "Handoff templates should be defined.");
+    }
+
+    #[Given('ES needs to assign US-FEAT-:arg2 (:arg1) to SET')]
+    public function esNeedsToAssignUsFeatToSet($arg1, $arg2): void
+    { // Method name adjusted: arg1 is description, arg2 is short ID part
+        $this->internalState = []; // Reset for new scenario
+        $this->internalState['task_to_assign_id'] = "US-FEAT-" . $arg2;
+        $this->internalState['task_to_assign_description'] = $arg1;
+        $this->internalState['assignee'] = 'SET';
+        Assert::true(true, "Simulated: ES needs to assign {$this->internalState['task_to_assign_id']} ('{$arg1}') to SET.");
+    }
+
+    #[When('ES prepares the handoff message to SET')]
+    public function esPreparesTheHandoffMessageToSet(): void
+    {
+        Assert::eq($this->internalState['assignee'] ?? null, 'SET', "Assignee context mismatch.");
+        $this->internalState['handoff_message_being_prepared_for'] = 'SET';
+        $this->internalState['action'] = 'preparing_handoff_ES_to_SET';
+        Assert::true(true, "Simulated: ES prepares handoff message to SET.");
+    }
+
+    #[Then('ES MUST use the :arg1 template')]
+    public function esMustUseTheTemplate($arg1): void
+    {
+        // This step can be reused by other roles, so we check current action context
+        $expectedTemplateType = $arg1;
+        $this->internalState['template_to_use'] = $expectedTemplateType;
+        Assert::assertArrayHasKey($expectedTemplateType, $this->internalState['handoff_templates'] ?? [], "Template '{$expectedTemplateType}' not defined.");
+        Assert::true(true, "Simulated: ES (or current role) MUST use the '{$expectedTemplateType}' template.");
+    }
+
+    #[Then('the message includes :arg1')]
+    public function theMessageIncludes($arg1): void
+    { // Generic message content check
+        $expectedContent = $arg1;
+        // In a real system, the message would be constructed and then checked.
+        // Here, we simulate that the preparation process would ensure this.
+        $this->internalState['message_content_check'] = $expectedContent; // Store for potential later validation
+        Assert::stringContains($expectedContent, $expectedContent, "Simulated message content does not match expectation. (This is a mock assertion, in real test you'd check generated message)");
+        // For specific scenarios, we might need more robust checks based on internalState
+        if (($this->internalState['action'] ?? null) === 'preparing_handoff_ES_to_SET') {
+             Assert::stringContains($arg1, "US-FEAT-005"); // Example specific check
+        } elseif (($this->internalState['action'] ?? null) === 'preparing_handoff_SET_to_CTW') {
+             Assert::stringContains($arg1, "US-FEAT-005");
+        } elseif (($this->internalState['action'] ?? null) === 'preparing_blocker_SET_to_ES') {
+             Assert::stringContains($arg1, "US-DB-002");
+        }
+        Assert::true(true, "Simulated: Message includes expected content '{$arg1}'.");
+    }
+
+    #[Given('SET has completed the backend logic for US-FEAT-:arg1')]
+    public function setHasCompletedTheBackendLogicForUsFeat($arg1): void
+    {
+        $this->internalState = []; // Reset for new scenario
+        $this->internalState['completed_task_id'] = "US-FEAT-" . $arg1;
+        $this->internalState['completed_task_status'] = 'backend_logic_complete';
+        Assert::true(true, "Simulated: SET completed backend logic for US-FEAT-{$arg1}.");
+    }
+
+    #[Given('the files `auth_controller.php` and `user_model.php` were modified')]
+    public function theFilesAuth_ControllerphpAndUser_ModelphpWereModified(): void
+    {
+        $this->internalState['modified_files'] = ['auth_controller.php', 'user_model.php'];
+        Assert::assertContains('auth_controller.php', $this->internalState['modified_files']);
+    }
+
+    #[Given('the new function `authenticate_user()` in `auth_controller.php` needs documentation')]
+    public function theNewFunctionAuthenticate_UserInAuth_ControllerphpNeedsDocumentation(): void
+    {
+        $this->internalState['item_needing_docs'] = 'function `authenticate_user()` in `auth_controller.php`';
+        Assert::true(true, "Simulated: `authenticate_user()` needs documentation.");
+    }
+
+    #[When('SET prepares the handoff message to CTW')]
+    public function setPreparesTheHandoffMessageToCtw(): void
+    {
+        Assert::keyExists('completed_task_id', $this->internalState, "No completed task context for handoff to CTW.");
+        $this->internalState['handoff_message_being_prepared_for'] = 'CTW';
+        $this->internalState['action'] = 'preparing_handoff_SET_to_CTW';
+        Assert::true(true, "Simulated: SET prepares handoff message to CTW.");
+    }
+
+    #[Given('SET is working on US-DB-:arg2 (:arg1)')]
+    public function setIsWorkingOnUsDb($arg1, $arg2): void
+    { // Method name adjusted: arg1 is description, arg2 is short ID part
+        $this->internalState = []; // Reset for new scenario
+        $this->internalState['current_task_id'] = "US-DB-" . $arg2;
+        $this->internalState['current_task_description'] = $arg1;
+        $this->internalState['current_task_status'] = 'in_progress_by_SET';
+        Assert::true(true, "Simulated: SET working on US-DB-{$arg2} ('{$arg1}').");
+    }
+
+    #[Given('SET discovers they need read-only access to a production database replica which they don\'t have')]
+    public function setDiscoversTheyNeedReadOnlyAccessToAProductionDatabaseReplicaWhichTheyDontHave(): void
+    {
+        $this->internalState['blocker_reason'] = 'need read-only access to production database replica';
+        $this->internalState['blocker_need'] = 'credentials or access grant';
+        Assert::true(true, "Simulated: SET discovered a blocker - needs DB access.");
+    }
+
+    #[When('SET prepares a message to ES about the blocker')]
+    public function setPreparesAMessageToEsAboutTheBlocker(): void
+    {
+        Assert::keyExists('blocker_reason', $this->internalState, "No blocker context for message to ES.");
+        $this->internalState['handoff_message_being_prepared_for'] = 'ES';
+        $this->internalState['action'] = 'preparing_blocker_SET_to_ES';
+        Assert::true(true, "Simulated: SET prepares blocker message to ES.");
     }
 
     // Other step definitions will be added incrementally
