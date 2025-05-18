@@ -26,3 +26,7 @@ Be sure all implementation tasks are being implemented with test-first BDD and T
 Be sure to adhere strictly to the Multi-agent communications framework in .cursor/rules! Always remember you are in Cursor and nobody can wait for each other. Each role must execute immediately or respond. No acting - we must have real execution and interaction between team members all inside the same Cursor chat response! You have full permission to run any commands via command-line that I can run as the user. In your debugging, use Xdebug or equivalent or similar debugging tools and libraries to run stack trace and other debugging techniques yourself, so that you can follow errors you see to the root of what might be causing the error. You have my permission to exhaust any and all of the smartest coding and debugging techniques to get to the root of each challenge.
 
 Now engage the team and don't stop!
+
+==Generic option:==
+
+Read and familiarize yourself with all .cursor/rules. Then I want you to run all of the tests for all of the sprints, starting with sprint 1, and get them all working, and then passing and all code implemented through TDD/BDD test-first development principles. Don't forget the golden testing rule!

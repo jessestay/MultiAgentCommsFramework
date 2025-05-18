@@ -7,6 +7,8 @@ default:
         - "%paths.base%/tests/features/US-MACF-M01"
         - "%paths.base%/tests/features/US-MACF-F01"
         - "%paths.base%/tests/features/US-MACF-P01"
+        - "%paths.base%/tests/features/sprint-1"
+        - "%paths.base%/tests/features"
   # Removing Behat's own autoload, will rely on Composer via the bootstrap file
   # autoload:
   #   "MACFCursor\\Tests\\Behat\\Context": "%paths.base%/tests/features/bootstrap"
@@ -24,4 +26,4 @@ default:
 #         default:
 #           selenium2: ~ # Or other browser driver
 
-# bootstrap: tests/features/bootstrap # Path relative to paths.base (which is .cursor) 
+bootstrap: tests/features/bootstrap/bootstrap.php # Path relative to paths.base (project root) 
