@@ -1,0 +1,25 @@
+parameters:
+    level: 0 # Start at the most lenient level
+    paths:
+        - frameworks/reviews/Verification
+        - frameworks/reviews/tests
+        # Add other source paths here if they exist
+    
+    # Exclude vendor directories to prevent analyzing third-party code
+    excludePaths:
+        - frameworks/reviews/vendor/* # For dependencies of frameworks/reviews
+        - vendor/* # For dependencies at the root project level, if any get added
+
+    # PHPStan might need help finding class definitions if they are not standard PSR-4
+    # autoload_directories:
+    #   - path/to/non_psr4_code
+
+    # If you use stub files for WordPress functions or other global symbols
+    # stubFiles:
+    #    - path/to/wordpress-stubs.php
+
+    # It's good practice to tell PHPStan about the autoloader for frameworks/reviews
+    # if it has trouble finding classes from its own 'src' (even if 'src' is missing, 
+    # the composer.json there defines an autoloader that might be relevant for 'tests').
+    bootstrapFiles:
+        - frameworks/reviews/vendor/autoload.php # Autoloader for the Behat contexts

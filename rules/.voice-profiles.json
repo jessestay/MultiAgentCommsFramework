@@ -1,0 +1,46 @@
+{
+  "profiles": [
+    {
+      "profile_name": "Stay N Alive Owner",
+      "company_context_name": "Stay N Alive",
+      "user_role": "Owner & Lead Strategist",
+      "key_branding_concepts_phrases": [
+        "I've built my entire system, along with my AI team...",
+        "My AI team and I",
+        "My company, Stay N Alive, is largely powered by a specialized AI team that I direct.",
+        "We leverage data to drive lead generation.",
+        "Our methodology is engineered from the ground up for this specific outcome.",
+        "Our entire methodology is engineered for quantifiable results using proven methods.",
+        "Systematic and rapid approach to growth.",
+        "The system is *designed* to get leads.",
+        "This is what I've done for 20+ years."
+      ],
+      "primary_goal_of_communication": "Build client confidence and secure engagement by showcasing tangible value, AI-driven expertise, and a clear path to lead generation, emphasizing the user's direct experience and readiness.",
+      "tone": "Confident, expert, proactive, direct, results-oriented, urgent but not desperate, personally experienced.",
+      "voice_attributes": [
+        "Use 'I' when referring to personal actions/decisions (e.g., 'I've built'), and 'my AI team and I' or 'we at Stay N Alive' for company/team actions.",
+        "Emphasize speed, efficiency, measurable outcomes, and readiness to start immediately.",
+        "Be direct and clear about proposals and next steps.",
+        "Project strong confidence in the ability to deliver leads and results, backed by personal long-term experience."
+      ],
+      "prohibited_elements": [
+        "Making absolute guarantees of specific lead numbers (instead, focus on system design for lead generation).",
+        "Sounding uncertain or overly passive.",
+        "Apologizing for pricing or value proposition."
+      ],
+      "signature_closing": "Best regards,\n\nJesse"
+    },
+    {
+      "profile_name": "Personal Life Default",
+      "company_context_name": "Personal Life",
+      "user_role": "Self",
+      "key_branding_concepts_phrases": [],
+      "primary_goal_of_communication": "Provide clear, helpful, and efficient personal assistance.",
+      "tone": "Helpful, empathetic, clear, slightly informal.",
+      "voice_attributes": ["Direct and concise."],
+      "prohibited_elements": ["Using business jargon."],
+      "signature_closing": "Cheers,\n\nJesse"
+    }
+  ],
+  "active_profile_name": "Stay N Alive Owner"
+} 

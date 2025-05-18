@@ -1,1 +1,8 @@
-../MultiAgentCommsFramework.code-workspace
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {}
+}
