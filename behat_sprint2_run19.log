@@ -1,0 +1,4 @@
+Error: Project Composer autoloader not found.
+Attempted to load: '' (resolved) or '/home/jessestay/GithubRepos/MultiAgentCommsFramework/tests/../../vendor/autoload.php' (literal)
+Current directory for bootstrap script: /home/jessestay/GithubRepos/MultiAgentCommsFramework/tests
+Please ensure 'composer install' has been run in the project root (MultiAgentCommsFramework/).

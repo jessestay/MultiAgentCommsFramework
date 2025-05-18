@@ -1,9 +1,0 @@
-default:
-  suites:
-    default:
-      paths:
-        - '%paths.base%/features'
-      contexts:
-        - MinimalContext
-  formatters:
-    progress: true

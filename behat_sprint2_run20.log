@@ -1,0 +1,7 @@
+ERROR IN: /home/jessestay/GithubRepos/MultiAgentCommsFramework/tests/behat_bootstrap.php
+Project Composer autoloader not found.
+Attempted to load: '/home/jessestay/GithubRepos/MultiAgentCommsFramework/tests/../../vendor/autoload.php'
+Calculated project root: '/home/jessestay/GithubRepos/MultiAgentCommsFramework/tests/../..'
+Value of __DIR__ in this script: '/home/jessestay/GithubRepos/MultiAgentCommsFramework/tests'
+Project root is readable.
+Project root contents: .git/, AISocialAssistant/, AustinShows/, AutomaticJesse/, BookFunnelAutomator/, Cursor Source/, EpicWD/, Github Repositories/, LegalAutomator/, MultiAgentCommsFramework/, StayNAlive.com/, The-Automatic-Transcriber/, ai-bridge/, composer.json, composer.lock, composer_debug.txt, cursor-ide/, docs/, output/, social-media-growth-ai/, social-media-growth-ai-DESKTOP-9MRGT6K/, test-logs/
