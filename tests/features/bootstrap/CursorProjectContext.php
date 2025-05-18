@@ -534,14 +534,14 @@ class CursorProjectContext implements Context
         // In a real system, the message would be constructed and then checked.
         // Here, we simulate that the preparation process would ensure this.
         $this->internalState['message_content_check'] = $expectedContent; // Store for potential later validation
-        Assert::stringContains($expectedContent, $expectedContent, "Simulated message content does not match expectation. (This is a mock assertion, in real test you'd check generated message)");
+        Assert::contains($expectedContent, $expectedContent, "Simulated message content does not match expectation. (This is a mock assertion, in real test you'd check generated message)");
         // For specific scenarios, we might need more robust checks based on internalState
         if (($this->internalState['action'] ?? null) === 'preparing_handoff_ES_to_SET') {
-             Assert::stringContains($arg1, "US-FEAT-005"); // Example specific check
+             Assert::contains($arg1, "US-FEAT-005"); // Corrected to Assert::contains
         } elseif (($this->internalState['action'] ?? null) === 'preparing_handoff_SET_to_CTW') {
-             Assert::stringContains($arg1, "US-FEAT-005");
+             Assert::contains($arg1, "US-FEAT-005"); // Corrected to Assert::contains
         } elseif (($this->internalState['action'] ?? null) === 'preparing_blocker_SET_to_ES') {
-             Assert::stringContains($arg1, "US-DB-002");
+             Assert::contains($arg1, "US-DB-002"); // Corrected to Assert::contains
         }
         Assert::true(true, "Simulated: Message includes expected content '{$arg1}'.");
     }

@@ -21,6 +21,7 @@ project-root/
 │   ├── technical/    # Technical documentation
 │   ├── api/          # API documentation
 │   ├── design/       # General design documents not tied to a specific user story
+│   ├── logs/         # Central directory for all logs (troubleshooting, tool output, application, etc.)
 │   └── strategy/     # Strategic planning documents
 ├── tests/            # Test files
 │   ├── unit/         # Unit tests
@@ -62,7 +63,7 @@ docs/
 │           ├── design/     # Design assets/docs specific to this story
 │           ├── technical/  # Technical docs specific to this story
 │           ├── assets/     # Assets specific to this story
-│           └── troubleshooting.md # [NEW] Log of troubleshooting steps for this story
+│           └── troubleshooting.md # [NEW] Log of troubleshooting steps for this story (to be moved under docs/logs/troubleshooting/)
 ├── technical/
 │   ├── README.md           # Explains technical docs structure
 │   ├── architecture/
@@ -71,6 +72,12 @@ docs/
 ├── design/                 # General design docs (brand guides, overall style)
 │   ├── README.md
 │   └── brand-guidelines.md
+├── logs/
+│   ├── README.md           # Explains log organization (e.g., subdirs for behat, composer, troubleshooting, app)
+│   ├── troubleshooting/    # User story specific troubleshooting logs (e.g., US-TH-001-troubleshooting.log)
+│   ├── behat/              # Output logs from Behat runs
+│   ├── composer/           # Output logs from Composer commands
+│   └── application/        # Application-specific logs (if any)
 ├── strategy/
 │   └── README.md           # Standard location for strategic planning documents
 └── INDEX.md                # Master documentation index (optional, can be replaced by READMEs)
@@ -177,11 +184,6 @@ All roles must adhere to these directory structure standards:
 
 ## Best Practices
 
-1. Maintain clean project structure by regularly moving unused files to the backups directory
-2. Use descriptive directory names that clearly indicate content
-3. Minimize directory depth where possible
-4. **Always include README.md files** in key directories to explain purpose and structure
-5. When working with temporary files, always use the backups directory
 1. Maintain clean project structure by regularly moving unused files to the backups directory
 2. Use descriptive directory names that clearly indicate content
 3. Minimize directory depth where possible

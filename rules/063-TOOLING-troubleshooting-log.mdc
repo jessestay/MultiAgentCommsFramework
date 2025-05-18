@@ -13,8 +13,8 @@ This rule defines the mandatory procedure for logging troubleshooting steps to d
 
 1.  **File-Based Logging**: All significant troubleshooting steps MUST be logged to a designated file.
 2.  **User Story Association**: Each log file MUST be associated with a specific User Story ID.
-3.  **Standard Location**: Log files MUST reside in `docs/logs/`.
-4.  **Naming Convention**: Log files MUST be named `US-[AREA]-[NUMBER]-troubleshooting.log` (e.g., `docs/logs/US-TH-001-troubleshooting.log`).
+3.  **Standard Location**: Troubleshooting log files MUST reside in `docs/logs/troubleshooting/`.
+4.  **Naming Convention**: Log files MUST be named `US-[AREA]-[NUMBER]-troubleshooting.log` (e.g., `docs/logs/troubleshooting/US-TH-001-troubleshooting.log`).
 5.  **Log Entry Format**: Each log entry MUST include:
     *   Timestamp (YYYY-MM-DD HH:MM:SS UTC)
     *   Role performing the action (e.g., SET)
@@ -26,7 +26,7 @@ This rule defines the mandatory procedure for logging troubleshooting steps to d
 ## Procedure
 
 1.  **Identify User Story**: Before starting troubleshooting, identify the relevant User Story ID (e.g., US-TH-001).
-2.  **Locate/Create Log File**: Determine the log file path (e.g., `docs/logs/US-TH-001-troubleshooting.log`). If the file doesn't exist, create it.
+2.  **Locate/Create Log File**: Determine the log file path (e.g., `docs/logs/troubleshooting/US-TH-001-troubleshooting.log`). If the file doesn't exist, create it (ensuring the `docs/logs/troubleshooting/` directory exists).
 3.  **Log Each Step**: After each significant troubleshooting action (e.g., running a command, editing a file for diagnostic purposes, analyzing results):
     *   Generate the log entry text in the standard format.
     *   **Append Log Entry (Preferred Method)**: Use the `run_terminal_cmd` tool with a command like `echo \"[log entry text]\"] >> [log_file_path]` to append the entry to the correct log file. This is the most efficient method, especially for large files. Ensure proper shell escaping of the log entry text within the command.
@@ -41,7 +41,7 @@ This rule defines the mandatory procedure for logging troubleshooting steps to d
     *   If the user declines, do not proceed with the unrelated task.
     *   If the user approves:
         *   **Create Backlog Story**: ES creates a new placeholder user story file in `docs/user-stories/backlog/` (e.g., `US-NEW-001-user-troubleshooting-request.md`) with a brief description.
-        *   **Create New Log File**: Initiate a new troubleshooting log file corresponding to the new story ID (e.g., `docs/logs/US-NEW-001-troubleshooting.log`).
+        *   **Create New Log File**: Initiate a new troubleshooting log file corresponding to the new story ID in the standard location (e.g., `docs/logs/troubleshooting/US-NEW-001-troubleshooting.log`).
         *   **Proceed**: Continue with the approved task, logging steps to the *new* log file.
 
 ## Enforcement
