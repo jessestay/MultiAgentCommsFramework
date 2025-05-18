@@ -502,7 +502,6 @@ class CursorProjectContext implements Context
     #[Given('ES needs to assign US-FEAT-:arg2 (:arg1) to SET')]
     public function esNeedsToAssignUsFeatToSet($arg1, $arg2): void
     { // Method name adjusted: arg1 is description, arg2 is short ID part
-        $this->internalState = []; // Reset for new scenario
         $this->internalState['task_to_assign_id'] = "US-FEAT-" . $arg2;
         $this->internalState['task_to_assign_description'] = $arg1;
         $this->internalState['assignee'] = 'SET';
@@ -550,7 +549,6 @@ class CursorProjectContext implements Context
     #[Given('SET has completed the backend logic for US-FEAT-:arg1')]
     public function setHasCompletedTheBackendLogicForUsFeat($arg1): void
     {
-        $this->internalState = []; // Reset for new scenario
         $this->internalState['completed_task_id'] = "US-FEAT-" . $arg1;
         $this->internalState['completed_task_status'] = 'backend_logic_complete';
         Assert::true(true, "Simulated: SET completed backend logic for US-FEAT-{$arg1}.");
@@ -573,7 +571,7 @@ class CursorProjectContext implements Context
     #[When('SET prepares the handoff message to CTW')]
     public function setPreparesTheHandoffMessageToCtw(): void
     {
-        Assert::keyExists('completed_task_id', $this->internalState, "No completed task context for handoff to CTW.");
+        Assert::keyExists($this->internalState, 'completed_task_id', "No completed task context for handoff to CTW.");
         $this->internalState['handoff_message_being_prepared_for'] = 'CTW';
         $this->internalState['action'] = 'preparing_handoff_SET_to_CTW';
         Assert::true(true, "Simulated: SET prepares handoff message to CTW.");
@@ -582,7 +580,6 @@ class CursorProjectContext implements Context
     #[Given('SET is working on US-DB-:arg2 (:arg1)')]
     public function setIsWorkingOnUsDb($arg1, $arg2): void
     { // Method name adjusted: arg1 is description, arg2 is short ID part
-        $this->internalState = []; // Reset for new scenario
         $this->internalState['current_task_id'] = "US-DB-" . $arg2;
         $this->internalState['current_task_description'] = $arg1;
         $this->internalState['current_task_status'] = 'in_progress_by_SET';
