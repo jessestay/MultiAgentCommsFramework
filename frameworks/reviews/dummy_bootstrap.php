@@ -1,2 +1,0 @@
-<?php
-echo "DUMMY_BOOTSTRAP_RUNNING\n"; 
