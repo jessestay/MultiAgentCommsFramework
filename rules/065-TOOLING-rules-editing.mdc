@@ -1,6 +1,6 @@
 ---
-description: Rule Editing Protocol for .cursor/rules/ Directory [CRITICAL]
-globs: 
+description: 
+globs: .cursor/rules/**
 alwaysApply: false
 ---
 # Rule Editing Protocol for .cursor/rules/ Directory [CRITICAL]

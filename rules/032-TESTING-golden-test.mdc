@@ -1,7 +1,9 @@
 ---
-description: 
-globs: 
+description: Mandates a strict testing protocol (AI Golden Test) for all AI-driven code modifications, requiring full test suite execution after every change.
+globs: []
 alwaysApply: true
+topic: Testing Standards
+version: 1.0.0
 ---
 # AI Golden Test Protocol [CRITICAL ENFORCEMENT]
 

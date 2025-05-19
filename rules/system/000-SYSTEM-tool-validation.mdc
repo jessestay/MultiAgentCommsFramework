@@ -1,7 +1,9 @@
 ---
-description: 
-globs: 
+description: Enforces strict pre-call validation for tool arguments, especially for `edit_file` (code_edit, instructions, target_file), with mandatory execution blocking and regeneration on failure.
+globs: [".cursor/rules/system/000-SYSTEM-tool-validation.mdc"]
 alwaysApply: true
+topic: System Standards
+version: 1.0.0
 ---
 # Mandatory Tool Argument Validation [MAXIMUM PRIORITY]
 

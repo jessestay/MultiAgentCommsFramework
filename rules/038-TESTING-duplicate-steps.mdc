@@ -1,7 +1,9 @@
 ---
-description: Handling Duplicate Step Definitions
-globs: 
-alwaysApply: false
+description: Outlines the standard process for diagnosing and resolving duplicate step definitions in Behat tests, including temporary workarounds and stakeholder review protocols during such issues.
+globs: []
+alwaysApply: true
+topic: Testing Standards
+version: 1.0.0
 ---
 # Handling Duplicate Step Definitions [MANDATORY]
 

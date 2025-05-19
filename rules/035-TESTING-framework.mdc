@@ -1,7 +1,10 @@
 ---
-description: 
-globs: 
+description: Defines the testing framework, tools (PHPUnit, Behat), execution environment (native WSL2), test running commands, BDD structure, and developer guides for testing.
+globs: []
 alwaysApply: true
+topic: Testing Standards
+version: 1.0.0
+---
 ---
 ---
 description: 

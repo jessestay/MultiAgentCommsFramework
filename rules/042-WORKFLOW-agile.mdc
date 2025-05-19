@@ -1,15 +1,10 @@
 ---
-description: 
-globs: 
-alwaysApply: true
----
----
 description: Agile Framework and User Story Templates for AI Agent Development - Applies to All Projects
-globs: 
+globs: []
 alwaysApply: true
+topic: Workflow Standards
 version: 1.0.0
 ---
-
 # Agile Framework for AI Agent Development
 
 ## Core Principles

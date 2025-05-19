@@ -5,7 +5,7 @@
   "scripts": {
     "test:behat": "vendor/bin/behat --config behat.yml",
     "test:phpunit:unit": "vendor/bin/phpunit --testsuite=unit --bootstrap tests/wp-mock-bootstrap.php",
-    "test:phpunit:integration": "vendor/bin/phpunit --testsuite=integration --bootstrap tests/bootstrap.php",
+    "test:phpunit:integration": "vendor/bin/phpunit --testsuite=integration --bootstrap tests/features/bootstrap/bootstrap.php",
     "test:phpunit": "npm run test:phpunit:unit && npm run test:phpunit:integration",
     "test": "npm run test:phpunit && npm run test:behat",
     "lint:php": "vendor/bin/phpcs --standard=WordPress --ignore=*/vendor/*,*/node_modules/*,*/dist/*,*/build/*,*.js,*.css,*.html .",

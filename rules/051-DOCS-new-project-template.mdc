@@ -1,7 +1,9 @@
 ---
-description: 
-globs: 
-alwaysApply: true
+description: Provides a template of instructions for initiating new projects within the Multi-agent Communications Framework, including rule familiarization, user story creation, and initial documentation setup.
+globs: []
+alwaysApply: false
+topic: Documentation Standards
+version: 1.0.0
 ---
 # USE THIS FOR ALL NEW PROJECTS, ONCE YOU HAVE THE TEAM CREATE A RELEASE PLAN:
 

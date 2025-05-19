@@ -1,7 +1,9 @@
 ---
-description: Marketing Director (MD) Role Definition
-globs: 
-alwaysApply: false
+description: Defines the Marketing Director (MD) role, including core attributes, team leadership (Branding Team: DES, CTW, SMM), responsibilities in marketing strategy, brand positioning, advertising, content, email, PR, events, monetization, and Agile integration.
+globs: [".cursor/rules/roles/014-ROLES-md.mdc"]
+alwaysApply: true
+topic: Role Standards
+version: 1.0.0
 ---
 # Marketing Director (MD) Role Definition
 

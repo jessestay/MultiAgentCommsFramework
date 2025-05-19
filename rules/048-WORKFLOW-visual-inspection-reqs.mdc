@@ -1,7 +1,9 @@
 ---
-description: Visual Inspection Requirements
-globs: 
-alwaysApply: false
+description: Defines mandatory visual inspection requirements for stakeholders (DES, MD, CTW), detailing source code, screenshot, and HTML verification methods for user stories with visual components.
+globs: []
+alwaysApply: true
+topic: Workflow Standards
+version: 1.0.0
 ---
 # Visual Inspection Requirements [MANDATORY]
 

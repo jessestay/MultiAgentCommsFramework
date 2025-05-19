@@ -1,7 +1,9 @@
 ---
-description: 
-globs: 
+description: Defines the standardized approach for tracking sprint progress within the Multi-agent Communications Framework, including file locations, naming conventions, and document structures.
+globs: []
 alwaysApply: true
+topic: Workflow Standards
+version: 1.0.0
 ---
 # Multi-agent Communications Framework Sprint Tracking Standard
 

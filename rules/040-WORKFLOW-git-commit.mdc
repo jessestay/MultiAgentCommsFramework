@@ -1,7 +1,9 @@
 ---
-description: 
-globs: 
+description: Defines the temporary Git commit policy for AI-driven development, mandating commits to the main branch until US-TD-008 is implemented.
+globs: []
 alwaysApply: true
+topic: Workflow Standards
+version: 1.0.0
 ---
 # AI Git Commit Policy (Temporary) [CRITICAL]
 

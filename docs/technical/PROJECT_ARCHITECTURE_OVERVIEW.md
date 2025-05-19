@@ -1,6 +1,10 @@
-# Project Architecture Overview
+# MACF Project Architecture Overview
 
 This document provides a high-level overview of the project's architecture. It is intended to be a living document, updated as major architectural components are added or changed.
+
+## Introduction
+
+*(Placeholder for a general introduction to the MACF project and its goals)*
 
 ## Core Components
 

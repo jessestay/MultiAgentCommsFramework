@@ -1,7 +1,9 @@
 ---
-description: 
-globs: 
+description: Overrides AI knowledge cutoff dates, instructing the AI to use current knowledge or perform online lookups for information up to the present date and time.
+globs: [".cursor/rules/system/000-SYSTEM-knowledge-cutoff.mdc"]
 alwaysApply: true
+topic: System Standards
+version: 1.0.0
 ---
 # Knowledge Cutoff Override [SYSTEM CRITICAL]
 

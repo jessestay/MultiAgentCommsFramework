@@ -1,7 +1,10 @@
 ---
-description: 
-globs: 
+description: Enforces mandatory pre-development checks for SET, including Git status, test suite status (temporarily excluding PHPCS), and dependency checks.
+globs: []
 alwaysApply: true
+topic: Workflow Standards
+version: 1.0.0
+---
 ---
 ---
 description: 

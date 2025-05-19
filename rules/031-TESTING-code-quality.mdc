@@ -1,7 +1,9 @@
 ---
-description: Code Quality Tool Standards including exclusions, PHPCBF usage, AI generation standards, and developer environment setup.
-globs: 
+description: Defines mandatory standards for code quality tools, including AI file editing/generation standards, exclusions, PHPCS/PHPCBF usage, test file quality, and handling of non-critical issues.
+globs: []
 alwaysApply: true
+topic: Testing Standards
+version: 1.0.0
 ---
 # Code Quality Tool Standards [MANDATORY]
 

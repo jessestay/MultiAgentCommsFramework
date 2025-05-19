@@ -1,7 +1,9 @@
 ---
 description: Defines responsibilities and process for creating and maintaining the PROJECT_ARCHITECTURE_OVERVIEW.md document.
-globs: [".cursor/docs/technical/PROJECT_ARCHITECTURE_OVERVIEW.md"]
-alwaysApply: false
+globs: []
+alwaysApply: true
+topic: Documentation Standards
+version: 1.0.0
 ---
 # 056: Project Architecture Overview Document Maintenance [DOCS]
 

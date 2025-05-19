@@ -1,12 +1,9 @@
 ---
-description: User Story Template
-globs: 
-alwaysApply: false
----
----
-description: User Story Template
-globs:
+description: Provides the standard template for creating user stories, including sections for description, business value, acceptance criteria (core, functional, visual, data, performance, compatibility), test coverage requirements, implementation tasks, and Definition of Done.
+globs: []
 alwaysApply: true
+topic: Documentation Standards
+version: 1.0.0
 ---
 # User Story Template
 

@@ -1,9 +1,10 @@
 ---
-description: 
-globs: 
+description: Defines the Software Engineering Team (SET) role, including responsibilities in technical implementation, testing/QA, technical leadership, proactive problem-solving, WordPress expertise, and Composer/PHPUnit/WP_Mock best practices.
+globs: [".cursor/rules/roles/013-ROLES-set.mdc"]
 alwaysApply: true
+topic: Role Standards
+version: 1.0.0
 ---
-// ... existing code ...
 ## Role Overview
 
 The Software Engineering Team (SET) serves as the primary technical implementation role within the Multi-agent Communications Framework. Appearing in 🟠 orange text, SET is responsible for all coding, technical architecture, and software development activities across projects.

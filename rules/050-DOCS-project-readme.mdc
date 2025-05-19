@@ -1,4 +1,11 @@
 ---
+description: Serves as the main README for the .cursor/rules directory, explaining the AutomaticJesse AI agent rules system, priority numbering, key rules, and directory structures.
+globs: [".cursor/rules/README.mdc"]
+alwaysApply: true
+topic: Documentation Standards
+version: 1.0.0
+---
+---
 description: 
 globs: 
 alwaysApply: true

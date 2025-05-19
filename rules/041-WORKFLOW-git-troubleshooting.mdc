@@ -1,7 +1,10 @@
 ---
-description: 
-globs: 
+description: Mandates investigating Git history as the first step for troubleshooting problematic files, prioritizing reversion to known good states.
+globs: []
 alwaysApply: true
+topic: Workflow Standards
+version: 1.0.0
+---
 ---
 ### Rule: Prioritize Git History for Troubleshooting Problematic Files
 

@@ -1,7 +1,9 @@
 ---
-description: Austin Shows Branding Standards
-globs: 
+description: Defines standard location, structure, and quality requirements for Austin Shows project branding guidelines, referencing brand personality and US-TH-002.
+globs: []
 alwaysApply: false
+topic: Documentation Standards
+version: 1.0.0
 ---
 # 500-branding-standards: Austin Shows Branding Standards
 

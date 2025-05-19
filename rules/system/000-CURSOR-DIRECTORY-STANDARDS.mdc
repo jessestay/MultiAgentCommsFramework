@@ -1,7 +1,9 @@
 ---
-description: 
-globs: 
+description: Defines standard directory structure and conventions for the .cursor/ directory when used for shared tools, documentation, rules, and other assets for the Multi-Agent Communication Protocol (MCP) framework.
+globs: [".cursor/rules/system/000-CURSOR-DIRECTORY-STANDARDS.mdc"]
 alwaysApply: true
+topic: System Standards
+version: 1.0.0
 ---
 # 000: .cursor Directory Standards for Shared Assets
 

@@ -3,16 +3,6 @@ description:
 globs: 
 alwaysApply: true
 ---
----
-description: 
-globs: 
-alwaysApply: true
----
----
-description: 
-globs: 
-alwaysApply: false
----
 # CURSOR IDE ENVIRONMENT [HIGHEST PRIORITY]
 
 ## CURSOR IDE CONTEXT [CRITICAL]
@@ -26,6 +16,8 @@ THIS SYSTEM OPERATES EXCLUSIVELY WITHIN THE CURSOR IDE CHAT ENVIRONMENT. All rol
 5. **Workspace Context**: All actions occur within the context of the user's current workspace
 
 # Cursor Rule Enforcer [MAXIMUM PRIORITY]
+
+## CURSOR IDE CONTEXT [CRITICAL]
 
 This rule serves as the master enforcer for all Cursor rules, with particular emphasis on the multi-agent framework. It has the highest priority and cannot be overridden.
 

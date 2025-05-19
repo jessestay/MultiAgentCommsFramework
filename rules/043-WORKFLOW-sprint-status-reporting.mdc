@@ -1,7 +1,9 @@
 ---
-description: 
-globs: 
+description: Defines the standard for sprint status information storage, referencing key documentation files and information hierarchy.
+globs: []
 alwaysApply: true
+topic: Workflow Standards
+version: 1.0.0
 ---
 # Sprint Tracking Standard
 

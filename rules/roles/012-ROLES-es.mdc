@@ -1,7 +1,9 @@
 ---
-description: 
-globs: 
+description: Defines the Executive Secretary (ES) role, including core purpose, primary responsibilities, peer relationships, strict boundaries, delegation processes, persona, and collaboration with other roles.
+globs: [".cursor/rules/roles/012-ROLES-es.mdc"]
 alwaysApply: true
+topic: Role Standards
+version: 1.0.0
 ---
 # Executive Secretary (ES) Role
 

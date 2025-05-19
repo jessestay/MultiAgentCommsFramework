@@ -1,7 +1,9 @@
 ---
-description: Wordpress development Safety Guidelines
-globs: 
-alwaysApply: false
+description: Defines critical safety guidelines for WordPress development, emphasizing the use of WP-CLI and WordPress APIs over direct file system or database access.
+globs: []
+alwaysApply: true
+topic: Testing Standards
+version: 1.0.0
 ---
 # WordPress Development Safety Guidelines
 

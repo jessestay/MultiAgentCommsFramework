@@ -1,7 +1,9 @@
 ---
-description: Environment configuration
-globs: 
-alwaysApply: false
+description: Defines critical rules for environment configuration, emphasizing not to modify settings unless explicitly requested and outlining WordPress development and testing approaches.
+globs: []
+alwaysApply: true
+topic: Project Standards
+version: 1.0.0
 ---
 # Environment Configuration
 

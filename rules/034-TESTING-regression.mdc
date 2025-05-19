@@ -1,7 +1,10 @@
 ---
-description: Regression Testing Rules [MANDATORY ENFORCEMENT]
-globs: 
-alwaysApply: false
+description: Defines mandatory regression testing rules, including principles, acceptance criteria validation, user story testing process, sprint acceptance, coverage requirements, and failure response.
+globs: []
+alwaysApply: true
+topic: Testing Standards
+version: 1.0.0
+---
 ---
 ---
 description: 

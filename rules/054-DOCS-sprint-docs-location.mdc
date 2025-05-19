@@ -1,7 +1,9 @@
 ---
-description: Sprint Documentation Locations
-globs: 
+description: Provides the locations of all sprint-related documentation for the Austin Shows Events project.
+globs: []
 alwaysApply: false
+topic: Documentation Standards
+version: 1.0.0
 ---
 # Sprint Documentation Locations
 

@@ -1,7 +1,9 @@
 ---
-description: 
-globs: 
+description: Central registry for all defined roles, including identifiers, colors, expertise, hierarchy, activation, and communication formats.
+globs: []
 alwaysApply: true
+topic: Role Standards
+version: 1.0.0
 ---
 # Role Registry
 
@@ -150,11 +152,6 @@ Examples:
 2. **Clear Handoffs**: When transitioning work between roles, provide clear context
 3. **Domain Boundaries**: Stay within primary expertise areas, deferring to other roles as appropriate
 4. **Unified Goal**: All roles work toward the common project objectives
-5. **Communication Consistency**: Maintain designated formats and color systems
-
-## Role Version Management
-
-This registry is the authoritative source for role definitions and will be updated if any role definitions or attributes change. The Executive Secretary (ES) maintains this registry and ensures consistency across all related documentation. 
 5. **Communication Consistency**: Maintain designated formats and color systems
 
 ## Role Version Management

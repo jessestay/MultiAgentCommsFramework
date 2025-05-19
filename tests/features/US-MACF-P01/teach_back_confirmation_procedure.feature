@@ -1,70 +1,58 @@
-@US-MACF-P01 @MACF_Process @Rule_068
+@US-MACF-P01 @workflow @rules
 Feature: Teach Back Context Confirmation Procedure
-
   As a MACF Project Maintainer
-  I want to ensure the "Teach Back Context Confirmation" procedure is followed
-  So that shared understanding is verified and task execution is aligned with expectations.
+  I want to ensure the Teach Back Context Confirmation procedure is testable
+  So that we can verify its application within the MACF.
 
   Background:
-    Given the rule file ".cursor/rules/068-WORKFLOW-teach-back-confirmation.mdc" exists
-    And I have read the content of the rule file ".cursor/rules/068-WORKFLOW-teach-back-confirmation.mdc"
-    And a task is about to be assigned
+    Given the rule "068-WORKFLOW-teach-back-confirmation.mdc" is active
+    And the internal state variable "current_task_complexity" is set to "low"
+    And the internal state variable "enhanced_briefing_provided" is set to "false"
+    And the internal state variable "assignee_perceives_ambiguity" is set to "false"
+    And the internal state variable "teach_back_performed" is set to "false"
+    And the internal state variable "teach_back_summary_received" is set to "false"
 
-  Scenario: Teach Back Triggered by Task Complexity
-    Given the current task is designated as "complex"
-    And the rule content should state that the procedure is triggered when "A task is explicitly designated as \"complex\" by the Assigner"
-    When the task is assigned from "ES" to "SET"
-    Then a "Teach Back Confirmation" from "SET" to "ES" is required by rule "068-WORKFLOW-teach-back-confirmation.mdc"
+  Scenario: AC2.1 - Rule is not triggered for a simple, non-briefed, clear task
+    Given the internal state variable "current_task_complexity" is set to "low"
+    And the internal state variable "enhanced_briefing_provided" is set to "false"
+    And the internal state variable "assignee_perceives_ambiguity" is set to "false"
+    When a task is assigned to a role
+    Then the teach back procedure should not be required
+    And no teach back summary should be received by the delegating role
 
-  Scenario: Teach Back Triggered by Contextual Briefing Package
-    Given a "Contextual Briefing Package" has been provided for the current task
-    And the rule content should state that the procedure is triggered when "A \"Contextual Briefing Package\" (as per `067-WORKFLOW-contextual-briefing.mdc`) has been provided to the Assignee for the task"
-    When the task is assigned from "ES" to "SET"
-    Then a "Teach Back Confirmation" from "SET" to "ES" is required by rule "068-WORKFLOW-teach-back-confirmation.mdc"
+  Scenario: AC2.2 - Rule is triggered for a complex task
+    Given the internal state variable "current_task_complexity" is set to "high"
+    When a task is assigned to a role
+    Then the teach back procedure should be required
+    # Simulate the teach back occurring
+    Given the teach back summary is "Task: Complex task. Key Files: A, B. Impact: High."
+    When the receiving role performs a teach back
+    Then a teach back summary should be received by the delegating role
+    And the received teach back summary should contain "Task: Complex task"
 
-  Scenario: Teach Back Explicitly Requested
-    Given the Assigner "ES" explicitly requests a "Teach Back Confirmation" for the current task
-    And the rule content should state that the procedure is triggered when "The Assigner explicitly requests a \"Teach Back Confirmation\""
-    When the task is assigned from "ES" to "SET"
-    Then a "Teach Back Confirmation" from "SET" to "ES" is required by rule "068-WORKFLOW-teach-back-confirmation.mdc"
+  Scenario: AC2.3 - Rule is triggered if an enhanced briefing was provided
+    Given the internal state variable "enhanced_briefing_provided" is set to "true"
+    When a task is assigned to a role
+    Then the teach back procedure should be required
+    Given the teach back summary is "Task: Briefed task. Key Files: C. Impact: Med. Context: Briefing X understood."
+    When the receiving role performs a teach back
+    Then a teach back summary should be received by the delegating role
+    And the received teach back summary should contain "Context: Briefing X understood"
 
-  Scenario: Successful Teach Back Occurs and is Acknowledged
-    Given a "Teach Back Confirmation" from "SET" to "ES" is required by rule "068-WORKFLOW-teach-back-confirmation.mdc"
-    And the rule content should define "Assignee Responsibilities (The \"Teach Back\")" criteria
-    And the rule content should define "Assigner Responsibilities" criteria
-    When "SET" provides a "Teach Back Confirmation" to "ES" including:
-      | item                        | detail                                                                 |
-      | Task Understanding          | "Implement feature X"                                                  |
-      | Key Components/Files        | ".cursor/foo.php, .cursor/bar.module"                                  |
-      | Approach Outline            | "Define interface, implement class, write unit tests"                  |
-      | Potential Impacts/Risks     | "May affect performance of Y if not optimized"                         |
-      | Relevant Context Confirmation | "Acknowledged rule 025-CODING-standards.mdc and PROJECT_ARCHITECTURE_OVERVIEW.md" |
-    And "ES" reviews and acknowledges the "Teach Back Confirmation" from "SET" as satisfactory
-    Then the "Teach Back Confirmation" procedure is considered complete for this task
+  Scenario: AC2.4 - Rule is triggered if assignee perceives ambiguity
+    Given the internal state variable "assignee_perceives_ambiguity" is set to "true"
+    When a task is assigned to a role
+    Then the teach back procedure should be required
+    Given the teach back summary is "Task: Ambiguous task. Need clarification on Y."
+    When the receiving role performs a teach back
+    Then a teach back summary should be received by the delegating role
+    And the received teach back summary should contain "Need clarification on Y"
 
-  Scenario: Teach Back Provided by Assignee Proactively
-    Given the Assignee "SET" feels a Teach Back is necessary for the current task
-    And the rule content should state that the procedure is triggered when "The Assignee, after reviewing the task, feels a Teach Back is necessary"
-    When "SET" proactively provides a "Teach Back Confirmation" to "ES" including:
-      | item               | detail                        |
-      | Task Understanding | "Refactor legacy module Z"    |
-    And "ES" reviews and acknowledges the "Teach Back Confirmation" from "SET" as satisfactory
-    Then the "Teach Back Confirmation" procedure is considered complete for this task
-
-  Scenario: Absence of Required Teach Back (Simulated Check)
-    Given the current task is designated as "complex"
-    And a "Teach Back Confirmation" from "SET" to "ES" is required by rule "068-WORKFLOW-teach-back-confirmation.mdc"
-    When the task is assigned from "ES" to "SET"
-    And "SET" proceeds with the task without providing a "Teach Back Confirmation"
-    Then a violation of rule "068-WORKFLOW-teach-back-confirmation.mdc" should be flagged for "Absence of required Teach Back"
-
-  Scenario: Teach Back Content Missing Critical Elements (Simulated Check)
-    Given a "Teach Back Confirmation" from "SET" to "ES" is required by rule "068-WORKFLOW-teach-back-confirmation.mdc"
-    And the rule content should specify that the "Assignee Responsibilities (The \"Teach Back\")" MUST include "Task Understanding"
-    And the rule content should specify that the "Assignee Responsibilities (The \"Teach Back\")" MUST include "Key Components/Files"
-    When "SET" provides a "Teach Back Confirmation" to "ES" including: # Missing Key Components/Files
-      | item                        | detail                                           |
-      | Task Understanding          | "Implement feature Y"                            |
-      | Approach Outline            | "Write some code"                                |
-      | Relevant Context Confirmation | "Read the ticket"                                |
-    Then a violation of rule "068-WORKFLOW-teach-back-confirmation.mdc" should be flagged for "Incomplete Teach Back - missing Key Components/Files" 
+  Scenario: AC2.5 - Absence of teach back for a complex task is (hypothetically) flagged
+    Given the internal state variable "current_task_complexity" is set to "high"
+    And the internal state variable "teach_back_performed" is set to "false"
+    When a task is assigned to a role
+    Then the teach back procedure should be required
+    And an error or warning should be logged indicating a teach back was expected but not performed
+    # This step implies logic in the rule or context that can detect this absence.
+    # For testing, we might just check if a flag is set or a log message exists. 

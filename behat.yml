@@ -6,6 +6,8 @@ default:
       paths:
         - "%paths.base%/tests/features/US-MACF-M01"
         - "%paths.base%/tests/features/US-MACF-F01"
+        - "%paths.base%/tests/features/US-MACF-F02"
+        - "%paths.base%/tests/features/US-MACF-F03"
         - "%paths.base%/tests/features/US-MACF-P01"
         - "%paths.base%/tests/features/sprint-1"
         - "%paths.base%/tests/features"
@@ -14,6 +16,16 @@ default:
   #   "MACFCursor\\Tests\\Behat\\Context": "%paths.base%/tests/features/bootstrap"
   formatters:
     progress: ~
+  extensions:
+    Behat\MinkExtension:
+      base_url: http://localhost:8000
+      default_session: browserkit
+      sessions:
+        browserkit:
+          browserkit_http: ~
+        # Example for Selenium (if needed later):
+        # selenium2:
+        #   wd_host: http://localhost:4444/wd/hub
 
 # You might want to add more profiles, e.g., for different environments or test types
 # local:

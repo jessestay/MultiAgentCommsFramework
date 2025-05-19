@@ -1,7 +1,9 @@
 ---
-description: 
-globs: 
+description: Defines the mandatory test execution protocol, including principles for specifying test suites, bootstrap pairing, test type isolation, approved/prohibited commands, and recovery protocols.
+globs: []
 alwaysApply: true
+topic: Testing Standards
+version: 1.0.0
 ---
 # Test Execution Protocol [MANDATORY]
 

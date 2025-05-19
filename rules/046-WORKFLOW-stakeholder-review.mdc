@@ -1,7 +1,9 @@
 ---
-description: Stakeholder Review Process
-globs: 
-alwaysApply: false
+description: Outlines the standardized process for coordinating stakeholder reviews (DES, MD, USER), including sequence, failure handling, documentation, and integration with Behat tests for review verification.
+globs: []
+alwaysApply: true
+topic: Workflow Standards
+version: 1.0.0
 ---
 # Stakeholder Review Process [MANDATORY]
 

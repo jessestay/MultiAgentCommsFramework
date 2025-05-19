@@ -3,6 +3,14 @@ description:
 globs: 
 alwaysApply: true
 ---
+\
+---
+description: Codifies critical AI behavioral corrections, emphasizing tool parity and deference to SET for technical expertise.
+globs: []
+alwaysApply: true
+topic: Tooling Standards
+version: 1.0.0
+---
 # AI Behavior Corrections [CRITICAL]
 
 ## Core Principle: Tool Parity & Expertise Deference

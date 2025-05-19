@@ -1,7 +1,9 @@
 ---
-description: 
-globs: 
+description: Provides a central library of reusable visual inspection tasks for stakeholders (DES, MD, CTW, USER), to be included as acceptance criteria for user stories requiring visual inspection.
+globs: []
 alwaysApply: true
+topic: Workflow Standards
+version: 1.0.0
 ---
 # Visual Inspection Library [REUSABLE COMPONENT]
 

@@ -17,11 +17,35 @@ alwaysApply: true
    - Scenarios must be written in GIVEN/WHEN/THEN format
    - Scenarios must be executable and integrated with the testing framework
 
-3. **Code Coverage Requirements [MANDATORY]**:
+3. **Test Pyramid Principle [INDUSTRY STANDARD]**:
+   - **Most tests should be unit tests**: Fast, isolated, cover logic and edge cases.
+   - **Fewer integration tests**: Cover interactions between components, APIs, and systems.
+   - **Fewest acceptance (BDD) tests**: Focus on end-to-end user-facing behavior and critical business flows only.
+   - **Do NOT cover low-level technical details (e.g., file permissions, internal state, atomic operations) with BDD/acceptance tests.** These belong in unit/integration tests.
+   - **Meta-process/workflow tests** (e.g., process rules, handoff templates) should be minimized and only included if essential for the framework's operation.
+
+4. **Test Layering Guidance**:
+   - Acceptance/BDD tests: End-to-end, user-facing, critical flows only.
+   - Integration tests: Component/service interactions, API boundaries.
+   - Unit tests: All logic, edge cases, error handling, technical details.
+
+5. **Test Coverage Requirements [MANDATORY]**:
    - All code must achieve minimum 80% test coverage
    - All public methods must have unit tests
    - All business logic must have integration tests
-   - All user-facing functionality must have acceptance tests
+   - All user-facing functionality must have acceptance tests (but only for critical flows)
+
+6. **Definition of Done**
+   - Code cannot be considered "Done" unless:
+     1. Tests were written before implementation code
+     2. All tests are passing
+     3. Code coverage meets the minimum 80% threshold
+     4. Behat scenarios exist for all acceptance criteria (critical flows only)
+     5. All tests are included in the automated test suite
+
+7. **Industry Standard Reference**
+   - This project follows the industry-standard test pyramid: https://martinfowler.com/bliki/TestPyramid.html
+   - BDD/acceptance tests should be concise, high-value, and not duplicate lower-level test coverage.
 
 ## User Story Standard Format
 
@@ -55,7 +79,7 @@ This criterion is a prerequisite for all other acceptance criteria - no other ac
 ### 3. Acceptance Testing
 
 - All user-facing functionality must have Behat scenarios
-- Scenarios must cover all acceptance criteria
+- Scenarios must cover all acceptance criteria (critical flows only)
 - Scenarios must be executable in the CI/CD pipeline
 - Visual elements must be tested with screenshot comparisons
 
@@ -66,7 +90,7 @@ Code cannot be considered "Done" unless:
 1. Tests were written before implementation code
 2. All tests are passing
 3. Code coverage meets the minimum 80% threshold
-4. Behat scenarios exist for all acceptance criteria
+4. Behat scenarios exist for all acceptance criteria (critical flows only)
 5. All tests are included in the automated test suite
 
 ## Tool Usage
@@ -79,7 +103,7 @@ Code cannot be considered "Done" unless:
 ## Sprint Process Integration
 
 1. **Planning Phase**:
-   - Create Behat features for all user stories
+   - Create Behat features for all user stories (critical flows only)
    - Define scenarios for all acceptance criteria
 
 2. **Development Phase**:
@@ -95,5 +119,7 @@ Code cannot be considered "Done" unless:
 ## Enforcement
 
 This standard applies to ALL code development without exception. No code will be accepted that doesn't meet these requirements.
+
+The Software Engineering Team (SET) is responsible for enforcing these standards and ensuring all code follows the TDD/BDD approach. 
 
 The Software Engineering Team (SET) is responsible for enforcing these standards and ensuring all code follows the TDD/BDD approach. 

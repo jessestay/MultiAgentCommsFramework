@@ -1,7 +1,9 @@
 ---
-description: 
-globs: 
+description: Lists specific constraints and standards for the project, supplementing general rules.
+globs: []
 alwaysApply: true
+topic: Project Standards
+version: 1.0.0
 ---
 # Specific Project Standards
 

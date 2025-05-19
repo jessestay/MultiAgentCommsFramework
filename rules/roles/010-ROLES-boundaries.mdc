@@ -1,7 +1,9 @@
 ---
-description: 
-globs: 
+description: Defines strict boundaries between roles (ES, SET, CTW, DES), outlining prohibited actions and mandatory delegations to ensure separation of concerns.
+globs: []
 alwaysApply: true
+topic: Role Standards
+version: 1.0.0
 ---
 # Role Boundaries [CRITICAL]
 

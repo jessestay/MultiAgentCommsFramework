@@ -1,7 +1,9 @@
 ---
-description: 
-globs: 
+description: Defines the standard for setting up and using a native WSL2 development environment, replacing Docker-based approaches.
+globs: []
 alwaysApply: true
+topic: Project Standards
+version: 1.0.0
 ---
 # Local Development Environment with WSL2 Native
 

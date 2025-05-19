@@ -1,7 +1,9 @@
 ---
-description: Screenshot Verification Process
-globs: 
-alwaysApply: false
+description: Outlines the standardized process for verifying screenshots used in stakeholder reviews, including requirements, capture process, and handling of invalid screenshots. This is a prerequisite for the stakeholder review process.
+globs: []
+alwaysApply: true
+topic: Workflow Standards
+version: 1.0.0
 ---
 # Screenshot Verification Process [MANDATORY]
 
