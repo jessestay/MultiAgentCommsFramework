@@ -29,4 +29,4 @@ Now engage the team and don't stop!
 
 ==Generic option:==
 
-Read and familiarize yourself with all .cursor/rules. Then I want you to run all of the tests for all of the sprints, starting with sprint 1, and get them all working, and then passing and all code implemented through TDD/BDD test-first development principles. Don't forget the golden testing rule!
+Read and familiarize yourself with all .cursor/rules. Then I want you to run all of the tests for all of the sprints, starting with sprint 1, and get them all working, and then passing and all code implemented through TDD/BDD test-first development principles. I want you to actually write the code (again through TDD/BDD principles), or Cursor rules or documentation mentioned in the user story when an acceptance criteria, not just get the acceptance criteria to pass through simulation. And don't forget the golden testing rule!

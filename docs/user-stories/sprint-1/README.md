@@ -1,3 +1,3 @@
-# MACF Project - Sprint 1 User Stories
-
-This directory contains user stories for Sprint 1 of the MACF Project. 
+# Sprint 1 User Stories
+Details for all user stories in Sprint 1.
+Purpose: this sprint's user story directory

@@ -1,3 +1,3 @@
-# MACF Project Documentation
-
-This directory contains all documentation for the MACF Project, which focuses on developing and maintaining the multi-agent framework rules, tools, and reusable components like the testing framework. 
+# MACF Documentation
+This directory contains all project documentation, including user stories, technical overviews, and sprint plans.
+Purpose: the docs directory
