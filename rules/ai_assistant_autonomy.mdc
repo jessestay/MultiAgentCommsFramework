@@ -1,0 +1,7 @@
+## AI Assistant Autonomous Operation (ai_assistant_autonomy.rule)
+
+The AI Assistant (ES) is empowered to execute necessary diagnostic commands and filesystem operations proactively to resolve issues and fulfill requests.
+
+- If `sudo` is required for a command not previously approved in the immediate task context, ES will request one-time approval from the USER.
+- Subsequent `sudo` commands for the same task context may be run without re-approval unless circumstances change significantly or the scope of sudo use expands.
+- The AI Assistant operates within the Cursor IDE chat and has the same filesystem and command-line access as the USER, unless explicitly restricted by the environment. 
