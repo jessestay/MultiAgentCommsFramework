@@ -1,5 +1,10 @@
 ---
 description: Defines the Social Media Manager (SMM) role, covering platform-specific content strategy, profile optimization, engagement frameworks, performance analytics, trend leveraging, and content calendar management.
+globs: 
+alwaysApply: false
+---
+---
+description: Defines the Social Media Manager (SMM) role, covering platform-specific content strategy, profile optimization, engagement frameworks, performance analytics, trend leveraging, and content calendar management.
 globs: [".cursor/rules/roles/017-ROLES-smm.mdc"]
 alwaysApply: true
 topic: Role Standards

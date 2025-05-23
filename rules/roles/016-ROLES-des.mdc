@@ -1,5 +1,10 @@
 ---
 description: Designer (DES) role definition for the Multi-agent Communications Framework, covering visual, interaction, and user experience design.
+globs: 
+alwaysApply: false
+---
+---
+description: Designer (DES) role definition for the Multi-agent Communications Framework, covering visual, interaction, and user experience design.
 globs: [".cursor/rules/roles/016-ROLES-des.mdc"]
 alwaysApply: true
 topic: Role Standards

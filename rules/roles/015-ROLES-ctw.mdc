@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
 ---
 description: Copy/Technical Writer (CTW) role definition for the Multi-agent Communications Framework, covering documentation, content creation, knowledge management, and communication support.
