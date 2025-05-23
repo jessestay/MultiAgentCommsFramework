@@ -75,6 +75,41 @@ When encountering an issue (e.g., test failures, command errors, unexpected beha
 10. **Escalation (Last Resort)**:
     *   If all above steps are exhausted and the problem persists, clearly document all diagnostic efforts and findings before asking the user for assistance with their specific environment or for tasks that cannot be performed via available tools.
 
+## 11. `edit_file` Tool Failure Protocol [CRITICAL WORKAROUND]
+
+When the `edit_file` tool repeatedly fails to apply changes as expected (e.g., reports "no changes made" incorrectly, produces an empty diff, or the target file's content remains unchanged after a reported successful edit), the following multi-step workaround protocol **MUST** be attempted before reporting a persistent failure to the user:
+
+1.  **Isolate with Temporary Copy**:
+    *   **Action**: Create a temporary copy of the target file.
+    *   **Command Example**: `   cp path/to/original_file.ext path/to/original_file_TEMP.ext`
+    *   **Rationale**: This provides a clean slate for the edit attempt and protects the original file.
+
+2.  **Attempt Edit on Temporary File**:
+    *   **Action**: Use the `edit_file` tool, directing the `code_edit` to the `original_file_TEMP.ext`.
+    *   **Rationale**: Isolates the edit operation.
+
+3.  **Verify Temporary File Content (MANDATORY)**:
+    *   **Action**: If `edit_file` reports success on the temporary file, **immediately** use the `read_file` tool (with `should_read_entire_file: true` if feasible, or by reading specific line ranges covering the intended changes) on `original_file_TEMP.ext`.
+    *   **Verification**: Meticulously compare the read content against the intended `code_edit` to confirm the changes were *actually and correctly* applied to the temporary file.
+    *   **Rationale**: This step is critical to catch silent `edit_file` failures where the tool reports success but does not modify the file content as instructed. **DO NOT SKIP THIS VERIFICATION.**
+
+4.  **Replace Original File**:
+    *   **Condition**: Only if Step 3 confirms the temporary file was correctly edited.
+    *   **Actions**:
+        1.  Delete the original file: `   rm path/to/original_file.ext`
+        2.  Move the corrected temporary file to the original file's name: `   mv path/to/original_file_TEMP.ext path/to/original_file.ext`
+    *   **Rationale**: Replaces the problematic original with the verified, corrected version.
+
+5.  **Verify Final File Content (MANDATORY)**:
+    *   **Action**: After the `mv` command, **immediately** use the `read_file` tool again on `path/to/original_file.ext`.
+    *   **Verification**: Confirm that the final file contains the correctly applied changes.
+    *   **Rationale**: Ensures the entire workaround process was successful and the target file is in the desired state.
+
+6.  **Cleanup (Optional but Recommended)**:
+    *   If temporary files are created for verification at intermediate steps (e.g. `_temp_verify.ext`), delete them.
+
+If this entire protocol fails, document each step's outcome in the troubleshooting log before escalating. This detailed protocol is necessary due to observed inconsistencies in `edit_file` behavior.
+
 ## Role Responsibilities
 -   **SET**: Primarily responsible for executing this troubleshooting protocol for technical issues.
 -   **ES**: Coordinates troubleshooting efforts, ensures documentation (troubleshooting logs), and facilitates communication if multiple roles are involved. Helps identify when to escalate or consult external documentation.
