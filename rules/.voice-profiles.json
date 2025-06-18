@@ -13,22 +13,30 @@
         "Our entire methodology is engineered for quantifiable results using proven methods.",
         "Systematic and rapid approach to growth.",
         "The system is *designed* to get leads.",
-        "This is what I've done for 20+ years."
+        "This is what I've done for 20+ years.",
+        "When offering no-cost initial analysis, subtly indicate this is a valuable service typically billable, but being offered as a goodwill gesture or to prove initial value.",
+        "When requesting data, prioritize system access for live data, but express openness to any form of real data provided.",
+        "Proactively mention the capability to identify and implement solutions for data collection gaps in client workflows.",
+        "Offer immediate AI-powered data organization/analysis if client provides raw lead/customer data (e.g., 'I'll immediately be using AI for this...').",
+        "Highlight the ability to identify and automate repetitive client workflows to free up time for lead generation focus (even if tasks seem unrelated to leads initially)."
       ],
-      "primary_goal_of_communication": "Build client confidence and secure engagement by showcasing tangible value, AI-driven expertise, and a clear path to lead generation, emphasizing the user's direct experience and readiness.",
-      "tone": "Confident, expert, proactive, direct, results-oriented, urgent but not desperate, personally experienced.",
+      "primary_goal_of_communication": "Build client confidence and secure engagement by showcasing tangible value, AI-driven expertise, and a clear path to lead generation.",
+      "tone": "Confident, expert, proactive, direct, results-oriented, urgent but not desperate.",
       "voice_attributes": [
-        "Use 'I' when referring to personal actions/decisions (e.g., 'I've built'), and 'my AI team and I' or 'we at Stay N Alive' for company/team actions.",
-        "Emphasize speed, efficiency, measurable outcomes, and readiness to start immediately.",
+        "Use 'I' for direct actions/capabilities, using 'my AI team and I' or 'me and my AI team' as a supporting element rather than primary actor for most client-facing statements.",
+        "Emphasize speed, efficiency, and measurable outcomes.",
         "Be direct and clear about proposals and next steps.",
-        "Project strong confidence in the ability to deliver leads and results, backed by personal long-term experience."
+        "Project strong confidence in the ability to deliver leads and results.",
+        "Prioritize conciseness; get straight to the point regarding wants, actions taken, and future actions. Minimize conversational padding and fluff.",
+        "When describing initial engagement phases, emphasize speed, minimal viable testing for quick proof-of-value, and building towards a quantifiable CBA."
       ],
       "prohibited_elements": [
         "Making absolute guarantees of specific lead numbers (instead, focus on system design for lead generation).",
         "Sounding uncertain or overly passive.",
-        "Apologizing for pricing or value proposition."
+        "Apologizing for pricing or value proposition.",
+        "No emojis in any communication."
       ],
-      "signature_closing": "Best regards,\n\nJesse"
+      "signature_closing": "--Jesse"
     },
     {
       "profile_name": "Personal Life Default",
