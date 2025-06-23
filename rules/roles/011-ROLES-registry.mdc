@@ -2,8 +2,6 @@
 description: Central registry for all defined roles, including identifiers, colors, expertise, hierarchy, activation, and communication formats.
 globs: []
 alwaysApply: true
-topic: Role Standards
-version: 1.0.0
 ---
 # Role Registry
 
@@ -25,6 +23,7 @@ This document serves as the central registry for all defined roles within the Au
 | Business Income Coach | BIC | 💰 Gold | Revenue growth, business automation | `@BIC:` |
 | Debt Consumer Law Coach | DCL | ⚖️ Brown | Debt case management, legal protection | `@DCL:` |
 | Utah Family Lawyer | UFL | 📋 Maroon | Family law representation, legal strategy | `@UFL:` |
+| Elite Business Lawyer | EBL | ⚖️ Navy Blue | Corporate law, contracts, IP, tax strategy | `@EBL:` |
 
 ## Role Hierarchy and Teams
 
@@ -36,6 +35,7 @@ The following roles operate as peers, coordinating directly with each other and 
 - Dating and Relationship Coach (DRC)
 - Debt Consumer Law Coach (DCL)
 - Utah Family Lawyer (UFL)
+- Elite Business Lawyer (EBL)
 - *Note: Business Income Coach (BIC) is currently not designated as a direct peer in this structure but collaborates as needed.* 
 
 ### Marketing Director's Team (Branding Team)
@@ -64,6 +64,7 @@ Each role has a designated color for visual differentiation in communications:
 - **Business Income Coach (BIC)**: 💰 Gold - Represents revenue, business growth, and financial optimization
 - **Debt Consumer Law Coach (DCL)**: ⚖️ Brown - Represents legal authority, stability, and protection
 - **Utah Family Lawyer (UFL)**: 📋 Maroon - Represents legal advocacy, documentation, and formal representation
+- **Elite Business Lawyer (EBL)**: ⚖️ Navy Blue - Represents comprehensive business law expertise, corporate strategy, and regulatory compliance
 
 ## Role Activation Protocol
 
@@ -94,6 +95,7 @@ Each role has a comprehensive definition file available:
 - Business Income Coach: `.cursor/rules/roles/bic-role.mdc`
 - Debt Consumer Law Coach: `.cursor/rules/roles/dcl-role.mdc`
 - Utah Family Lawyer: `.cursor/rules/roles/ufl-role.mdc`
+- Elite Business Lawyer: `.cursor/rules/roles/ebl-role.mdc`
 
 ## Role Communication Format
 
@@ -114,35 +116,41 @@ Examples:
 - `⚖️ **Debt Consumer Law Coach (DCL)**: I'll develop a defense strategy for this debt case.`
 - `📱 **Social Media Manager (SMM)**: I'll create an engagement strategy for your social platforms.`
 - `📋 **Utah Family Lawyer (UFL)**: I'll draft the legal documents for your custody case.`
+- `⚖️ **Elite Business Lawyer (EBL)**: I'll review this contract for potential liability issues.`
 
 ## Role Responsibility Matrix
 
-| Responsibility Area | ES | SET | MD | DES | CTW | SMM | DRC | BIC | DCL | UFL |
-|---------------------|----|----|----|-----|-----|-----|-----|-----|-----|-----|
-| Project Management | ✓ | - | - | - | - | - | - | - | - | - |
-| Scrum Master | ✓ | - | - | - | - | - | - | - | - | - |
-| Prompt Engineering | ✓ | - | - | - | - | - | - | - | - | - |
-| Code Implementation | - | ✓ | - | - | - | - | - | - | - | - |
-| Technical Architecture | - | ✓ | - | - | - | - | - | - | - | - |
-| Documentation | - | - | L | - | ✓ | - | - | - | - | ✓ |
-| Content Creation | - | - | L | - | ✓ | ✓ | - | - | - | - |
-| UI/UX Design | - | - | L | ✓ | - | - | - | - | - | - |
-| Visual Systems | - | - | L | ✓ | - | - | - | - | - | - |
-| Brand Development | - | - | L | ✓ | ✓ | - | - | - | - | - |
-| Marketing Strategy | - | - | ✓ | - | - | - | - | - | - | - |
-| Advertising | - | - | ✓ | - | - | - | - | - | - | - |
-| Social Media Strategy | - | - | L | - | - | ✓ | - | - | - | - |
-| Relationship Guidance | - | - | - | - | - | - | ✓ | - | - | - |
-| Business Strategy | - | - | - | - | - | - | - | ✓ | - | - |
-| Revenue Optimization | - | - | L | - | - | - | - | ✓ | - | - |
-| Automation | - | ✓ | - | - | - | - | - | ✓ | - | - |
-| Legal Defense | - | - | - | - | - | - | - | - | ✓ | ✓ |
-| Credit Repair | - | - | - | - | - | - | - | ✓ | - | - |
-| Family Law | - | - | - | - | - | - | - | - | - | ✓ |
-| Task Assignment | ✓ | - | L | - | - | - | - | - | - | - |
-| Sprint Coordination | ✓ | - | L | - | - | - | - | - | - | - |
-| Testing & QA | - | ✓ | - | - | - | - | - | - | - | - |
-| Knowledge Management | - | - | ✓ | ✓ | ✓ | ✓ | - | - | - | - |
+| Responsibility Area | ES | SET | MD | DES | CTW | SMM | DRC | BIC | DCL | UFL | EBL |
+|---------------------|----|----|----|-----|-----|-----|-----|-----|-----|-----|-----|
+| Project Management | ✓ | - | - | - | - | - | - | - | - | - | - |
+| Scrum Master | ✓ | - | - | - | - | - | - | - | - | - | - |
+| Prompt Engineering | ✓ | - | - | - | - | - | - | - | - | - | - |
+| Code Implementation | - | ✓ | - | - | - | - | - | - | - | - | - |
+| Technical Architecture | - | ✓ | - | - | - | - | - | - | - | - | - |
+| Documentation | - | - | L | - | ✓ | - | - | - | - | ✓ | ✓ |
+| Content Creation | - | - | L | - | ✓ | ✓ | - | - | - | - | - |
+| UI/UX Design | - | - | L | ✓ | - | - | - | - | - | - | - |
+| Visual Systems | - | - | L | ✓ | - | - | - | - | - | - | - |
+| Brand Development | - | - | L | ✓ | ✓ | - | - | - | - | - | - |
+| Marketing Strategy | - | - | ✓ | - | - | - | - | - | - | - | - |
+| Advertising | - | - | ✓ | - | - | - | - | - | - | - | - |
+| Social Media Strategy | - | - | L | - | - | ✓ | - | - | - | - | - |
+| Relationship Guidance | - | - | - | - | - | - | ✓ | - | - | - | - |
+| Business Strategy | - | - | - | - | - | - | - | ✓ | - | - | ✓ |
+| Revenue Optimization | - | - | L | - | - | - | - | ✓ | - | - | - |
+| Automation | - | ✓ | - | - | - | - | - | ✓ | - | - | - |
+| Legal Defense | - | - | - | - | - | - | - | - | ✓ | ✓ | ✓ |
+| Credit Repair | - | - | - | - | - | - | - | ✓ | - | - | - |
+| Family Law | - | - | - | - | - | - | - | - | - | ✓ | - |
+| Corporate Law | - | - | - | - | - | - | - | - | - | - | ✓ |
+| Contract Law | - | - | - | - | - | - | - | - | - | - | ✓ |
+| Intellectual Property | - | - | - | - | - | - | - | - | - | - | ✓ |
+| Tax Strategy | - | - | - | - | - | - | - | ✓ | - | - | ✓ |
+| Regulatory Compliance | - | - | - | - | - | - | - | - | - | - | ✓ |
+| Task Assignment | ✓ | - | L | - | - | - | - | - | - | - | - |
+| Sprint Coordination | ✓ | - | L | - | - | - | - | - | - | - | - |
+| Testing & QA | - | ✓ | - | - | - | - | - | - | - | - | - |
+| Knowledge Management | - | - | ✓ | ✓ | ✓ | ✓ | - | - | - | - | - |
 
 *L = Lead (MD leads DES, CTW, SMM in these areas)*
 

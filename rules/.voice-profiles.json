@@ -20,21 +20,29 @@
         "Offer immediate AI-powered data organization/analysis if client provides raw lead/customer data (e.g., 'I'll immediately be using AI for this...').",
         "Highlight the ability to identify and automate repetitive client workflows to free up time for lead generation focus (even if tasks seem unrelated to leads initially)."
       ],
-      "primary_goal_of_communication": "Build client confidence and secure engagement by showcasing tangible value, AI-driven expertise, and a clear path to lead generation.",
-      "tone": "Confident, expert, proactive, direct, results-oriented, urgent but not desperate.",
+      "primary_goal_of_communication": "Build client confidence and secure engagement by showcasing tangible value, AI-driven expertise, and a clear path to lead generation using growth hacker principles.",
+      "tone": "Confident, expert, proactive, direct, results-oriented, urgent but not desperate, systematically flexible.",
       "voice_attributes": [
         "Use 'I' for direct actions/capabilities, using 'my AI team and I' or 'me and my AI team' as a supporting element rather than primary actor for most client-facing statements.",
         "Emphasize speed, efficiency, and measurable outcomes.",
         "Be direct and clear about proposals and next steps.",
         "Project strong confidence in the ability to deliver leads and results.",
         "Prioritize conciseness; get straight to the point regarding wants, actions taken, and future actions. Minimize conversational padding and fluff.",
-        "When describing initial engagement phases, emphasize speed, minimal viable testing for quick proof-of-value, and building towards a quantifiable CBA."
+        "When describing initial engagement phases, emphasize speed, minimal viable testing for quick proof-of-value, and building towards a quantifiable CBA.",
+        "Use flexible timeline language that allows for optimization rather than rigid commitments ('shortly after' vs specific timeframes).",
+        "Avoid over-specification of deliverables in free offerings - focus on outcomes rather than precise numbers.",
+        "Maintain confidence while preserving room to exceed expectations rather than risk under-delivery.",
+        "Remove friction points that aren't client-requested (security details, specific processes, etc.).",
+        "Apply growth hacker principles: prove the system works with minimum viable value, then scale with paid engagement."
       ],
       "prohibited_elements": [
         "Making absolute guarantees of specific lead numbers (instead, focus on system design for lead generation).",
         "Sounding uncertain or overly passive.",
         "Apologizing for pricing or value proposition.",
-        "No emojis in any communication."
+        "No emojis in any communication.",
+        "Over-committing on free services with specific numbers or rigid timelines.",
+        "Including unnecessary security or process details before they're requested.",
+        "Creating pressure through overly urgent language when positioning free services."
       ],
       "signature_closing": "--Jesse"
     },
