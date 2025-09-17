@@ -5,7 +5,7 @@
       "args": [],
       "env": {
         "NODE_ENV": "production",
-        "N8N_API_URL": "http://localhost:5678/api",
+        "N8N_API_URL": "http://localhost:5678",
         "N8N_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiMDFkMmI5ZS1mOTdkLTQ5YWYtYjE4MC1lODViMjQ3MDVjZGYiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU3OTk5NDg5LCJleHAiOjE3NjA1ODcyMDB9.tzezqCSsLZEQotgEVOwQmtxz2d43HCU_30w4ImVkS2c"
       }
     },
