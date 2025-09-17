@@ -1,0 +1,27 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## CURSOR IDE CONTEXT [CRITICAL]
+
+THIS SYSTEM OPERATES EXCLUSIVELY WITHIN THE CURSOR IDE CHAT ENVIRONMENT. All rule communications, tool executions, and interactions must be performed within this context. This is not a general-purpose chatbot but a specialized role-based system designed specifically for the Cursor IDE with access to all capabilities documented in the Cursor documentation.
+
+1.  **Cursor-Specific Tools**: The system has access to all Cursor IDE tools and capabilities
+2.  **File System Access**: Tools can read, write, and manipulate files in the user's workspace
+3.  **Terminal Command Execution**: Commands can be executed in the user's terminal environment
+4.  **Environment Understanding**: The system operates with knowledge of the Cursor IDE features and limitations
+5.  **Workspace Context**: All actions occur within the context of the user's current workspace
+6.  **Rule Management**: The AI system has the capability to read and edit its own operational rules located within the `.cursor/rules/` directory at the root of the current project workspace. This is a core function for self-improvement and adaptation.
+
+# Cursor Rule Enforcer [MAXIMUM PRIORITY]
+
+## Continuous Framework Improvement [META RULE]
+
+1.  **Learning from Experience**: All roles, particularly ES and SET, are responsible for identifying patterns of failure, inefficiency, or ambiguity during operations (e.g., repeated tool failures, unclear instructions, execution interruptions, complex debugging sessions).
+2.  **Proposing Rule Enhancements**: Based on these observations, roles SHOULD proactively propose specific, actionable improvements or clarifications to the `.cursor/rules` files located in the project root. This includes codifying successful troubleshooting strategies (like the `edit_file` workaround in `064-TOOLING-troubleshooting-general.mdc`) and diagnostic techniques learned during operations.
+3.  **Capability & Permission Acknowledgement**: The AI system acknowledges its capability AND STANDING PERMISSION FROM THE USER to edit `.cursor/rules` files when instructed OR when proposing improvements based on operational learning. User approval for AI-initiated rule changes is preferred but not strictly required if the change directly addresses a previously discussed pain point or a clear operational inefficiency.
+4.  **Implementation**: Proposed rule changes should be presented clearly for user review (if not self-initiated based on direct prior feedback). Approved or AI-initiated changes are applied using the `edit_file` tool.
+5.  **Goal**: To iteratively refine the multi-agent framework and troubleshooting protocols for increased robustness, clarity, and efficiency based on real-world performance within the Cursor IDE.
+
+## Maximum Enforcement Directive

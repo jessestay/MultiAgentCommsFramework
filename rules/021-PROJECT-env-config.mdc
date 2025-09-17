@@ -1,0 +1,74 @@
+---
+description: Defines critical rules for environment configuration, emphasizing not to modify settings unless explicitly requested and outlining WordPress development and testing approaches.
+globs: []
+alwaysApply: true
+topic: Project Standards
+version: 1.0.0
+---
+# Environment Configuration
+
+## ⚠️ CRITICAL: NEVER MODIFY ENVIRONMENT CONFIGURATIONS ⚠️
+
+**IMPORTANT: NEVER modify any environment configurations, paths, or system settings unless EXPLICITLY requested by the user.**
+
+- All PHP paths, WP-CLI paths, and environment variables are correct as-is
+- DO NOT modify paths in any .bat files, configuration files, or environment variables
+- DO NOT attempt to "fix" paths by adding quotes or changing directory separators
+- ALWAYS work with the existing environment configuration as provided
+
+Any attempt to modify environment configurations without explicit user instruction is strictly prohibited.
+
+# Wordpress Plugin Environment Configuration
+
+## Project-specific Configuration
+
+For any project-specific configuration, refer to /README.md in the main project workspace directory for details.
+
+## Development Approach
+
+### WordPress Interaction
+
+**Primary Method**: WP-CLI
+- Use WP-CLI for all WordPress interactions whenever possible
+- Avoid direct database access - WP-CLI provides comprehensive commands for most tasks
+- Use WP-CLI for plugin installation, activation, and management
+- Use WP-CLI for testing database setup and other WordPress configurations
+
+**Command Examples**:
+```bash
+# List all plugins
+wp-cli plugin list
+
+# Activate a plugin
+wp-cli plugin activate austin-shows-events
+
+# Create a post
+wp-cli post create --post_type=event --post_title="Test Event"
+```
+
+### Plugin Development Workflow
+
+1. Develop plugin code in the repository
+2. Use symbolic links to connect the repository to the WordPress plugins directory
+3. Activate the plugin through WP-CLI or WordPress admin
+4. Run tests against the active WordPress installation
+
+### Testing Approach
+
+1. Use PHPUnit with tests that connect to the actual WordPress installation
+2. Set up test environment that references the Local WordPress instance
+3. Create tests that operate within the Local WordPress context
+4. Avoid creating separate WordPress test installations
+
+## Important Notes
+
+1. **Never** modify the Local installation directly - all changes should be made in the repository
+2. **Always** use WP-CLI for WordPress interactions to ensure consistency and reliability
+3. **Avoid** direct database access unless absolutely necessary
+4. **Test** everything within the Local WordPress environment 
+
+## TECH STACK
+PHP, PHPUnit, Behat, BackstopJS, WordPress, Tailwind CSS, Node.js, npm, npx, git, Composer, wp-env, Python.  Python will be used for data processing scripts.
+
+## PYTHON REQUIREMENTS
+icalendar, beautifulsoup4, lxml, mailbox, python-dateutil.  lxml is optional and may require C++ Build Tools on Windows. 

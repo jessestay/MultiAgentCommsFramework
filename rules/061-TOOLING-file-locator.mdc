@@ -1,0 +1,118 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Project File Locator [CRITICAL REFERENCE]
+
+This rule provides a centralized index of important project files and their locations for quick reference. When files need to be located, consult this document first before performing extensive searches.
+
+## Core Source Files
+
+| Component           | Description                       | Primary File Location                            |
+|---------------------|-----------------------------------|--------------------------------------------------|
+| Plugin Bootstrap    | Main plugin file                  | `austin-shows-events/austin-shows-events.php`    |
+| Theme Root          | Custom theme directory            | `austin-shows-theme/`                            |
+| Plugin Includes     | PHP classes for plugin            | `austin-shows-events/includes/`                  |
+| Theme Functions     | Main theme functions file         | `austin-shows-theme/functions.php`               |
+| Docker Configuration| Docker environment definition     | `docker-compose.yml`                             |
+| WP Env Configuration| WP Env specific settings        | `.wp-env.json`                                   |
+
+## Important Configuration Files
+
+| File Type           | Description                   | Location             |
+|---------------------|-------------------------------|----------------------|
+| PHPCS Configuration | PHP Code Sniffer config       | `phpcs.xml` or `phpcs.xml.dist` |
+| Composer Config     | PHP dependencies              | `composer.json`      |
+| NPM Config          | JavaScript dependencies       | `package.json`       |
+| Behat Config        | Behat test suite config       | `behat.yml`          |
+| PHPUnit Config      | PHPUnit test suite config     | `phpunit.xml.dist`   |
+| Git Ignore          | Git ignore patterns           | `.gitignore`         |
+| Environment Vars    | Environment variables         | `.env` / `.env.example`|
+
+## Key Documentation Files
+
+| Documentation Type  | Description                     | Location                         |
+|---------------------|---------------------------------|----------------------------------|
+| Acceptance Report   | Latest test results             | `acceptance-criteria-report.md`  |
+| User Story Root     | Top-level user story directory  | `docs/user-stories/`             |
+| Technical Docs Root | Top-level technical docs        | `docs/technical/`                |
+| Project README      | Project overview                | `README.md`                      |
+
+## Test Structure
+
+| Test Type         | Description                   | Location                           |
+|-------------------|-------------------------------|------------------------------------|
+| Acceptance Tests  | User story Behat tests        | `tests/acceptance/`                |
+| Unit Tests        | Component-level PHPUnit tests | `tests/unit/`                      |
+| Integration Tests | Cross-component PHPUnit tests | `tests/integration/`               |
+| Feature Files     | Behat Gherkin files           | `features/`                        |
+
+## Directory Structure Convention
+
+The project follows this standard directory structure:
+
+```
+project-root/
+├── austin-shows-events/    # Main plugin directory
+│   └── austin-shows-events.php # Main plugin file
+│   └── includes/
+├── austin-shows-theme/     # Main theme directory
+│   └── functions.php
+│   └── style.css
+├── docs/                   # Documentation
+│   ├── user-stories/
+│   ├── technical/
+│   └── ...
+├── src/                    # Legacy or shared source? (Verify usage)
+├── tests/                  # Tests
+│   ├── acceptance/
+│   ├── unit/
+│   └── integration/
+├── features/               # Behat feature files
+├── vendor/                 # Composer dependencies
+├── node_modules/           # Node dependencies
+├── docker/                 # Docker configuration files
+├── .cursor/
+│   └── rules/
+├── docker-compose.yml
+├── composer.json
+├── package.json
+├── behat.yml
+├── phpunit.xml
+└── README.md
+```
+
+## Locator Usage Guide
+
+1. **Find Plugin File**: Check Core Source Files table. Path: `austin-shows-events/austin-shows-events.php`.
+2. **Find Theme Directory**: Check Core Source Files table. Path: `austin-shows-theme/`.
+3. **Find User Story**: Navigate `docs/user-stories/`.
+4. **Find Tests**: Navigate `tests/` or `features/`.
+5. **Update This Locator**: Add new key files/locations as discovered.
+
+## Maintenance
+
+This file locator system should be maintained as the project evolves.
+**[CRITICAL]** All roles, especially SET and ES, are responsible for proactively updating this locator rule whenever significant files are added, moved, or renamed. This ensures the locator remains the single source of truth for file paths, crucial for efficient navigation and tool usage within the workspace.
+**[CRITICAL]** Similarly, ensure relevant paths in the workspace settings file (`.vscode/settings.json`) are kept up-to-date to guarantee tool integrations (like linters, debuggers, test runners) function correctly.
+
+## Common Executable Paths/Commands [REFERENCE]
+
+Note: Actual paths may vary based on system PATH configuration and environment.
+
+| Executable  | Typical Command/Path (Project Root) | Notes |
+|-------------|-------------------------------------|-------|
+| PHP         | `php`                               | Assumes PHP is in system PATH. |
+| Composer    | `composer`                          | Assumes Composer is installed globally and in PATH. |
+| WP-CLI      | `./vendor/bin/wp` or `npx wp-env run cli wp` | Use `vendor/bin` directly or via `wp-env` wrapper if environment is active. |
+| Docker      | `docker`                            | Assumes Docker Desktop/Engine is installed and in PATH. |
+| Docker Compose | `docker compose`                 | Assumes Docker Compose V2+ is installed. |
+| PHPUnit     | `./vendor/bin/phpunit` or `npx wp-env run tests-cli phpunit` | Use `vendor/bin` directly or via `wp-env` wrapper. |
+| PHPCS       | `./vendor/bin/phpcs`                | Installed via Composer. |
+| PHPCBF      | `./vendor/bin/phpcbf`               | Installed via Composer. |
+## Maintenance
+
+This file locator system should be maintained as the project evolves.
+**[CRITICAL]** All roles, especially SET and ES, are responsible for proactively updating this locator rule whenever significant files are added, moved, or renamed. This ensures the locator remains the single source of truth for file paths, crucial for efficient navigation and tool usage within the workspace.
+**[CRITICAL]** Similarly, ensure relevant paths in the workspace settings file (`.vscode/settings.json`) are kept up-to-date to guarantee tool integrations (like linters, debuggers, test runners) function correctly.

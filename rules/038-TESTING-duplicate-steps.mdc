@@ -1,0 +1,217 @@
+---
+description: Outlines the standard process for diagnosing and resolving duplicate step definitions in Behat tests, including temporary workarounds and stakeholder review protocols during such issues.
+globs: []
+alwaysApply: true
+topic: Testing Standards
+version: 1.0.0
+---
+# Handling Duplicate Step Definitions [MANDATORY]
+
+## Overview
+This document outlines the standard process for handling duplicate step definitions in Behat tests, which is a common issue in complex test architectures. This process MUST be followed when duplicate step definition errors are encountered.
+
+## Diagnostic Process
+
+1. **Identify Duplicate Step Definitions [REQUIRED]**
+   - When a Behat test fails with an error like:
+     ```
+     `FeatureContext::iAmOn()` has been defined multiple times
+     ```
+   - Record the specific step definition that is duplicated
+
+2. **Locate Conflicting Files [REQUIRED]**
+   - Search for all occurrences of the duplicate step definition:
+     ```bash
+     grep -r "function iAmOn" tests/
+     grep -r "@Given(\"I am on" tests/
+     ```
+   - Identify all context files containing the duplicate definition
+
+3. **Analyze Context Usage [REQUIRED]**
+   - Determine which feature files use each conflicting context
+   - Check each feature file's `behat.yml` configuration to understand context loading
+
+## Resolution Options
+
+### Option 1: Rename Step Definitions [PREFERRED]
+
+If different contexts need similar but distinct steps:
+
+1. **Differentiate Step Names**:
+   - Rename steps to be more context-specific:
+     - Change `I am on the homepage` to `I am on the branded homepage`
+   - Update corresponding feature files to use the renamed steps
+
+2. **Example Implementation**:
+   ```php
+   // In BrandedThemeContext.php
+   /**
+    * @Given I am on the branded homepage
+    */
+   public function iAmOnBrandedHomepage()
+   {
+       // Implementation
+   }
+   
+   // In RegularThemeContext.php
+   /**
+    * @Given I am on the classic homepage
+    */
+   public function iAmOnClassicHomepage()
+   {
+       // Similar implementation
+   }
+   ```
+
+3. **Update Feature Files**:
+   ```gherkin
+   # Before
+   Feature: Branded Theme
+     Scenario: Viewing the homepage
+       Given I am on the homepage
+       
+   # After
+   Feature: Branded Theme
+     Scenario: Viewing the homepage
+       Given I am on the branded homepage
+   ```
+
+### Option 2: Context Inheritance [ALTERNATIVE]
+
+For shared functionality:
+
+1. **Create a Base Context**:
+   - Move common step definitions to a shared base context
+   - Have specific contexts extend the base context
+
+2. **Example Implementation**:
+   ```php
+   // BaseContext.php
+   class BaseContext implements Context
+   {
+       /**
+        * @Given I am on :page
+        */
+       public function iAmOn($page)
+       {
+           // Shared implementation
+       }
+   }
+   
+   // BrandedThemeContext.php
+   class BrandedThemeContext extends BaseContext
+   {
+       // Only theme-specific steps here
+   }
+   ```
+
+3. **Update behat.yml**:
+   ```yaml
+   default:
+     suites:
+       branded_theme:
+         contexts:
+           - BrandedThemeContext
+   ```
+
+### Option 3: Context Segregation [LAST RESORT]
+
+For completely separate test suites:
+
+1. **Separate Context Usage**:
+   - Ensure conflicting contexts are never loaded together
+   - Define separate suites in `behat.yml` for different contexts
+
+2. **Example behat.yml**:
+   ```yaml
+   default:
+     suites:
+       branded_theme:
+         contexts:
+           - BrandedThemeContext
+         paths:
+           - "%paths.base%/features/branded_theme"
+       
+       regular_theme:
+         contexts:
+           - RegularThemeContext
+         paths:
+           - "%paths.base%/features/regular_theme"
+   ```
+
+3. **Organize Feature Files**:
+   - Move feature files to separate directories based on context usage
+
+## Temporary Workaround Process [FOR STAKEHOLDER REVIEWS]
+
+When stakeholder reviews are pending and immediate test execution is needed:
+
+1. **Defer Test Infrastructure Fix [ALLOWED TEMPORARILY]**
+   - Add the duplicate step definition issue to the technical debt backlog
+   - Create a user story for comprehensive test architecture refactoring
+
+2. **Isolate Critical Tests [REQUIRED]**
+   - Identify the specific test scenarios needed for stakeholder review
+   - Extract these into standalone test files if necessary
+
+3. **Manual Test Execution [TEMPORARY]**
+   - Run specific scenarios directly:
+     ```bash
+     vendor/bin/behat features/branded_theme.feature:10
+     ```
+   - Document the manual steps needed for verification
+
+4. **Document Workaround [REQUIRED]**
+   - Add the temporary workaround to the US-TD-001 document
+   - Include steps for executing critical tests manually
+   - Set a deadline for permanent resolution
+
+## Implementation Plan
+
+When resolving duplicate step definitions:
+
+1. **Impact Analysis [REQUIRED]**
+   - Identify all affected feature files
+   - Estimate the effort required for each resolution option
+
+2. **Choose Resolution Strategy [REQUIRED]**
+   - Select the most appropriate resolution option
+   - Document the selected approach
+
+3. **Phased Implementation [RECOMMENDED]**
+   - Implement changes incrementally
+   - Test each change before proceeding
+
+4. **Update Documentation [REQUIRED]**
+   - Update test documentation to reflect changes
+   - Add notes about the resolution approach
+
+## Stakeholder Review Protocol During Test Issues
+
+When stakeholder reviews are needed while test infrastructure issues exist:
+
+1. **Generate Review Artifacts [REQUIRED]**
+   - Run `scripts/test/generate-review-artifacts.sh`
+   - Manually capture required screenshots if needed
+   - Document HTML output using curl commands
+
+2. **Provide Clear Review Instructions [REQUIRED]**
+   - Use `docs/user-stories/[sprint-X]/[US-ID]/reviews/USER-INSTRUCTIONS.md`
+   - Explicitly state which elements to review
+   - Provide detailed guidance on feedback format
+
+3. **Coordinate Reviews [REQUIRED]**
+   - Each stakeholder still performs their three verification methods:
+     1. Source code examination
+     2. Screenshot analysis
+     3. Live HTML verification
+   - Reviews proceed in sequence: DES → MD → CTW → USER
+
+4. **Document Test Status [REQUIRED]**
+   - Clearly note in all documentation that formal tests are pending infrastructure fixes
+   - Specify which verification methods were used instead
+   - Include references to the technical debt items for test infrastructure
+
+## Enforcement
+
+This process MUST be followed whenever duplicate step definition errors are encountered. The temporary workaround is ONLY permitted when stakeholder reviews are pending and a US-TD item exists for the permanent resolution.

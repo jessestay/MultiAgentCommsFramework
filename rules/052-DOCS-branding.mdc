@@ -1,0 +1,61 @@
+---
+description: Defines standard location, structure, and quality requirements for Austin Shows project branding guidelines, referencing brand personality and US-TH-002.
+globs: []
+alwaysApply: false
+topic: Documentation Standards
+version: 1.0.0
+---
+# 500-branding-standards: Austin Shows Branding Standards
+
+## Overview
+
+This rule defines the standard location, structure, and quality requirements for branding guidelines within the Austin Shows project, ensuring consistency and alignment with the defined brand personality ("Vibrant, Authentic, Connected, A Little Weird").
+
+## Standard Location
+
+All core branding guideline documents MUST reside within the following directory:
+
+```
+docs/design/branding/
+```
+
+This includes, but is not limited to:
+- `brand-guidelines.md` (or equivalent comprehensive guide)
+- `logo-usage.md`
+- `color-palette.md`
+- `typography-standards.md`
+- `iconography-styleguide.md`
+- `imagery-guidelines.md`
+- `voice-and-tone.md`
+
+## Standard Structure
+
+Each branding guideline document should:
+1.  Clearly state its purpose.
+2.  Define specific standards and rules.
+3.  Provide visual examples (Do's and Don'ts).
+4.  Explain the rationale behind the standards, linking them to the core brand personality.
+5.  Specify usage guidelines across different media (web, print, social).
+
+## Quality Requirements
+
+Branding guidelines must meet the following quality standards:
+1.  **Comprehensive**: Cover all key aspects of the visual and verbal identity.
+2.  **Clear**: Easy to understand and apply for designers, developers, and content creators.
+3.  **Consistent**: Align with the overall brand strategy and personality.
+4.  **Professional**: Reflect a high standard of design thinking and execution, comparable to industry leaders.
+5.  **Accessible**: Ensure guidelines promote accessible design practices (e.g., color contrast).
+6.  **Up-to-date**: Regularly reviewed and updated to reflect any brand evolution.
+
+## Enforcement
+
+- **MD**: Responsible for overseeing the creation and maintenance of branding guidelines according to this standard.
+- **DES**: Primarily responsible for creating and updating visual guideline documents.
+- **CTW**: Primarily responsible for creating and updating voice/tone guidelines and ensuring overall clarity and consistency of documentation.
+- **ES**: Ensures all roles are aware of and adhere to the standard location and structure.
+- **SET**: Consults branding guidelines when implementing UI components.
+
+## Relationship to US-TH-002
+
+This rule is directly informed by the requirements and outputs of User Story US-TH-002, specifically the refined brand personality and the creation of detailed design specifications. The assets generated for US-TH-002 (e.g., `design/brand-guidelines.md`, `design/revised-design-presentation.html`) should form the basis of the official branding documentation stored in the standard location.
+

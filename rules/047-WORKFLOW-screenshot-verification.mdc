@@ -1,0 +1,93 @@
+---
+description: Outlines the standardized process for verifying screenshots used in stakeholder reviews, including requirements, capture process, and handling of invalid screenshots. This is a prerequisite for the stakeholder review process.
+globs: []
+alwaysApply: true
+topic: Workflow Standards
+version: 1.0.0
+---
+# Screenshot Verification Process [MANDATORY]
+
+## Overview
+This document outlines the standardized process for verifying screenshots used in stakeholder reviews. Proper screenshots are CRITICAL for effective stakeholder reviews and MUST be captured following this process.
+
+## Screenshot Requirements
+
+1. **Mandatory Screenshots [REQUIRED]**
+   - Each user story requiring visual review MUST include screenshots in:
+     `docs/user-stories/[sprint-X]/[US-ID]/screenshots/`
+   - Screenshots MUST NOT be placeholders or empty files (0 bytes)
+   - Screenshots MUST show the actual implementation in its current state
+
+2. **Required Screenshot Types**
+   - Desktop view (minimum resolution: 1440x900)
+   - Mobile view (standard resolution: 375x812)
+   - Tablet view (if applicable, standard resolution: 768x1024)
+   - Any specific UI components highlighted in acceptance criteria
+
+3. **Screenshot Naming Convention [MANDATORY]**
+   - `[template-name]-[device-type].png`
+   - Example: `single-event-desktop.png`, `archive-events-mobile.png`
+
+4. **Screenshot Quality Requirements**
+   - Full-page screenshots showing all relevant UI elements
+   - Clear, high-resolution images (not compressed/blurry)
+   - Captured in a standard browser (Chrome preferred)
+   - Showing the actual implementation (not mockups)
+
+## Screenshot Capture Process
+
+1. **Capture Methods [PREFERRED]**
+   - Use Browser DevTools device emulation for consistent device sizes
+   - Use full-page screenshot capability (Chrome DevTools)
+   - Save as .png format for better quality
+
+2. **Verification Steps [MANDATORY]**
+   - After capturing, ES MUST verify screenshots are:
+     - Not empty files (file size > 0 bytes)
+     - Showing the correct template/page
+     - Clear and properly cropped
+     - Demonstrating relevant UI elements
+
+3. **Stakeholder Verification Requirements**
+   - Reviewers MUST explicitly confirm they have reviewed actual screenshots
+   - Reviewers MUST reference specific elements from screenshots in their reviews
+   - Reviewers MUST include screenshot filenames in their review documentation
+
+## Implementation Verification
+
+For screenshots to be considered valid, SET MUST:
+1. Capture screenshots of the actual running implementation
+2. Save screenshots with proper naming convention
+3. Verify screenshots are not empty/placeholder files
+4. Include screenshot capture method in documentation
+
+## When Screenshots Are Missing or Invalid [CRITICAL PROCESS]
+
+When screenshots are missing, empty, or invalid, ES MUST:
+
+1. **Immediate Notification**: Notify SET that screenshots are inadequate
+2. **Blocking Status**: Mark review as BLOCKED until proper screenshots are provided
+3. **Documentation**: Document the screenshot issue in `docs/logs/[US-ID]-troubleshooting.log`
+4. **Resolution**: SET must capture and provide proper screenshots before reviews can proceed
+
+## Role Responsibilities
+
+### Executive Secretary (ES)
+- Verifies screenshots exist and are valid before initiating reviews
+- Documents screenshot status in review coordination
+- Ensures reviewers reference screenshots in their reviews
+
+### Software Engineering Team (SET)
+- Captures screenshots from running implementation
+- Ensures screenshots meet quality requirements
+- Replaces any placeholder/empty screenshots
+- Documents screenshot capture process
+
+### Designer (DES) & Marketing Director (MD)
+- Verify screenshots represent actual implementation
+- Reference specific screenshot elements in reviews
+- Confirm screenshot quality is sufficient for assessment
+
+## Integration with Review Process
+
+This Screenshot Verification Process is a critical prerequisite for the Stakeholder Review Process (450-stakeholder-review-process.mdc). No stakeholder review can proceed until screenshots are properly verified according to this process.
