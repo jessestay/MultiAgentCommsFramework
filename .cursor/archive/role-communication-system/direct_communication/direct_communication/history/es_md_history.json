@@ -1,0 +1,29 @@
+[
+  {
+    "id": "e315b8a3-f6f3-4740-82a8-bf41886a3890",
+    "source_role": "ES",
+    "target_role": "MD",
+    "content": "\n# URGENT: Fundraising Target - $3,000 by Monday\n\nDear Team,\n\nWe need to coordinate our efforts to reach our fundraising goal of $3,000 by Monday. \nThis is a high-priority task that requires immediate attention from all roles.\n\n## Action Items:\n1. Marketing Director: Prepare social media campaign materials\n2. Social Media Manager: Schedule posts across all platforms\n3. Copy/Technical Writer: Draft compelling fundraising copy\n4. Business Income Coach: Provide strategies for maximizing donations\n\nPlease respond with your action plan within 24 hours.\n\nThank you for your immediate attention to this matter.\n\nExecutive Secretary\n",
+    "metadata": {
+      "priority": "urgent",
+      "deadline": "Monday",
+      "target_amount": 3000,
+      "category": "fundraising"
+    },
+    "timestamp": "2025-03-06T17:44:42.915543",
+    "read": false
+  },
+  {
+    "id": "3e53df10-686a-41ca-ae92-3a79d71ab8c5",
+    "source_role": "MD",
+    "target_role": "ES",
+    "content": "\n# RE: URGENT: Fundraising Target - $3,000 by Monday\n\nDear Executive Secretary,\n\nI've prepared a comprehensive social media campaign strategy to help us reach our $3,000 fundraising goal by Monday:\n\n## Campaign Strategy:\n1. Create urgency-focused graphics highlighting the Monday deadline\n2. Develop a series of testimonials from beneficiaries\n3. Design a progress tracker to show real-time donation amounts\n4. Prepare email templates for our subscriber list\n\nAll materials will be ready by tomorrow morning for review. I've coordinated with the Social Media Manager to ensure immediate deployment once approved.\n\nPlease let me know if you need any adjustments to this plan.\n\nMarketing Director\n",
+    "metadata": {
+      "in_response_to": "urgent_fundraising_message",
+      "response_time": "4:30:00",
+      "category": "fundraising"
+    },
+    "timestamp": "2025-03-06T17:44:45.611747",
+    "read": false
+  }
+]

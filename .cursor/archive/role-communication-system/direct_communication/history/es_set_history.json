@@ -1,0 +1,26 @@
+[
+  {
+    "id": "4ac89322-80bd-471b-975f-0aedf271ef5d",
+    "source_role": "ES",
+    "target_role": "SET",
+    "content": "\n[ES]: @SET: I need your assistance with implementing a new feature in our system. \nThe Marketing Director has requested a tool for tracking campaign performance. \nCould you please provide an estimate of how long this would take to implement?\n\nBest regards,\nExecutive Secretary\n",
+    "timestamp": "2025-03-06T13:58:52.450051",
+    "read": false
+  },
+  {
+    "id": "fde27d06-5587-4395-8201-a08ad3c16b5a",
+    "source_role": "SET",
+    "target_role": "ES",
+    "content": "\n[SET]: @ES: Thank you for your request regarding the campaign performance tracking tool.\n\nBased on our initial analysis, implementing this feature would take approximately:\n- 2 weeks for basic functionality\n- 4 weeks for a comprehensive solution with analytics\n\nWould you like us to proceed with development? If so, which version would the Marketing Director prefer?\n\nBest regards,\nSoftware Engineering Team\n",
+    "timestamp": "2025-03-06T13:58:52.506298",
+    "read": false
+  },
+  {
+    "id": "4ea837d5-7778-4de8-823a-c2a770cf7154",
+    "source_role": "ES",
+    "target_role": "SET",
+    "content": "[ES]: @SET: I'm testing the direct communication system. Can you confirm receipt of this message?",
+    "timestamp": "2025-03-06T13:59:41.357595",
+    "read": false
+  }
+]

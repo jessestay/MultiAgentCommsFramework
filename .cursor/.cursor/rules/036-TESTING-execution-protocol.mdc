@@ -1,0 +1,90 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Test Execution Protocol [MANDATORY]
+
+## Core Principles
+
+1. **Strict Testsuite Specification [NON-NEGOTIABLE]**
+   * **NEVER** run `phpunit` without specifying a testsuite
+   * **NEVER** execute `vendor/bin/phpunit` alone without proper arguments
+   * Always specify which tests to run via testsuite or explicit path
+
+2. **Bootstrap-Suite Pairing [REQUIRED]**
+   * Each test type MUST use its appropriate bootstrap file:
+     - Unit tests: `tests/wp-mock-bootstrap.php` (for mocking WordPress functions)
+     - Integration tests: `tests/bootstrap.php` (for WordPress test environment)
+   * Bootstraps MUST NOT be interchanged between test types
+
+3. **Test Type Isolation [REQUIRED]**
+   * Never run unit and integration tests together in a single command
+   * Always run each test type with its dedicated configuration
+
+## Approved Commands (Canonical Formats)
+
+### PHPUnit Unit Tests
+```
+vendor/bin/phpunit --testsuite=unit --bootstrap tests/wp-mock-bootstrap.php
+npm run test:unit
+```
+
+### PHPUnit Integration Tests
+```
+vendor/bin/phpunit --testsuite=integration --bootstrap tests/bootstrap.php 
+npm run test:integration
+```
+
+### Behat Acceptance Tests
+```
+vendor/bin/behat --config behat.yml features/branded-theme.feature
+npm run test:behat:th002
+```
+
+## Prohibited Commands [VIOLATIONS]
+
+The following command formats are **STRICTLY PROHIBITED**:
+* `vendor/bin/phpunit` (without testsuite)
+* `vendor/bin/phpunit --bootstrap tests/bootstrap.php` (without testsuite)
+* `phpunit tests/unit/SomeTest.php` (without proper bootstrap)
+
+## Recovery Protocol
+
+If a prohibited command was accidentally used and caused errors:
+
+1. **Regenerate Composer autoloader:**
+   ```
+   composer dump-autoload
+   ```
+
+2. **Clear cache and temporary files:**
+   ```
+   rm -f .phpunit.result.cache
+   ```
+
+3. **Run tests correctly using approved commands**
+
+## Integration with CI/CD
+
+All CI/CD workflows must use the approved command formats for test execution.
+
+## Namespacing Requirements
+
+When test errors occur due to namespace mismatches:
+
+1. Check git history for file relocations using:
+   ```
+   git log --name-status --follow -- '*ClassName.php'
+   ```
+
+2. Ensure test classes use the correct namespaces that match source files
+
+3. When source files have been moved, update test files to reference the new namespace
+
+## Standard Test Scripts (Project Specific)
+
+The following scripts should generally be used for testing, although paths may change. Document correct paths/scripts in `@sprint-status.md` if they differ.
+- PHPUnit: `scripts/test/run-phpunit.sh`
+- Behat: `scripts/test/run-behat.sh`
+- Visual Regression: `scripts/test/visual/run-all-tests.sh`

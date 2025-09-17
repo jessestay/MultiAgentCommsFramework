@@ -1,0 +1,64 @@
+# Environment variables
+.env
+.env.local
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+.env
+
+# Project specific
+*.db
+profile_screenshots/
+logs/
+debug_screenshots/
+debug_html/
+error_screenshots/
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs/
+*.log
+linkedin_dm_*.log
+linkedin_scraper_*.log
+
+# CSV files with sensitive data
+*_freelancers.csv
+linkedin_profiles.csv
+
+# Tracking files
+messaged_profiles.txt
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo 

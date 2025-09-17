@@ -1,0 +1,20 @@
+default:
+  autoload:
+    # Try defining autoload specifically for contexts
+    # AustinShows\Reviews\Tests\: "%paths.base%/tests"
+    '': "%paths.base%/features/bootstrap" # Autoload our FeatureContext from global namespace
+  suites:
+    default:
+      paths:
+        - "features" # Correct path to our feature files
+      contexts:
+        - FeatureContext # Our main context class
+      # bootstrap: "dummy_bootstrap.php"
+  # extensions: # Completely remove extensions section
+  #   Behat\MinkExtension:
+  #     # This section might be unnecessary now / cause issues if Mink is removed
+  #     # base_url: "http://localhost:8080"
+  #     # goutte: ~
+  #     # sessions:
+  #     #   default:
+  #     #     goutte: ~ 

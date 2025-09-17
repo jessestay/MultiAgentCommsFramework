@@ -1,0 +1,22 @@
+## Behat Test Debuggability (behat_debuggability.rule)
+
+To enhance the debuggability of Behat tests, the following practices must be followed:
+
+### 4.1. Xdebug for Behat
+- When debugging Behat test failures, enable and configure Xdebug for CLI PHP.
+- Ensure Xdebug is set up to allow connections from the IDE for step-through debugging of Behat contexts, Mink, WebDriver, and underlying framework code.
+- Project `README.md` or a dedicated `../DEBUGGING_GUIDE.md` (relative to this rules directory, in `.cursor/`) should document the specific Xdebug setup steps for Behat within the project context.
+
+### 4.2. ChromeDriver Logging
+- When running Behat tests with ChromeDriver, ensure ChromeDriver's verbose logging is enabled.
+- This should be configured in `behat.yml` capabilities (e.g., `chrome.switches` including `--verbose --log-path=.reports/behat/chromedriver.behat.log`).
+- These logs must be collected (e.g., in a `.reports/behat/` directory, added to `.gitignore`) and reviewed as part of debugging UI test failures.
+
+### 4.3. Temporary Browser Visibility for Debugging
+- If headless mode (`--headless`) is suspected of masking UI test issues, temporarily disable it in `behat.yml` `chrome.switches`.
+- This allows for visual inspection of browser behavior during test execution on a system with appropriate display capabilities (e.g., local desktop with X server, or via WSLg). This rule applies primarily to local development debugging.
+
+### 4.4. Mink Session State Dumps
+- When Behat steps fail or at critical checkpoints during debugging, implement diagnostic dumps within Behat context methods.
+- Dumps should include: current URL, full page HTML (saved to a timestamped file in `.reports/behat/dumps/`), active cookies, and screenshots (if supported by the driver, saved to the same dumps directory).
+- A helper trait or abstract class for these common debugging dump functions should be provided in `../Behat/BehatDebugHelpers.php` (relative to this rules directory, in `.cursor/Behat/`) and should be used to standardize this practice. 

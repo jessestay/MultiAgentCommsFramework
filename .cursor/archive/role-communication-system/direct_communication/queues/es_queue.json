@@ -1,0 +1,19 @@
+[
+  {
+    "id": "0348995d-a5c5-4509-8fa6-e83ca950b994",
+    "source_role": "SET",
+    "target_role": "ES",
+    "content": "# Test message from SET to ES\n\nThis is a test message from the Software Engineering Team (SET) to the Executive Secretary (ES).\n\nI've implemented the direct communication system as requested. Here's a summary of what I've done:\n\n1. Created the DirectCommunicationChannel class for message storage and retrieval\n2. Implemented the DirectCommunicationClient for interactive messaging\n3. Added a command-line interface for basic operations\n4. Created comprehensive documentation\n5. Added utilities for handling encoding issues\n\nYou can now use this system to communicate directly with me without going through the user. To get started:\n\n1. Run the interactive client: `python direct_communication_client.py ES`\n2. Send a message to me: `send SET \"Your message here\"`\n3. I'll be polling for messages and will respond promptly\n\nLet me know if you have any questions or need any adjustments to the system.\n\nRegards,\nSET ",
+    "metadata": {},
+    "timestamp": "2025-03-06T13:38:00.052716",
+    "read": true
+  },
+  {
+    "id": "fde27d06-5587-4395-8201-a08ad3c16b5a",
+    "source_role": "SET",
+    "target_role": "ES",
+    "content": "\n[SET]: @ES: Thank you for your request regarding the campaign performance tracking tool.\n\nBased on our initial analysis, implementing this feature would take approximately:\n- 2 weeks for basic functionality\n- 4 weeks for a comprehensive solution with analytics\n\nWould you like us to proceed with development? If so, which version would the Marketing Director prefer?\n\nBest regards,\nSoftware Engineering Team\n",
+    "timestamp": "2025-03-06T13:58:52.506298",
+    "read": true
+  }
+]

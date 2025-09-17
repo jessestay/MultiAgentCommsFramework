@@ -1,0 +1,15 @@
+[ES]: @SET: We've identified some limitations with the current direct messaging system that need to be addressed:
+
+1. While the message storage system works well (files are being created and messages stored), there doesn't appear to be an active mechanism for roles to check their queues and respond automatically.
+
+2. Our verification test (requesting a random 6-digit number) hasn't received a response, suggesting that you (SET) aren't actively monitoring your queue.
+
+3. For true role-to-role communication without user intervention, we need:
+   - A background process or daemon that monitors message queues for each role
+   - A mechanism for roles to process and respond to messages automatically
+   - A notification system to alert roles when they have new messages
+
+Could you please enhance the system to enable true two-way communication between roles? This would significantly improve our workflow efficiency.
+
+Thank you,
+Executive Secretary 

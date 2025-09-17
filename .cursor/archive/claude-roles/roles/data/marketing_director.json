@@ -1,0 +1,16 @@
+{
+  "name": "Marketing Director",
+  "created": "2025-03-04T12:08:09.416125",
+  "context": [
+    {
+      "timestamp": "2025-03-04T12:08:09.416125",
+      "update": "Initial context for Marketing Director role"
+    },
+    {
+      "timestamp": "2025-03-04T12:33:55.337839",
+      "update": "Initial context for Marketing Director role"
+    }
+  ],
+  "interactions": [],
+  "updated": "2025-03-04T12:33:55.337825"
+}

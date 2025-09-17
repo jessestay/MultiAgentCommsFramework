@@ -1,0 +1,45 @@
+---
+description: Defines responsibilities and process for creating and maintaining the PROJECT_ARCHITECTURE_OVERVIEW.md document.
+globs: []
+alwaysApply: true
+topic: Documentation Standards
+version: 1.0.0
+---
+# 056: Project Architecture Overview Document Maintenance [DOCS]
+
+## 1. Purpose
+This rule defines the responsibilities and process for creating, maintaining, and updating the `PROJECT_ARCHITECTURE_OVERVIEW.md` document located in `.cursor/docs/technical/PROJECT_ARCHITECTURE_OVERVIEW.md`. This document serves as a crucial, high-level guide to the MACF project\'s architecture for all team members.
+
+## 2. Document Owner and Key Contributors
+-   **Primary Drafter (Initial Creation)**: The Copy/Technical Writer (CTW) is responsible for the initial drafting of the `PROJECT_ARCHITECTURE_OVERVIEW.md` document, incorporating foundational input from the Software Engineering Team (SET).
+-   **Primary Technical Contributor & Reviewer**: The Software Engineering Team (SET) is responsible for providing the core technical information, architectural diagrams (or descriptions thereof), and reviewing the document for technical accuracy and completeness.
+-   **Ongoing Maintenance Lead**: The Copy/Technical Writer (CTW) leads the ongoing maintenance, ensuring the document remains up-to-date, clear, and well-organized.
+
+## 3. Initial Creation Process
+1.  CTW creates the initial placeholder document as specified in `US-MACF-M01`.
+2.  SET provides CTW with the initial high-level architectural concepts, key components, core services/modules, data model outlines (if applicable), and primary communication flows. This can be in the form of notes, diagrams, or direct discussion.
+3.  CTW structures this information into the `PROJECT_ARCHITECTURE_OVERVIEW.md`, focusing on clarity and readability for both technical and non-technical (e.g., ES) audiences.
+4.  SET reviews the initial draft for technical accuracy.
+5.  ES reviews the draft for overall clarity and adherence to documentation standards.
+
+## 4. Incremental Update Process
+The `PROJECT_ARCHITECTURE_OVERVIEW.md` is a living document and MUST be updated incrementally under the following conditions:
+
+1.  **Trigger Conditions for Updates**:
+    *   When a new major architectural component or service is designed or implemented.
+    *   When a significant change is made to existing core components or their interactions.
+    *   When a key design principle is newly adopted or substantially modified.
+    *   At the end of a sprint if significant architectural evolution occurred that is not yet reflected.
+2.  **Update Responsibilities**:
+    *   **SET**: Proactively informs CTW and ES when an architectural change warrants an update to the overview document. SET provides the technical details of the change, potentially including simplified diagrams or mermaid syntax for inclusion by CTW.
+    *   **CTW**: Integrates the new information provided by SET into the `PROJECT_ARCHITECTURE_OVERVIEW.md`, maintaining consistency and clarity. CTW may request diagrams or further explanations from SET.
+    *   **ES**: Ensures that the task of updating the architecture overview is considered during sprint planning or retrospectives if major architectural work has been done.
+
+## 5. Review of Updates
+-   All significant updates to the `PROJECT_ARCHITECTURE_OVERVIEW.md` should be briefly reviewed by SET for technical accuracy and by ES for clarity before being considered final for that iteration.
+
+## 6. Accessibility
+-   The document should be written and structured in a way that is accessible and understandable at a high level by all roles within the multi-agent framework. While technical accuracy is paramount, jargon should be explained where possible.
+
+## 7. Relation to Contextual Briefing
+-   The `PROJECT_ARCHITECTURE_OVERVIEW.md` is a key component of the "Contextual Briefing Package" (see `067-WORKFLOW-contextual-briefing.mdc`) and must be kept current to ensure its utility. 

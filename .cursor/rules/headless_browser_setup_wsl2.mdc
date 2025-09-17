@@ -1,0 +1,5 @@
+## Headless Browser Testing Setup (WSL2) (headless_browser_setup_wsl2.rule)
+
+- For projects requiring headless browser testing (e.g., Behat with Selenium/WebDriver) in a WSL2 environment, the standardized script `../setup_wsl2_headless_chrome.sh` (relative to this rules directory, in `.cursor/`) must be used.
+- This script installs and configures Google Chrome and a compatible ChromeDriver.
+- Behat configurations (e.g., `behat.yml`) must reference the Chrome binary and ChromeDriver paths provided by this setup script to ensure consistency. 

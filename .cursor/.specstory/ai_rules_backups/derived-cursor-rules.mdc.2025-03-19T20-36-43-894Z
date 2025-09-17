@@ -1,0 +1,375 @@
+
+## PROJECT OVERVIEW
+
+This project, AutomaticJesse, aims to automate various tasks and workflows using AI and a role-based system. The system utilizes a multi-role architecture for handling diverse functionalities. AutomaticJesse is a framework with a Role Communication System and an Agile Framework for AI Agents. Active projects include `facebook-growth-ai`, `social-media-growth-ai`, `ai-bridge`, and `calendar_integration`. Roles include ES, SET, CTW, DES, and DRC, each with defined responsibilities and a structured communication protocol. The `ai-bridge` project has been migrated to its own workspace following the principles detailed in `projects/project-migration-guide.md`. The AutomaticJesse framework includes a Role Communication System with roles: ES, SET, CTW, DES, and DRC. An Agile Framework is used for AI agent development with 2-week sprints and ES as Scrum Master. Active projects: facebook-growth-ai (Sprint 4-5), social-media-growth-ai, ai-bridge, calendar_integration.  The facebook-growth-ai project is currently focused on: US-FB-A05: Facebook Insights Integration, US-FB-C01: Content Generator Interface, US-FB-S01: Scheduler Database.  The project leverages a local AI bridge for secure processing, detailed in `.cursor/rules/execution-requirements.mdc`.  The local AI bridge is an essential security feature.  The local AI bridge is used to keep sensitive data on your local machine and provide an option to use Ollama for local AI processing. The bridge sanitizes requests and responses, and logs all AI interactions locally.  All AI requests should go through the local bridge, using Ollama for local processing when possible, and only using remote AI services as a fallback.  The local AI bridge automatically determines whether to use local or cloud AI based on pre-defined rules and user overrides. The user can override these settings in `facebook-growth-ai/ai-bridge/config/user_overrides.py`.  The local AI bridge automatically routes AI requests to either local or cloud processing based on pre-defined rules and user overrides. The user can override these settings in `facebook-growth-ai/ai-bridge/config/user_overrides.py`.  Python versions 3.7 - 3.12 are supported. Python 3.13 is not currently supported due to spaCy incompatibility.  See PROJECT DOCUMENTATION & CONTEXT SYSTEM for details.  All project plans, user stories, and release plans for `social-media-growth-ai` and `facebook-growth-ai` have been moved to the new workspace at `C:\Users\stay\OneDrive\Documents\Github Repos\social-media-growth-ai`.  The `ai-bridge` project has also been migrated to its own workspace at `C:\Users\stay\OneDrive\Documents\Github Repos\ai-bridge`.  See `projects/project-migration-guide.md` for details on the migration process.  The `ai-bridge` project has been migrated to its own workspace at `C:\Users\stay\OneDrive\Documents\Github Repos\ai-bridge`.
+
+
+## CODE STYLE
+
+* Consistent indentation (4 spaces).
+* Meaningful variable and function names.
+* Adherence to PEP 8 (Python) and relevant style guides for other languages.
+
+
+## FOLDER ORGANIZATION
+
+The project follows a modular structure, separating concerns into distinct folders. Specific folder organization is detailed in the `FOLDER_ORGANIZATION.md` file within the `.cursor/rules` directory.  The `ai-bridge` project has been migrated to its own workspace following the same principles detailed in `projects/project-migration-guide.md`.  The `.cursor/rules` directories within the `social-media-growth-ai` and `facebook-growth-ai` projects are symlinks to the `.cursor/rules` directory in the main AutomaticJesse project. The `projects/social-media-growth-ai` and `projects/facebook-growth-ai` directories are symlinks to the new workspace.  The `ai-bridge` project has been migrated to its own workspace and follows the same principles.  See `projects/project-migration-guide.md` for details.
+
+
+## TECH STACK
+
+* Python (version 3.7 or newer, but not 3.13; 3.10 or 3.11 recommended)
+* JavaScript (Node.js)
+* Electron (for desktop application)
+* React (for UI components)
+* Tailwind CSS (for styling)
+* PostgreSQL (for database)
+* SQLite (added as alternative to PostgreSQL)
+* pnpm (for package management)
+* spacy (Note: May have compatibility issues with Python 3.13. See WORKFLOW & RELEASE RULES for details.)
+* textblob (added as alternative to spacy for Python 3.13 and above)
+* Git (required for version control)
+* Jest (added for JavaScript testing)
+* pytest (added for Python testing)
+* Flask (added for AI bridge)
+* requests (added for AI bridge)
+* Other libraries and tools as needed.
+
+
+## PROJECT-SPECIFIC STANDARDS
+
+* All roles must have clearly defined responsibilities (see `.cursor/rules/system/000-role-definitions.mdc`).
+* Role communication follows a predefined protocol (see `.cursor/rules/system/100-communication-protocol.mdc`). All role communications must be properly formatted with the designated color emoji (🔵 for ES, 🟠 for SET, 🟢 for CTW, 🟣 for DES, 💕 for DRC). Each role must respond appropriately when addressed. Clear separation must be maintained between different roles' communications. The last mentioned role will be tracked and used as the default responder when no specific role is addressed. The role addressed by the user should always be the one to finish the conversation. All communications must follow the format: `🔵 **Executive Secretary (ES)**: Message content` and include proper role identification. Failure to follow these guidelines requires an audit of `.cursor/rules` files by SET.
+* All code must be thoroughly tested.  Automated test-driven development is required for all user stories.
+* All user story cards must be documented as individual markdown files following the format specified in `.cursor/rules/user-story-templates.mdc`. Automated test-driven programming is required for all user stories.
+
+
+## WORKFLOW & RELEASE RULES
+
+* Agile development methodology is employed. (See `.cursor/rules/agile-framework.mdc` for details)
+* Version control using Git. A private Github repository will be created for the `social-media-growth-ai` project and synced with the new workspace. Ensure Git is installed and added to your system's PATH environment variable. See debugging section for instructions.
+* Regular release cycles will be determined and documented here. Addressing communication protocol lapses requires auditing `.cursor/rules` files. Audits of `.cursor/rules` files to address communication protocol lapses will be conducted by SET. The audit will also include verification of proper role identification in all communications, including consistent use of the  `🔵 **Executive Secretary (ES)**: Message content` format. File access timeouts require investigation and resolution. The consistent timeouts accessing project files require immediate investigation and resolution. This includes investigating potential network issues, file permission problems, or resource constraints.
+* Addressing file access timeouts is required. The consistent timeouts accessing project files require immediate investigation and resolution. This includes investigating potential network issues, file permission problems, or resource constraints. A Python 3.13 compatible setup has been created to address installation issues with `spacy`. See PROJECT DOCUMENTATION & CONTEXT SYSTEM for details.
+* Addressing error during `pip install -r requirements.txt` needs debugging by SET. Solutions implemented include a modified requirements file (`requirements_py313.txt`), a setup script (`setup_py313.py`), and updated documentation in the README.md. See PROJECT DOCUMENTATION & CONTEXT SYSTEM for details. SET will create and execute a plan to move the `social-media-growth-ai` and `facebook-growth-ai` projects to a new workspace and set up a private Github repository. The new workspace for `social-media-growth-ai` and `facebook-growth-ai` is located at `C:\Users\stay\OneDrive\Documents\Github Repos\social-media-growth-ai`. Symlinks to the main `.cursor/rules` directory and other necessary files will be implemented to maintain consistent workflow, roles, and visualizations. A new workspace has been created for the `social-media-growth-ai` and `facebook-growth-ai` projects. The `.cursor/rules` directory within this workspace is a symlink to the main AutomaticJesse project's `.cursor/rules` directory. The `projects/social-media-growth-ai` and `projects/facebook-growth-ai` directories within the AutomaticJesse workspace are now symbolic links to the new workspace at `C:\Users\stay\OneDrive\Documents\Github Repos\social-media-growth-ai`. The `.cursor/rules` directory within the new workspace is a symbolic link to the `.cursor/rules` directory in the main AutomaticJesse project. The `.cursor/rules` directories within the `social-media-growth-ai` and `facebook-growth-ai` projects are symlinks to the `.cursor/rules` directory in the main AutomaticJesse project. The `projects/social-media-growth-ai` and `projects/facebook-growth-ai` directories are symlinks to the new workspace.  The `ai-bridge` project has been migrated to its own workspace and follows the same principles.  See `projects/project-migration-guide.md` for details. SET is responsible for auditing `.cursor/rules` for compliance and integration. Work should stop if the user is a roadblock until the necessary information is provided.  All execution must produce files on the hard drive and commands in terminal and truly execute.  All executions must produce files on the hard drive and commands in terminal and truly execute.  All executions must produce files on the hard drive and commands in the terminal and truly execute.
+* All executions must produce files on the hard drive and commands in the terminal and truly execute.  All role communications must execute simultaneously and the initiating role must provide a summary.  All code must be executed using the correct format as specified in `.cursor/rules/execution-requirements.mdc`.  All code must be executed using the correct format as specified in `.cursor/rules/execution-requirements.mdc`. Failure to do so will result in an audit by SET.  A local AI bridge is used for secure processing. All role communications must adhere to the protocol in `.cursor/rules/role-communication-protocol.mdc`.  A local AI bridge is used for secure processing of all AI requests.  The bridge automatically determines whether to use local or cloud AI based on pre-defined rules and user overrides.  The user can override these settings in `facebook-growth-ai/ai-bridge/config/user_overrides.py`.  All executions must produce files on the hard drive and commands in the terminal and truly execute.  All role communications must execute simultaneously and the initiating role must provide a summary.  The local AI bridge is used for secure processing of all AI requests.  The bridge automatically determines whether to use local or cloud AI based on pre-defined rules and user overrides.  The user can override these settings in `facebook-growth-ai/ai-bridge/config/user_overrides.py`.
+* All executions must produce files on the hard drive and commands in the terminal and truly execute.  All role communications must execute simultaneously and the initiating role must provide a summary. The local AI bridge is used to process all AI requests, automatically determining whether to use local or cloud AI based on predefined rules and user overrides.  User overrides can be set in `facebook-growth-ai/ai-bridge/config/user_overrides.py`.  Python 3.7 - 3.12 is supported. Python 3.13 is not currently supported due to spaCy incompatibility.  See PROJECT DOCUMENTATION & CONTEXT SYSTEM for details.  The only way to create files is by using the syntax: ```language:path/to/file.js // File content```.
+
+
+## REFERENCE EXAMPLES
+
+* Refer to the `.cursor/rules` directory for examples and best practices.
+* Add new examples to this section as the project evolves.
+
+
+## PROJECT DOCUMENTATION & CONTEXT SYSTEM
+
+* Documentation is maintained using markdown files within the project's structure.
+* Specific documentation standards are outlined in `PROJECT_DOCUMENTATION.md` (to be created).
+* Version updates to documentation and related systems will be logged here.
+* Chat name generation guidelines added (see `.specstory/history/2025-03-17_21-46-chat-name-generation.md`).
+* Facebook Growth AI project documentation created: Quick Start Guide, PostgreSQL/SQLite alternatives, setup scripts, Sprint 5 documentation. A Python 3.13 compatible setup has been created to address installation issues with `spacy`. See WORKFLOW & RELEASE RULES for details. A smart setup system has been implemented to improve user experience and compatibility. See WORKFLOW & RELEASE RULES for details. User story templates are detailed in `.cursor/rules/user-story-templates.mdc`. The role registry is detailed in `.cursor/rules/role-registry.mdc`.  Added documentation for the local AI bridge, including setup instructions, security considerations, and configuration options.  Added documentation for the local AI bridge, including setup instructions, security considerations, and configuration options. Added documentation for the local AI bridge, including setup instructions, security considerations, and configuration options.
+* Project overview added based on AI analysis of `.cursor/rules` directory: AutomaticJesse is a framework with a Role Communication System and an Agile Framework for AI Agents. Active projects include `facebook-growth-ai`, `social-media-growth-ai`, and `calendar_integration`. Roles include ES, SET, CTW, DES, and DRC, each with defined responsibilities and a structured communication protocol. All project plans, user stories, and release plans for `social-media-growth-ai` and `facebook-growth-ai` have been moved to the new workspace.
+* The AutomaticJesse framework includes a Role Communication System with roles: ES, SET, CTW, DES, and DRC. An Agile Framework is used for AI agent development with 2-week sprints and ES as Scrum Master. Active projects: facebook-growth-ai (Sprint 4-5), social-media-growth-ai, calendar_integration.
+* A guide on repeating the project migration process for future projects is located in `projects/project-migration-guide.md`.
+* User story card format clarified: Each user story should be a separate markdown file with a unique identifier, title, description, acceptance criteria, details (assignment, sprint, status, story points, priority), and notes.  User stories should follow the format: "As a [type of user], I want [functionality] so that [benefit/goal]." (See `.cursor/rules/user-story-templates.mdc` for details).  The format should be "As a [type of user], I want [functionality] so that [benefit/goal]."  All user stories must be documented as individual files.  Added documentation for the local AI bridge, including setup instructions, security considerations, and configuration options.
+* Added documentation for the local AI bridge, including setup instructions, security considerations, and configuration options.  Added documentation for the local AI bridge, including setup instructions, security considerations, and configuration options.  Added documentation for the local AI bridge, including setup instructions, security considerations, and configuration options.  Added documentation for the local AI bridge, including setup instructions, security considerations, and configuration options.  Added documentation for the experimental workaround for spaCy and Python 3.13 in `docs/advanced/python313.md`.  Added documentation for installation and troubleshooting of spaCy issues in `docs/setup/installation.md`. Added documentation for the local AI bridge, including setup, security, and configuration options.  Added documentation for the local AI bridge, including setup, security, and configuration options.  Added documentation for the local AI bridge, including setup, security, and configuration options.  Added documentation for the local AI bridge, including setup, security, and configuration options.  Added documentation for the local AI bridge, including setup, security, and configuration options.
+
+
+## DEBUGGING
+
+* Standard debugging techniques should be used.
+* Specific debugging procedures for project components will be added here. Addressing file access timeouts is required. The consistent timeouts accessing project files require immediate investigation and resolution. This includes investigating potential network issues, file permission problems, or resource constraints.
+* Error during `pip install -r requirements.txt` needs debugging by SET. See WORKFLOW & RELEASE RULES for details. Solutions implemented include a modified requirements file (`requirements_py313.txt`), a setup script (`setup_py313.py`), and updated documentation in the README.md. See PROJECT DOCUMENTATION & CONTEXT SYSTEM for details.
+* To resolve "git is not recognized" error: If Git is not installed, download from https://git-scm.com/downloads and ensure "add Git to your PATH" is selected during installation. Restart your terminal. If Git is already installed, locate the Git installation path (e.g., `C:\Program Files\Git\bin`), add it to the system PATH environment variable, and restart your terminal. If the GitHub Pull Requests extension is installed, the issue is likely with the PATH configuration. Check the Git installation location (`C:\Program Files\Git\bin`, `C:\Program Files (x86)\Git\bin`, `C:\Users\[YourUsername]\AppData\Local\Programs\Git\bin`) and add the path to the bin directory to the system PATH environment variable. Restart Cursor after updating the PATH. Alternatively, use the full path to Git in your commands or temporarily add Git to your session PATH in the terminal using `set PATH=%PATH%;C:\Program Files\Git\bin` (adjusting the path as needed). Further troubleshooting steps for Git PATH issues include verifying Git installation location using `where.exe git` or directory searches, checking the current PATH variable with `echo $env:PATH`, temporarily adding Git to the PATH using PowerShell (`$env:PATH += ";C:\Program Files\Git\bin;C:\Program Files\Git\cmd"`), permanently adding Git to the user PATH using PowerShell (See detailed instructions in the new AI interactions), verifying VS Code/Cursor Git configuration, and using a script to install Git if needed.  PowerShell commands for permanently adding Git to the user PATH:  `[Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariable("Path", "User") + ";C:\Program Files\Git\bin;C:\Program Files\Git\cmd", "User")` (adjust path as needed).  Added troubleshooting steps for `pip install -r requirements.txt` failure due to spaCy incompatibility with Python 3.13.  Solutions include using Python 3.10 or 3.11, using a simplified requirements file, or using a different NLP library.  Added troubleshooting for spaCy installation failures related to Python 3.13 incompatibility. Solutions include using Python 3.10 or 3.11, using pre-built wheels, or using a different NLP library.  Added troubleshooting steps for spaCy installation problems related to Python 3.13 incompatibility.  Solutions include using Python 3.10 or 3.11, using pre-built wheels, or using a different NLP library.  Python versions 3.7 - 3.12 are supported. Python 3.13 is not currently supported due to spaCy incompatibility.  See PROJECT DOCUMENTATION & CONTEXT SYSTEM for details.  Added troubleshooting for spaCy installation failures on Python 3.13 due to incompatibility with thinc, blis, and srsly.  Solutions include using Python 3.10 or 3.11, building spaCy from source with patches (advanced users only, see `docs/advanced/python313.md`), or using a different NLP library.
+
+
+## FINAL DOs AND DON'Ts
+
+* **DO** follow the coding style guidelines.
+* **DO** write unit tests for all modules. Automated test-driven development is required for all user stories.
+* **DO** adhere to the project's workflow and release rules, including proper role-based communication and self-identification by role using the format `🔵 **Executive Secretary (ES)**: Message content`.
+* **DO** document all user stories as individual markdown files, following the specified format in `.cursor/rules/user-story-templates.mdc`.
+* **DON'T** commit code that is not thoroughly tested.
+* **DON'T** introduce breaking changes without proper notification.
+* **DO** ensure all code execution adheres to the guidelines in `.cursor/rules/execution-requirements.mdc`.  Failure to do so will result in an audit by SET.  All executions must produce files on the hard drive and commands in the terminal and truly execute.
+* **DO** use the local AI bridge for all AI interactions to maintain security and privacy.
+* **DO** use the correct format for file creation within code blocks, as detailed in `.cursor/rules/execution-requirements.mdc`. Failure to follow this format will result in files not being created.  The only way to create files is by using the syntax: ```language:path/to/file.js // File content```.
+
+# Lazy Loading Index for Rules
+
+## Core System Rules
+- system/000-core-definitions.mdc: Core definitions and system architecture
+- system/000-role-definitions.mdc: Core definitions of all roles in the system
+- system/100-communication-protocol.mdc: Standards for role-based communication and message routing
+- system/101-format-standards.mdc: Comprehensive standards for role communication formats and activation methods
+- system/102-default-role-behavior.mdc: Defines the default role behavior when no role is explicitly addressed
+- system/103-command-execution.mdc: Defines requirements for actual file creation and terminal command execution
+- system/103-visual-identity.mdc: Visual identity system for role differentiation
+- system/104-user-identification.mdc: User identification and authentication standards
+- system/105-cross-platform.mdc: Cross-platform compatibility guidelines
+- system/106-interaction-protocols.mdc: Interaction protocols and best practices
+- system/107-triggers.mdc: Documentation for the role communication trigger system
+- system/109-question-filtering.mdc: Guidelines for filtering and prioritizing questions
+- system/200-behavior.mdc: Detailed behavior guidelines for all roles
+- system/300-user.mdc: User management and interaction guidelines
+- system/400-workflow.mdc: Workflow rules and processes
+- system/401-product-planning.mdc: Product planning and roadmap
+- system/402-documentation-enforcement.mdc: Documentation enforcement and standards
+- system/500-feedback.mdc: Feedback implementation and integration
+- system/800-role-management.mdc: Role management system and access controls
+- system/801-system-architecture.mdc: Detailed system architecture diagrams and explanations
+- system/900-project-migration.mdc: Guide for migrating projects to their own workspaces
+- system/900-rule-testing.mdc: Comprehensive testing and validation procedures for all rules
+- system/auto_rules_workflow.mdc: Automated rules integration and workflow
+- system/feedback_implementation.mdc: Feedback implementation and workflow
+- system/README.mdc: Overview and usage instructions for the system rules
+- system/role_communication_protocol.mdc: Detailed role communication protocol
+- system/triggers: Directory containing trigger files for automated tasks and workflows
+- system/execution-requirements.mdc: Execution Requirements for AI Agent Development - Applies to All Projects
+
+
+## Role-Specific Rules
+- roles/es/role.mdc: Consolidated role definition for Executive Secretary
+- roles/es/scrum-master-responsibilities.mdc: Scrum Master Responsibilities for Executive Secretary Role
+- roles/es/follow_up_schedule.mdc: Follow-up schedule for Executive Secretary
+- roles/es/knowledge_versioning.mdc: Knowledge versioning system for Executive Secretary
+- roles/es/knowledge.mdc: Knowledge base for Executive Secretary
+- roles/es/100-code_boundaries.mdc: Code boundaries for Executive Secretary
+- roles/es/101-role_boundaries.mdc: Role boundaries for Executive Secretary
+
+- roles/drc/role.mdc: Consolidated role definition for Dating and Relationship Coach
+- roles/drc/100-knowledge.mdc: Knowledge base for Dating and Relationship Coach
+- roles/drc/101-role-boundaries.mdc: Role boundaries for Dating and Relationship Coach
+- roles/drc/000-transfer.mdc: Role transfer protocol for Dating and Relationship Coach
+
+
+- roles/ctw/000-transfer.mdc: Role transfer protocol for Copy/Technical Writer
+- roles/ctw/documentation_templates.mdc: Documentation templates for Copy/Technical Writer
+- roles/ctw/knowledge.mdc: Knowledge base for Copy/Technical Writer
+- roles/ctw/learning_templates.mdc: Learning documentation templates for Copy/Technical Writer
+
+- roles/des/000-transfer.mdc: Role transfer protocol for Designer
+- roles/des/100-role-boundaries.mdc: Role boundaries for Designer
+- roles/des/accessibility_guidelines.mdc: Accessibility guidelines for Designer
+- roles/des/design_system.mdc: Design system specifications and guidelines for the Designer role
+- roles/des/knowledge.mdc: Knowledge base for Designer
+- roles/des/responsive_design.mdc: Responsive design guidelines for Designer
+- roles/des/visual_identity_system.mdc: Visual identity system for Designer
+
+- roles/dlc/000-transfer.mdc: Role transfer protocol for Debt Consumer Law Coach
+- roles/md/000-transfer.mdc: Role transfer protocol for Marketing Director
+- roles/se/000-transfer.mdc: Role transfer protocol for Software Engineer
+- roles/set/knowledge.mdc: Knowledge base for Software Engineering Team
+- roles/smm/000-transfer.mdc: Role transfer protocol for Social Media Manager
+- roles/ufl/000-transfer.mdc: Role transfer protocol for Utah Family Lawyer
+
+
+## Shared Resources
+- shared/common-knowledge.mdc: Common knowledge shared by all roles
+- shared/workflow-patterns.mdc: Common workflow patterns for all roles
+- shared/templates/: Directory containing templates for various documents and communications
+- shared/triggers/: Directory containing trigger files for automated tasks and workflows
+- shared/README.mdc: Overview and usage instructions for shared resources
+
+
+## Project Management
+- agile-framework.mdc: Agile Framework for AI Agent Development - Applies to All Projects
+- test-driven-development.mdc: Test-Driven Development Guidelines for AI Agent Projects
+- user-story-templates.mdc: User Story Templates for AI Agent Development - Applies to All Projects
+- execution-requirements.mdc: Execution Requirements for AI Agent Development - Applies to All Projects
+
+
+# Cursor Rules System Configuration
+
+## Overview
+
+This directory contains the rule configurations and triggers that enforce our agile workflow and role-based communication system. The rules are automatically loaded at the start of each Cursor session and ensure consistent process execution across all projects.
+
+## Directory Structure
+
+```
+.cursor/rules/
+├── agile-framework.mdc           # Core agile framework definition
+├── system/
+│   ├── 100-communication-protocol.mdc    # Role communication standards
+│   ├── 102-default-role-behavior.mdc     # Default role behaviors
+│   ├── 103-visual-identity.mdc       # Visual identity system for roles
+│   ├── 107-triggers.mdc                  # System triggers definition
+│   └── ...
+├── roles/                       # Role-specific rules and knowledge
+└── shared/                      # Shared resources and patterns
+```
+
+## Configuration Files
+
+### .cursorrc
+Located in the root directory, this file configures:
+- Automatic rule loading
+- Role validation
+- Immediate execution requirements
+- Editor settings
+- Terminal configuration
+
+### System Triggers (107-triggers.mdc)
+Defines triggers for:
+- Role activation and communication
+- Agile workflow enforcement
+- Documentation updates
+- Validation checks
+- Error handling
+
+### Visual Identity System (103-visual-identity.mdc)
+Defines the visual formatting for all role communications:
+- Role-specific color coding (🔵 ES, 🟠 SET, 🟢 CTW, 🟣 DES, 💕 DRC)
+- Standardized message formatting
+- Templates for consistent communication
+- Best practices for role interactions
+
+## Role Communication
+
+### Available Roles
+- 🔵 ES: Executive Secretary (Scrum Master)
+- 🟠 SET: Software Engineering Team
+- 🟢 CTW: Copy/Technical Writer
+- 🟣 DES: Designer
+- 💕 DRC: Dating and Relationship Coach
+
+### Message Format
+```
+@[ROLE_ABBREVIATION]: [Message]
+```
+
+### Visual Format
+```
+🔵 [ES] Executive Secretary
+──────────────────────────────────────────────────────────────────────
+────────────────────────
+[Message content]
+
+🔵➡️ @ROLE: [Directed communication]
+──────────────────────────────────────────────────────────────────────
+────────────────────────
+```
+
+# Changelog
+
+All notable changes to the rules directory will be documented in this file.
+
+## [1.14.0] - 2025-03-19
+
+### Added
+- `utils/version_check.py`: Python script to check for compatible Python versions (3.7-3.12) and provide warnings for incompatible versions.
+- `docs/setup/python312_spacy_guide.md`: Detailed guide on installing Python 3.12.x with spaCy compatibility, including troubleshooting tips and alternative approaches.
+- Note in `docs/setup/installation.md` about spaCy compatibility issues with Python 3.13.
+- Note in `docs/sprints/sprint4_plan.md` about Python 3.13 incompatibility.
+- `.cursor/rules/roles/set/knowledge.mdc` CRITICAL OPERATING CONTEXT reminder for SET role.
+- `fix_python_path.ps1`: PowerShell script to automatically fix Python PATH issues.
+- `fix_python_path_launcher.ps1`: PowerShell script to launch `fix_python_path.ps1` with admin privileges.
+- `python_path_fix_instructions.html`: HTML file with instructions on running the fix scripts.
+- Added a section to `execution-requirements.mdc` clarifying the difference between descriptive code examples and actual executable code.  Added a CRITICAL section highlighting the ONLY way to create files.
+
+### Changed
+- Updated `PROJECT OVERVIEW` to include the new workspace location and symlink structure.
+- Updated `WORKFLOW & RELEASE RULES` to reflect the use of symlinks and the creation of a private Github repository for the `social-media-growth-ai` project.
+- Updated `TECH STACK` to specify Python version compatibility (3.7-3.12).
+- Updated `FINAL DOs AND DON'Ts` to clarify the only way to create files.
+- Updated `DEBUGGING` to include troubleshooting for spaCy installation failures with Python 3.13.
+- Updated `README.md` to include Python version requirements.
+- Updated `docs/setup/installation.md` to clearly communicate Python version requirements and include a troubleshooting section for spaCy issues.
+- Updated `requirements.txt` to remove spaCy and added a `requirements_py313.txt` for alternative installation.
+- `setup.py`: Updated to specify Python version requirements (`>=3.7, <3.13`).
+- Updated `WORKFLOW & RELEASE RULES` to include a note about the importance of the local AI bridge and its automatic decision-making capabilities.
+- Updated `PROJECT DOCUMENTATION & CONTEXT SYSTEM` to include a note about the new quick start guide.
+- Updated `PROJECT DOCUMENTATION & CONTEXT SYSTEM` to include documentation for the local AI bridge.
+- Updated `FINAL DOs AND DON'Ts` to reflect the critical issue regarding actual file creation and terminal command execution.
+- Updated `roles/set/knowledge.mdc` to include a CRITICAL section reminding SET of the importance of executing commands directly within Cursor.
+- Updated `execution-requirements.mdc` with clearer instructions and examples on how to create files properly and the critical issue of the ONLY way to create files.
+
+
+## [1.13.0] - 2025-03-19
+
+### Added
+- `projects/project-migration-guide.md`: Comprehensive guide documenting the project migration process, including step-by-step instructions, real-world examples, and troubleshooting tips.
+
+
+## [1.12.0] - 2025-03-19
+
+### Added
+- `role-communication-protocol.mdc` defining a strict protocol for role-based communication, ensuring simultaneous responses from all tagged roles and a summary from the initiating role.
+- `execution-requirements.mdc` defining requirements for actual file creation and terminal command execution.  Added clarification on the correct syntax for file creation within code blocks.  Added a CRITICAL section highlighting the ONLY way to create files.  Added a section on clarifying code execution, highlighting the difference between descriptive code examples and actual file creation.  Added a section on the correct and incorrect formatting for file creation.
+
+### Changed
+- Updated `WORKFLOW & RELEASE RULES` to reflect the new communication protocol and execution requirements.
+- Updated `PROJECT-SPECIFIC STANDARDS` to clarify role communication expectations and add requirements for simultaneous execution and summarization.
+- Updated `agile-framework.mdc` to remove duplicate code blocks and improve clarity. Added a `validate_sprint()` function example for sprint validation.
+
+
+## [1.11.0] - 2025-03-19
+
+### Added
+- `test-driven-development.mdc` outlining test-driven development guidelines.
+- Clarified user story format in `.cursor/rules/user-story-templates.mdc` to adhere to standard Agile Scrum methodology ("As a ..., I want ..., so that ...").
+- Added detailed instructions for permanently adding Git to the user PATH environment variable using PowerShell in the DEBUGGING section.
+
+### Changed
+- Updated `WORKFLOW & RELEASE RULES` to explicitly state that work should stop if the user is a roadblock until the necessary information is provided.
+- Updated the `PROJECT-SPECIFIC STANDARDS` section to reflect the new user story format.
+- Updated the `PROJECT DOCUMENTATION & CONTEXT SYSTEM` section to reflect the addition of the `test-driven-development.mdc` file.
+- Updated `agile-framework.mdc` to remove duplicate code blocks and improve clarity.  Added a `validate_sprint()` function example for sprint validation.
+
+
+## [1.10.0] - 2025-03-19
+
+### Added
+- `900-project-migration.mdc` to the system directory documenting the process for migrating projects to their own workspaces.
+
+### Changed
+- Updated the `PROJECT OVERVIEW` section to reflect the new workspace structure for `social-media-growth-ai` and `facebook-growth-ai` projects.  Symlinks are now used instead of copies.
+- Updated the `WORKFLOW & RELEASE RULES` section to reflect the use of symlinks and the creation of a private Github repository for the `social-media-growth-ai` project.
+- Clarified the instructions for creating symlinks in the `WORKFLOW & RELEASE RULES` and `DEBUGGING` sections.  Added instructions on using PowerShell's `New-Item` command with `-ItemType SymbolicLink`.  Added instructions for using the `mklink` command in a batch script run with administrator privileges.  Added notes regarding permission issues when creating symlinks.
+
+
+## [1.9.0] - 2025-03-08
+
+### Added
+- Designer (DES) role with knowledge, boundaries, and transfer files
+- Visual identity system for role differentiation
+- Updated role definitions to include Designer role
+
+### Changed
+- Updated system/000-role-definitions.mdc to version 1.1.0
+- Incorporated UI/UX design best practices from cursor.directory
+
+## [1.8.0] - 2025-03-08
+
+### Added
+- Trigger system documentation in `.cursor/rules/system/107-triggers.mdc`
+- Trigger files in `.cursor/rules/shared/triggers/`
+
+### Changed
+- Migrated role context information from `role_context/` to role knowledge files
+- Archived Claude-Roles directory to `archive/claude-roles/`
+- Updated README for archived Claude-Roles directory
+
+### Removed
+- Empty directories: `cleanup/`, `conversation_archives/`, `config/`
+- Legacy files: `test_recovery.db`, `MCP`, `query`
+- HTML template files
+
+## [1.7.0] - 2025-03-07
+
+### Added
+- Role-specific knowledge files for ES, SET, and CTW
+- Role boundaries documentation
+- Code boundaries documentation
+- Role transfer protocols
+
+### Changed
+- Restructured rules directory to include roles, system, and shared subdirectories
+- Updated README with directory structure information
+- Implemented auto-rules integration
+
+### Removed
+- Deprecated role communication files
+
+## 2025-03-07: Major Files
