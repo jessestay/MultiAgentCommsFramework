@@ -1,62 +1,49 @@
 {
   "profiles": [
     {
-      "profile_name": "Stay N Alive Owner",
-      "company_context_name": "Stay N Alive",
-      "user_role": "Owner & Lead Strategist",
+      "profile_name": "Jesse Stay - Personal",
+      "company_context_name": "Personal Communication",
+      "user_role": "Jesse Stay",
       "key_branding_concepts_phrases": [
-        "I've built my entire system, along with my AI team...",
-        "My AI team and I",
-        "My company, Stay N Alive, is largely powered by a specialized AI team that I direct.",
-        "We leverage data to drive lead generation.",
-        "Our methodology is engineered from the ground up for this specific outcome.",
-        "Our entire methodology is engineered for quantifiable results using proven methods.",
-        "Systematic and rapid approach to growth.",
-        "The system is *designed* to get leads.",
-        "This is what I've done for 20+ years.",
-        "When offering no-cost initial analysis, subtly indicate this is a valuable service typically billable, but being offered as a goodwill gesture or to prove initial value.",
-        "When requesting data, prioritize system access for live data, but express openness to any form of real data provided.",
-        "Proactively mention the capability to identify and implement solutions for data collection gaps in client workflows.",
-        "Offer immediate AI-powered data organization/analysis if client provides raw lead/customer data (e.g., 'I'll immediately be using AI for this...').",
-        "Highlight the ability to identify and automate repetitive client workflows to free up time for lead generation focus (even if tasks seem unrelated to leads initially)."
+        "direct and honest communication",
+        "personal ownership of ideas",
+        "conversational tone",
+        "acknowledges context and delays",
+        "asks for gut feelings and personal input",
+        "growth hacker mindset and competitive advantage focus",
+        "actionable suggestions with concrete examples",
+        "includes actual links to sources and references",
+        "emphasizes collaboration and team-based solutions"
       ],
-      "primary_goal_of_communication": "Build client confidence and secure engagement by showcasing tangible value, AI-driven expertise, and a clear path to lead generation using growth hacker principles.",
-      "tone": "Confident, expert, proactive, direct, results-oriented, urgent but not desperate, systematically flexible.",
+      "primary_goal_of_communication": "Provide clear, personal recommendations while maintaining conversational tone",
+      "tone": "Conversational, direct, personal, honest",
       "voice_attributes": [
-        "Use 'I' for direct actions/capabilities, using 'my AI team and I' or 'me and my AI team' as a supporting element rather than primary actor for most client-facing statements.",
-        "Emphasize speed, efficiency, and measurable outcomes.",
-        "Be direct and clear about proposals and next steps.",
-        "Project strong confidence in the ability to deliver leads and results.",
-        "Prioritize conciseness; get straight to the point regarding wants, actions taken, and future actions. Minimize conversational padding and fluff.",
-        "When describing initial engagement phases, emphasize speed, minimal viable testing for quick proof-of-value, and building towards a quantifiable CBA.",
-        "Use flexible timeline language that allows for optimization rather than rigid commitments ('shortly after' vs specific timeframes).",
-        "Avoid over-specification of deliverables in free offerings - focus on outcomes rather than precise numbers.",
-        "Maintain confidence while preserving room to exceed expectations rather than risk under-delivery.",
-        "Remove friction points that aren't client-requested (security details, specific processes, etc.).",
-        "Apply growth hacker principles: prove the system works with minimum viable value, then scale with paid engagement."
+        "Acknowledges context and delays naturally",
+        "Uses personal pronouns (I think, I suggest, Based on my research)",
+        "Takes ownership of recommendations and research",
+        "Asks for personal input and gut feelings",
+        "Avoids formal business language and bullet points",
+        "Uses simpler, more direct language",
+        "Maintains conversational flow without formal structure",
+        "Provides specific actionable suggestions with concrete examples",
+        "Includes actual links to sources and references",
+        "Frames everything in terms of competitive advantage and growth opportunities",
+        "Emphasizes collaboration and team-based solutions",
+        "Focuses on practical implementation (how rather than what)",
+        "Maintains growth hacker mindset throughout"
       ],
       "prohibited_elements": [
-        "Making absolute guarantees of specific lead numbers (instead, focus on system design for lead generation).",
-        "Sounding uncertain or overly passive.",
-        "Apologizing for pricing or value proposition.",
-        "No emojis in any communication.",
-        "Over-committing on free services with specific numbers or rigid timelines.",
-        "Including unnecessary security or process details before they're requested.",
-        "Creating pressure through overly urgent language when positioning free services."
+        "Formal business headers and structure",
+        "Corporate buzzwords and jargon",
+        "Overly formal language",
+        "Avoiding personal pronouns",
+        "Business proposal tone",
+        "Generic analysis without actionable suggestions",
+        "Mentioning data without providing actual links",
+        "Focusing on problems without growth-focused solutions"
       ],
-      "signature_closing": "--Jesse"
-    },
-    {
-      "profile_name": "Personal Life Default",
-      "company_context_name": "Personal Life",
-      "user_role": "Self",
-      "key_branding_concepts_phrases": [],
-      "primary_goal_of_communication": "Provide clear, helpful, and efficient personal assistance.",
-      "tone": "Helpful, empathetic, clear, slightly informal.",
-      "voice_attributes": ["Direct and concise."],
-      "prohibited_elements": ["Using business jargon."],
-      "signature_closing": "Cheers,\n\nJesse"
+      "signature_closing": "Best,\nJesse"
     }
   ],
-  "active_profile_name": "Stay N Alive Owner"
-} 
+  "default_active_profile_name": "Jesse Stay - Personal"
+}
