@@ -1,0 +1,28 @@
+{
+  "name": "role-mention-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for role-based @mention communication in Cursor",
+  "main": "role-mention-server.js",
+  "scripts": {
+    "start": "node role-mention-server.js",
+    "test": "jest",
+    "setup-cursor": "node setup-cursor.js",
+    "install-and-run": "node install-and-run.js"
+  },
+  "keywords": [
+    "cursor",
+    "mcp",
+    "role",
+    "mention",
+    "communication"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/server": "^0.1.0"
+  },
+  "devDependencies": {
+    "jest": "^29.5.0",
+    "supertest": "^6.3.3"
+  }
+} 

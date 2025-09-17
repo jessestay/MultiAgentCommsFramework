@@ -1,0 +1,16 @@
+{
+  "name": "Social Media Manager",
+  "created": "2025-03-04T12:08:09.417121",
+  "context": [
+    {
+      "timestamp": "2025-03-04T12:08:09.417121",
+      "update": "Initial context for Social Media Manager role"
+    },
+    {
+      "timestamp": "2025-03-04T12:33:55.340287",
+      "update": "Initial context for Social Media Manager role"
+    }
+  ],
+  "interactions": [],
+  "updated": "2025-03-04T12:33:55.340270"
+}

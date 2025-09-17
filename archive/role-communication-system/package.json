@@ -1,0 +1,30 @@
+{
+  "name": "role-mention-system",
+  "version": "1.0.0",
+  "description": "Role Mention System for Cursor",
+  "main": "standalone-server.js",
+  "scripts": {
+    "start": "node standalone-server.js",
+    "install-service": "node install-service.js",
+    "uninstall-service": "node uninstall-service.js",
+    "test": "node tests/server-tests.js",
+    "test:role-mention": "node tests/role-mention-tests.js",
+    "test:automated": "node tests/automated-service-tests.js",
+    "start:mcp": "node mcp-role-server.js",
+    "install-mcp-service": "node install-mcp-service.js",
+    "uninstall-mcp-service": "node uninstall-mcp-service.js"
+  },
+  "keywords": [
+    "cursor",
+    "role",
+    "mention"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "github:modelcontextprotocol/typescript-sdk",
+    "eventsource": "^2.0.2",
+    "node-windows": "^1.0.0-beta.8",
+    "role-mention-system": "file:"
+  }
+}

@@ -1,0 +1,99 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# TDD/BDD Development Standard [MANDATORY]
+
+## Core Principles
+
+1. **Test-First Development [REQUIRED]**: All code must be developed following Test-Driven Development (TDD) principles:
+   - Tests MUST be written BEFORE implementation code
+   - Implementation code should only be written to make failing tests pass
+   - All tests must pass before code is considered complete
+
+2. **Behavior-Driven Development [REQUIRED]**: All user stories must include Behat/Gherkin scenarios:
+   - Each acceptance criterion must have at least one corresponding Behat scenario
+   - Scenarios must be written in GIVEN/WHEN/THEN format
+   - Scenarios must be executable and integrated with the testing framework
+
+3. **Code Coverage Requirements [MANDATORY]**:
+   - All code must achieve minimum 80% test coverage
+   - All public methods must have unit tests
+   - All business logic must have integration tests
+   - All user-facing functionality must have acceptance tests
+
+## User Story Standard Format
+
+All user stories MUST include the following acceptance criterion:
+
+```
+Development follows strict TDD/BDD approach with unit tests written before implementation code and minimum 80% code coverage
+```
+
+This criterion is a prerequisite for all other acceptance criteria - no other acceptance criteria can be considered complete until this criterion is satisfied.
+
+## Implementation Requirements
+
+### 1. Unit Testing
+
+- All classes must have corresponding unit test classes
+- Unit tests must be written before implementation code
+- Unit tests must verify:
+  - Expected behavior
+  - Edge cases
+  - Error conditions
+  - Type safety
+
+### 2. Integration Testing
+
+- All integrations between components must be tested
+- Database interactions must be tested
+- External API interactions must be mocked and tested
+- File system operations must be tested
+
+### 3. Acceptance Testing
+
+- All user-facing functionality must have Behat scenarios
+- Scenarios must cover all acceptance criteria
+- Scenarios must be executable in the CI/CD pipeline
+- Visual elements must be tested with screenshot comparisons
+
+## Definition of Done
+
+Code cannot be considered "Done" unless:
+
+1. Tests were written before implementation code
+2. All tests are passing
+3. Code coverage meets the minimum 80% threshold
+4. Behat scenarios exist for all acceptance criteria
+5. All tests are included in the automated test suite
+
+## Tool Usage
+
+- PHPUnit for unit and integration testing
+- Behat for acceptance testing
+- PHPCodeCoverage for measuring code coverage
+- WP_Mock for mocking WordPress functions
+
+## Sprint Process Integration
+
+1. **Planning Phase**:
+   - Create Behat features for all user stories
+   - Define scenarios for all acceptance criteria
+
+2. **Development Phase**:
+   - Write unit tests before implementation code
+   - Create integration tests for component interactions
+   - Run tests continuously
+
+3. **Review Phase**:
+   - Verify test coverage meets requirements
+   - Execute all tests to verify functionality
+   - Review test quality and completeness
+
+## Enforcement
+
+This standard applies to ALL code development without exception. No code will be accepted that doesn't meet these requirements.
+
+The Software Engineering Team (SET) is responsible for enforcing these standards and ensuring all code follows the TDD/BDD approach. 

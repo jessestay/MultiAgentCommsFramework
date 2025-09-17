@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "role-mention": {
+      "url": "http://localhost:3000/sse"
+    }
+  }
+} 

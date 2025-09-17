@@ -1,0 +1,312 @@
+<?php
+/**
+ * Review Process Driver for US-TH-002
+ *
+ * This script drives the review process for US-TH-002, engaging AI stakeholders
+ * and the user in the review process. It coordinates the workflow from implementation
+ * to stakeholder reviews to user approval.
+ */
+
+require_once __DIR__ . '/src/Reviews/ReviewManager.php';
+
+// Constants
+define( 'USER_STORY_ID', 'US-TH-002' );
+define( 'DESIGNER', 'designer' );
+define( 'MARKETING_DIRECTOR', 'marketing_director' );
+
+// Create test-logs directory if it doesn't exist
+$logs_dir = __DIR__ . '/test-logs';
+if ( ! file_exists( $logs_dir ) ) {
+	mkdir( $logs_dir, 0777, true );
+}
+
+// Output file for logs
+$output_file = $logs_dir . '/review_process_' . date( 'Ymd_His' ) . '.log';
+
+// Check if Reviews directory and ReviewManager.php exist
+$review_manager_path = __DIR__ . '/src/Reviews/ReviewManager.php';
+if ( ! file_exists( $review_manager_path ) ) {
+	echo "❌ Error: ReviewManager.php not found at: {$review_manager_path}\n";
+	echo "Creating the directory structure and fixing paths...\n";
+	
+	// Create the src/Reviews directory if it doesn't exist
+	$reviews_dir = __DIR__ . '/src/Reviews';
+	if ( ! file_exists( $reviews_dir ) ) {
+		mkdir( $reviews_dir, 0777, true );
+		echo "Created Reviews directory at: {$reviews_dir}\n";
+	}
+}
+
+// Start output buffering
+ob_start();
+
+echo "=== US-TH-002 Review Process Driver ===\n";
+echo 'Started at: ' . date( 'Y-m-d H:i:s' ) . "\n";
+echo 'Working directory: ' . __DIR__ . "\n\n";
+
+// Create ReviewManager instance
+$reviewManager = new \AustinShows\Reviews\ReviewManager( USER_STORY_ID );
+
+// Get current review status
+$status = $reviewManager->getStatus();
+echo "Current Review Status:\n";
+echo '- Designer: ' . $status['ai_stakeholder_reviews'][ DESIGNER ]['status'] . "\n";
+echo '- Marketing Director: ' . $status['ai_stakeholder_reviews'][ MARKETING_DIRECTOR ]['status'] . "\n";
+echo '- User: ' . $status['user_feedback']['status'] . "\n";
+echo '- Iterations: ' . $status['user_feedback']['iterations'] . "\n\n";
+
+// Check if review process is already complete
+if ( $reviewManager->isReviewComplete() ) {
+	echo '✅ Review process is already complete for ' . USER_STORY_ID . ".\n";
+	echo "No further actions needed.\n";
+	exit( 0 );
+}
+
+// Get the requested step from command line arguments (default: check)
+$step = isset( $argv[1] ) ? $argv[1] : 'check';
+
+switch ( $step ) {
+	case 'check':
+		// Just show the current status (already done above)
+		echo "Use one of the following commands to proceed:\n";
+		echo "- php drive-reviews.php stakeholder-designer : Trigger Designer review\n";
+		echo "- php drive-reviews.php stakeholder-marketing : Trigger Marketing Director review\n";
+		echo "- php drive-reviews.php user : Trigger User review (requires completed stakeholder reviews)\n";
+		echo "- php drive-reviews.php reset : Reset all review statuses to pending\n";
+		echo "- php drive-reviews.php hybrid : Run the hybrid AI-assisted review process\n";
+		break;
+
+	case 'stakeholder-designer':
+		// Trigger Designer review
+		if ( $status['ai_stakeholder_reviews'][ DESIGNER ]['status'] === 'approved' ) {
+			echo "Designer review is already approved.\n";
+			break;
+		}
+
+		echo "Triggering Designer review process...\n";
+		$reviewManager->updateStakeholderStatus( DESIGNER, 'in_progress' );
+
+		echo "Instructions for Designer (DES):\n";
+		echo "1. Start a local WordPress environment\n";
+		echo "2. Navigate to the theme templates in a browser\n";
+		echo "3. Take screenshots of the implementation:\n";
+		echo "   - Single event template (desktop and mobile)\n";
+		echo "   - Event archive template (desktop and mobile)\n";
+		echo '4. Save screenshots to docs/user-stories/sprint-3/' . USER_STORY_ID . "/screenshots/\n";
+		echo '5. Update your review in docs/user-stories/sprint-3/' . USER_STORY_ID . "/reviews/stakeholder/designer-review.md\n";
+		echo "   Be sure to include:\n";
+		echo "   - Visual Evidence section with screenshot references\n";
+		echo "   - Code Examination Log with file paths and line numbers\n";
+		echo "   - Validation Methodology description\n";
+		echo "   - Human Validation confirmation\n";
+		echo "   - Approval Decision\n";
+		echo "6. Once review is complete, run:\n";
+		echo "   php drive-reviews.php designer-approve\n";
+		echo "   OR if changes are needed:\n";
+		echo "   php drive-reviews.php designer-reject\n";
+		break;
+
+	case 'stakeholder-marketing':
+		// Trigger Marketing Director review
+		if ( $status['ai_stakeholder_reviews'][ MARKETING_DIRECTOR ]['status'] === 'approved' ) {
+			echo "Marketing Director review is already approved.\n";
+			break;
+		}
+
+		echo "Triggering Marketing Director review process...\n";
+		$reviewManager->updateStakeholderStatus( MARKETING_DIRECTOR, 'in_progress' );
+
+		echo "Instructions for Marketing Director (MD):\n";
+		echo "1. Start a local WordPress environment\n";
+		echo "2. Navigate to the theme templates in a browser\n";
+		echo "3. Take screenshots of the implementation:\n";
+		echo "   - Single event template (desktop and mobile)\n";
+		echo "   - Event archive template (desktop and mobile)\n";
+		echo '4. Save screenshots to docs/user-stories/sprint-3/' . USER_STORY_ID . "/screenshots/\n";
+		echo '5. Update your review in docs/user-stories/sprint-3/' . USER_STORY_ID . "/reviews/stakeholder/marketing-director-review.md\n";
+		echo "   Be sure to include:\n";
+		echo "   - Visual Evidence section with screenshot references\n";
+		echo "   - Code Examination Log with file paths and line numbers\n";
+		echo "   - Validation Methodology description\n";
+		echo "   - Human Validation confirmation\n";
+		echo "   - Approval Decision\n";
+		echo "6. Once review is complete, run:\n";
+		echo "   php drive-reviews.php marketing-approve\n";
+		echo "   OR if changes are needed:\n";
+		echo "   php drive-reviews.php marketing-reject\n";
+		break;
+
+	case 'designer-approve':
+		// Approve Designer review
+		echo "Updating Designer review status to approved...\n";
+		$reviewManager->updateStakeholderStatus( DESIGNER, 'approved' );
+		echo "✅ Designer review has been approved.\n";
+
+		// Check if all stakeholders are approved
+		if ( $reviewManager->isStakeholderReviewComplete() ) {
+			echo "✅ All stakeholder reviews are now complete.\n";
+			echo "Now ready for user review. Run:\n";
+			echo "php drive-reviews.php user\n";
+		} else {
+			echo "Waiting for other stakeholder reviews to complete.\n";
+		}
+		break;
+
+	case 'designer-reject':
+		// Reject Designer review
+		echo "Updating Designer review status to rejected...\n";
+		$reviewManager->updateStakeholderStatus( DESIGNER, 'rejected' );
+		echo "❌ Designer review has been rejected.\n";
+		echo "Please make necessary changes to the implementation based on feedback and then re-request review.\n";
+		break;
+
+	case 'marketing-approve':
+		// Approve Marketing Director review
+		echo "Updating Marketing Director review status to approved...\n";
+		$reviewManager->updateStakeholderStatus( MARKETING_DIRECTOR, 'approved' );
+		echo "✅ Marketing Director review has been approved.\n";
+
+		// Check if all stakeholders are approved
+		if ( $reviewManager->isStakeholderReviewComplete() ) {
+			echo "✅ All stakeholder reviews are now complete.\n";
+			echo "Now ready for user review. Run:\n";
+			echo "php drive-reviews.php user\n";
+		} else {
+			echo "Waiting for other stakeholder reviews to complete.\n";
+		}
+		break;
+
+	case 'marketing-reject':
+		// Reject Marketing Director review
+		echo "Updating Marketing Director review status to rejected...\n";
+		$reviewManager->updateStakeholderStatus( MARKETING_DIRECTOR, 'rejected' );
+		echo "❌ Marketing Director review has been rejected.\n";
+		echo "Please make necessary changes to the implementation based on feedback and then re-request review.\n";
+		break;
+
+	case 'user':
+		// Trigger User review
+		if ( ! $reviewManager->isStakeholderReviewComplete() ) {
+			echo "❌ Cannot trigger user review until all stakeholder reviews are approved.\n";
+			echo "Current stakeholder review status:\n";
+			echo '- Designer: ' . $status['ai_stakeholder_reviews'][ DESIGNER ]['status'] . "\n";
+			echo '- Marketing Director: ' . $status['ai_stakeholder_reviews'][ MARKETING_DIRECTOR ]['status'] . "\n";
+			echo "Please complete stakeholder reviews first.\n";
+			break;
+		}
+
+		if ( $status['user_feedback']['status'] === 'approved' ) {
+			echo "User review is already approved.\n";
+			break;
+		}
+
+		echo "Triggering User review process...\n";
+		$reviewManager->updateUserStatus( 'in_progress' );
+
+		echo "Instructions for User:\n";
+		echo "1. Start a local WordPress environment\n";
+		echo "2. Navigate to the theme templates in a browser\n";
+		echo "3. Verify the implementation meets all requirements\n";
+		echo "4. Verify the screenshots match the actual implementation\n";
+		echo "5. Verify stakeholder reviews are based on actual evidence\n";
+		echo '6. Update your review in docs/user-stories/sprint-3/' . USER_STORY_ID . "/reviews/user/user-review.md\n";
+		echo "   Be sure to include:\n";
+		echo "   - Validation of stakeholder reviews\n";
+		echo "   - Your feedback on the implementation\n";
+		echo "   - Approval Decision\n";
+		echo "7. Once review is complete, run:\n";
+		echo "   php drive-reviews.php user-approve\n";
+		echo "   OR if changes are needed:\n";
+		echo "   php drive-reviews.php user-reject\n";
+		break;
+
+	case 'user-approve':
+		// Approve User review
+		echo "Updating User review status to approved...\n";
+		$reviewManager->updateUserStatus( 'approved' );
+		echo "✅ User review has been approved.\n";
+		echo '✅ Review process is now complete for ' . USER_STORY_ID . ".\n";
+		echo "Running the Behat tests should now pass successfully.\n";
+		break;
+
+	case 'user-reject':
+		// Reject User review
+		echo "Updating User review status to rejected...\n";
+		$reviewManager->updateUserStatus( 'rejected' );
+		echo "❌ User review has been rejected.\n";
+		echo "Please make necessary changes to the implementation based on feedback.\n";
+		echo "After implementation changes, you need to:\n";
+		echo "1. Reset stakeholder review statuses: php drive-reviews.php reset-stakeholders\n";
+		echo "2. Re-trigger stakeholder reviews\n";
+		break;
+
+	case 'reset':
+		// Reset all review statuses
+		echo "Resetting all review statuses to pending...\n";
+
+		$status['ai_stakeholder_reviews'][ DESIGNER ]['status']    = 'pending';
+		$status['ai_stakeholder_reviews'][ DESIGNER ]['timestamp'] = null;
+
+		$status['ai_stakeholder_reviews'][ MARKETING_DIRECTOR ]['status']    = 'pending';
+		$status['ai_stakeholder_reviews'][ MARKETING_DIRECTOR ]['timestamp'] = null;
+
+		$status['user_feedback']['status']    = 'pending';
+		$status['user_feedback']['timestamp'] = null;
+
+		$reviewManager->saveStatus( $status );
+		echo "✅ All review statuses have been reset to pending.\n";
+		break;
+
+	case 'reset-stakeholders':
+		// Reset only stakeholder review statuses
+		echo "Resetting stakeholder review statuses to pending...\n";
+
+		$status['ai_stakeholder_reviews'][ DESIGNER ]['status']    = 'pending';
+		$status['ai_stakeholder_reviews'][ DESIGNER ]['timestamp'] = null;
+
+		$status['ai_stakeholder_reviews'][ MARKETING_DIRECTOR ]['status']    = 'pending';
+		$status['ai_stakeholder_reviews'][ MARKETING_DIRECTOR ]['timestamp'] = null;
+
+		$reviewManager->saveStatus( $status );
+		echo "✅ Stakeholder review statuses have been reset to pending.\n";
+		break;
+
+	case 'new-iteration':
+		// Create new iteration for reviews
+		echo "Creating new review iteration...\n";
+		$reviewManager->createNewIteration();
+		echo '✅ New review iteration created. Iteration count: ' . ( $status['user_feedback']['iterations'] + 1 ) . "\n";
+		break;
+
+	case 'hybrid':
+		// Trigger the hybrid review process
+		echo "Starting hybrid AI-assisted review process...\n";
+		$output = shell_exec( 'bash ' . __DIR__ . '/generate-hybrid-reviews.sh 2>&1' );
+		echo $output;
+		break;
+
+	default:
+		echo "❌ Unknown command: $step\n";
+		echo "Available commands:\n";
+		echo "- php drive-reviews.php check : Show current status\n";
+		echo "- php drive-reviews.php stakeholder-designer : Trigger Designer review\n";
+		echo "- php drive-reviews.php stakeholder-marketing : Trigger Marketing Director review\n";
+		echo "- php drive-reviews.php designer-approve : Approve Designer review\n";
+		echo "- php drive-reviews.php designer-reject : Reject Designer review\n";
+		echo "- php drive-reviews.php marketing-approve : Approve Marketing Director review\n";
+		echo "- php drive-reviews.php marketing-reject : Reject Marketing Director review\n";
+		echo "- php drive-reviews.php user : Trigger User review\n";
+		echo "- php drive-reviews.php user-approve : Approve User review\n";
+		echo "- php drive-reviews.php user-reject : Reject User review\n";
+		echo "- php drive-reviews.php reset : Reset all review statuses\n";
+		echo "- php drive-reviews.php reset-stakeholders : Reset only stakeholder statuses\n";
+		echo "- php drive-reviews.php new-iteration : Create new review iteration\n";
+		echo "- php drive-reviews.php hybrid : Run the hybrid AI-assisted review process\n";
+}
+
+echo "\n=== Process completed at: " . date( 'Y-m-d H:i:s' ) . " ===\n";
+
+// Capture output and save to file
+$output = ob_get_clean();
+echo $output;
+file_put_contents( $output_file, $output );

@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Canva Workshop Mexico",
+    "subject": "",
+    "body": "Hi {first_name},\n\nI just wrote the book, Canva For Dummies, and wanted to share a special event I'm hosting just for residents of Mexico. I'm hosting a live 2-day Canva training on March 6-7 where I'll teach how to make money using Canva—selling templates, working with international clients, and using Canva for business.\n\nIf you're interested, you can check out more details here: \nhttps://jessestay.com/makemoneyoncanvamexico\n\nLet me know if you have any questions!",
+    "tags": ["mexico", "canva", "workshop"]
+  },
+  {
+    "name": "Design Professional Outreach",
+    "subject": "",
+    "body": "Hello {first_name},\n\nI noticed your background in {title} and wanted to reach out. I recently authored Canva For Dummies and am hosting a specialized 2-day workshop for Mexico-based professionals on March 6-7.\n\nThe focus will be on monetizing Canva skills through template sales, international client work, and business applications.\n\nDetails are available at: https://jessestay.com/makemoneyoncanvamexico\n\nWould this be relevant to your work?",
+    "tags": ["design", "professional", "mexico"]
+  }
+] 

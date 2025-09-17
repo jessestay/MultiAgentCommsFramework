@@ -1,0 +1,14 @@
+{
+  "id": "weekly_report",
+  "type": "scheduled",
+  "source_role": "ES",
+  "target_role": "MD",
+  "message_template": "Please provide the weekly marketing report.",
+  "schedule": {
+    "type": "weekly",
+    "value": "Monday 09:00"
+  },
+  "active": true,
+  "created_at": "2025-03-05T23:21:44.612394",
+  "last_executed": null
+}

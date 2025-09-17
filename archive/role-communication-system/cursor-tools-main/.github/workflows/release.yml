@@ -1,0 +1,160 @@
+name: Release
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Setup pnpm
+        run: pnpm setup
+
+      - name: Configure PATH
+        run: echo "C:\\Users\\runneradmin\\AppData\\Local\\pnpm" >> $env:GITHUB_PATH
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Setup Windows build tools
+        shell: powershell
+        run: |
+          pnpm config set msvs_version 2022 --location project
+          pnpm config set python ${{ env.pythonLocation }} --location project
+
+      - name: Install and build
+        env:
+          PNPM_CONFIG_BUILD_FROM_SOURCE: true
+          PYTHON: ${{ env.pythonLocation }}
+          PNPM_CONFIG_MSVS_VERSION: 2022
+          BETTER_SQLITE3_BINARY: false
+        run: |
+          pnpm install --frozen-lockfile
+          cd apps/electron-app
+          pnpm electron-builder install-app-deps
+          pnpm build:win --publish never
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: apps/electron-app/dist/*.exe
+          retention-days: 30
+
+  release-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Setup pnpm
+        run: pnpm setup
+
+      - name: Configure PATH
+        run: echo "/Users/runner/Library/pnpm" >> $GITHUB_PATH
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install Python dependencies
+        run: |
+          python -m ensurepip --upgrade
+          python -m pip install --upgrade pip setuptools wheel
+
+      - name: Install and build
+        env:
+          npm_config_build_from_source: true
+          PYTHON: ${{ env.pythonLocation }}
+          BETTER_SQLITE3_BINARY: false
+        run: |
+          pnpm install --frozen-lockfile
+          cd apps/electron-app
+          pnpm electron-builder install-app-deps
+          pnpm build:mac --publish never
+
+      - name: Upload macOS Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: apps/electron-app/dist/*.dmg
+          retention-days: 30
+
+  create-release:
+    needs: [release-windows, release-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            windows-artifacts/*
+            macos-artifacts/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          discussion-category: "Announcements"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
