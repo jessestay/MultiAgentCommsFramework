@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "n8n": {
-      "command": "./node_modules/.bin/n8n-mcp",
+            "command": "n8n-mcp",
       "args": [],
       "env": {
         "NODE_ENV": "production",
