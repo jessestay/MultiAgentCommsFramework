@@ -1,0 +1,220 @@
+---
+alwaysApply: false
+---
+
+# N8N Workflow Debugging Protocol [MANDATORY]
+
+## Overview
+This rule defines the mandatory debugging approach for N8N workflows, emphasizing execution-based testing over static validation.
+
+## Core Principle: Test by Execution [CRITICAL]
+
+When debugging N8N workflow issues, SET MUST:
+1. **Execute the workflow** after making changes (in n8n UI)
+2. **Fetch execution data** using MCP tools
+3. **Analyze actual runData** to see what really happened
+4. **Verify the fix** before reporting success
+
+**Static validation is supplementary, not sufficient.**
+
+## Mandatory Debugging Steps
+
+### Step 1: Make the Fix
+Use `mcp_n8n_n8n_update_partial_workflow` or similar to apply changes.
+
+### Step 2: Run the Workflow
+Execute the workflow in n8n UI (manually or via evaluation trigger).
+
+### Step 3: Fetch Execution Data [REQUIRED]
+```javascript
+// Get the latest execution
+const executions = await mcp_n8n_n8n_list_executions({
+  workflowId: 'xxx',
+  limit: 1
+});
+
+// Get detailed execution data
+const detail = await mcp_n8n_n8n_get_execution({
+  id: executions.data[0].id,
+  includeData: true
+});
+```
+
+### Step 4: Analyze runData [REQUIRED]
+Check:
+- Which nodes executed: `Object.keys(detail.data.resultData.runData)`
+- Where execution stopped: `detail.data.resultData.lastNodeExecuted`
+- Node outputs: `runData[nodeName][0].data.main`
+- Waiting nodes: `detail.data.executionData.waitingExecution`
+- Error details: `detail.data.resultData.error`
+
+### Step 5: Verify Expected Behavior
+Confirm:
+- Expected nodes executed
+- Data flowed correctly between nodes
+- No nodes waiting indefinitely
+- No empty objects or null values where data expected
+
+### Step 6: Iterate if Needed
+If execution data shows issues:
+- Identify the root cause from actual behavior
+- Make a new fix targeting the real problem
+- Repeat from Step 1
+
+## Common N8N Issues and Solutions
+
+### Issue 1: "Cannot read properties of null (reading 'name')"
+
+**Possible causes:**
+1. Ghost connections to non-existent nodes
+2. Missing `operator.name` field in IF node conditions
+3. Null node in execution stack
+
+**Diagnosis via execution data:**
+```javascript
+// Check for ghost connections
+const waitingNodes = detail.data.executionData.waitingExecution;
+// Look for null entries in node references
+
+// Check node execution stack
+const stack = detail.data.executionData.nodeExecutionStack;
+// Look for { "node": null } entries
+```
+
+**Fix:**
+- Remove ghost connections
+- Add missing operator.name fields
+- Verify all connections point to existing nodes
+
+### Issue 2: IF Nodes Routing Incorrectly
+
+**Symptom:** Node outputs on wrong branch or outputs empty objects
+
+**Diagnosis:**
+```javascript
+// Check what data went INTO the IF node
+const previousNode = runData['Previous Node'][0].data.main[0][0].json;
+console.log('Input data:', previousNode);
+
+// Check which branch executed
+const ifOutput = runData['IF Node'][0].data.main;
+console.log('TRUE branch items:', ifOutput[0].length);
+console.log('FALSE branch items:', ifOutput[1].length);
+```
+
+**Common causes:**
+- Condition checking wrong field (e.g., `is_unit_test` doesn't exist on pipeline tests)
+- Using "exists" operator when you mean "equals"
+- Test data missing expected fields
+
+**Fix:**
+- Change conditions to check explicit values, not existence
+- Example: `test_type === "unit"` instead of `is_unit_test exists`
+
+### Issue 3: Merge Nodes Blocking Indefinitely
+
+**Symptom:** Merge node in `waitingExecution` with null inputs
+
+**Diagnosis:**
+```javascript
+const waiting = detail.data.executionData.waitingExecution['Merge Node'];
+console.log('Input 0:', waiting[0].main[0] === null ? 'NULL' : 'has data');
+console.log('Input 1:', waiting[0].main[1] === null ? 'NULL' : 'has data');
+```
+
+**Fix:**
+- Set merge node to `mode: "append"` to not wait for all inputs
+- Verify connections to merge node inputs are correct
+- Check that mode parameter persists across workflow updates
+
+### Issue 4: Empty Objects in Node Output
+
+**Symptom:** Node outputs `[{"json": {}}]`
+
+**Common causes:**
+- Function node not populating fields
+- Test data missing required structure
+- Mock data doesn't match expected format
+
+**Fix:**
+- Trace backwards to see where data was lost
+- Verify function node logic
+- Check test data structure matches production data
+
+## N8N-Specific Quirks
+
+### Expression Limitations
+**Not Supported:**
+- Optional chaining: `?.`
+- Nullish coalescing: `??`
+
+**Use instead:**
+- `exists` / `notExists` operators
+- Explicit value checks with `equals`
+
+### TypeVersion Issues
+Always use latest typeVersions:
+- IF nodes: `2.2`
+- Merge nodes: `3.2`
+- HTTP Request: `4.2`
+- Google Sheets: `4.7`
+
+Older versions may have bugs or missing features.
+
+### Merge Mode Persistence
+The `mode: "append"` parameter on merge nodes can be lost when updating other node properties. Always verify merge modes after workflow updates.
+
+## MCP Tools for Debugging
+
+### Primary Tools
+- `mcp_n8n_n8n_list_executions`: Get recent workflow runs
+- `mcp_n8n_n8n_get_execution`: Get detailed execution data with runData
+- `mcp_n8n_n8n_get_workflow`: Get current workflow configuration
+- `mcp_n8n_n8n_validate_workflow`: Catch structural issues (supplement only)
+
+### Debugging Sequence
+```javascript
+// 1. Get latest execution ID
+const execList = await mcp_n8n_n8n_list_executions({ workflowId: 'xxx', limit: 1 });
+const execId = execList.data[0].id;
+
+// 2. Get execution details
+const exec = await mcp_n8n_n8n_get_execution({ id: execId, includeData: true });
+
+// 3. Analyze runData
+const runData = exec.data.resultData.runData;
+const lastNode = exec.data.resultData.lastNodeExecuted;
+const waiting = exec.data.executionData.waitingExecution;
+
+// 4. Trace the issue
+console.log('Last node executed:', lastNode);
+console.log('Nodes waiting:', Object.keys(waiting));
+// Examine specific node data...
+```
+
+## Role Responsibilities
+
+**Software Engineering Team (SET)** [MANDATORY]:
+- Execute workflows after EVERY change
+- Fetch execution data using MCP tools
+- Analyze runData before declaring fix complete
+- Verify fixes by examining actual execution behavior
+- Document findings in troubleshooting logs
+- **Check your work** by running tests, not just validating
+
+**Executive Secretary (ES)**:
+- Ensure SET follows this execution-based protocol
+- Track debugging progress and issue resolution
+- Coordinate testing verification
+
+## Enforcement
+
+This protocol is **MANDATORY**. 
+
+**Every N8N workflow fix MUST be verified by:**
+1. Executing the workflow
+2. Fetching execution data via MCP
+3. Analyzing runData to confirm expected behavior
+4. NOT just running validation tools
+
+**Validation tools are supplementary diagnostics, not verification.**

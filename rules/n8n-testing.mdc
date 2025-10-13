@@ -1,0 +1,149 @@
+# N8N Workflow Testing Requirements [MANDATORY]
+
+## Overview
+
+All N8N workflow modifications require testing before deployment. This rule defines the testing protocol for N8N workflows.
+
+## Pre-Commit Testing Requirements
+
+### 1. Local Test Execution [REQUIRED]
+
+Before committing ANY changes to N8N workflows, you MUST:
+
+```bash
+# Run the complete test suite
+./scripts/test/run-n8n-tests.sh
+```
+
+**All tests MUST pass before committing.**
+
+### 2. Test Coverage Requirements
+
+Each workflow modification must have corresponding tests:
+
+- **Logic changes** → Update test validation functions
+- **Scoring changes** → Update expected results in test fixtures
+- **New features** → Add new test cases
+- **Bug fixes** → Add regression test case
+
+### 3. Test Fixture Management
+
+When modifying workflows:
+
+1. Check if test fixtures need updating
+2. Update `test-fixtures/` with new test cases
+3. Document new test scenarios in comments
+4. Validate test data is realistic
+
+## Test Workflow Development
+
+### Creating New Test Workflows
+
+For each production workflow, create a corresponding test workflow:
+
+**Required Components**:
+1. Test Webhook Trigger (`/webhook/test/{workflow-name}`)
+2. Mock External APIs (Function nodes returning test data)
+3. Validation Logic (Function nodes checking expected vs actual)
+4. Results Logging (Google Sheets for test history)
+5. Response Handler (Return results to caller)
+
+**Template**: See `docs/technical/N8N-Test-Workflow-Template.md`
+
+### Test Workflow Naming Convention
+
+- Production: `{Workflow Name}`
+- Test: `Test: {Workflow Name}`
+
+Examples:
+- Production: `Top-of-Funnel Collector`
+- Test: `Test: Top-of-Funnel Collector`
+
+## Testing Checklist
+
+Before marking a workflow change as complete:
+
+- [ ] Test workflow created/updated
+- [ ] Test fixtures updated with new scenarios
+- [ ] All tests pass locally (`./scripts/test/run-n8n-tests.sh`)
+- [ ] Test results logged to Google Sheets
+- [ ] Documentation updated (`docs/technical/N8N-Testing-Strategy.md`)
+- [ ] Edge cases covered (empty data, null values, errors)
+
+## Automated Testing Schedule
+
+The Master Test Controller workflow runs automatically:
+
+- **Frequency**: Every 6 hours
+- **Action on failure**: Email alert to admin
+- **Monitoring**: Google Sheets dashboard
+
+## Test Failure Protocol
+
+When tests fail:
+
+1. **Identify** - Which test case failed and why
+2. **Reproduce** - Run the specific test locally
+3. **Fix** - Correct the workflow logic or test expectation
+4. **Verify** - Re-run all tests to ensure no regressions
+5. **Document** - Update test fixtures and documentation
+
+## Cursor IDE Integration
+
+### Quick Test Commands
+
+```bash
+# Run all tests
+./scripts/test/run-n8n-tests.sh
+
+# Test specific workflow (when individual test webhooks exist)
+curl -X POST http://localhost:5678/webhook/test/top-of-funnel \
+  -H "Content-Type: application/json" \
+  -d @test-fixtures/top-of-funnel-test.json | jq
+
+# Check test results in Google Sheets
+# Open: https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit#gid={TEST_RESULTS_TAB}
+```
+
+### SET Role Responsibilities
+
+When modifying N8N workflows, SET MUST:
+
+1. Update corresponding test workflows
+2. Run full test suite before committing
+3. Fix any failing tests
+4. Update test fixtures if needed
+5. Document test coverage for new features
+
+### ES Role Responsibilities
+
+When coordinating N8N workflow changes, ES MUST:
+
+1. Verify SET has run tests before approval
+2. Check test results in Google Sheets dashboard
+3. Ensure test coverage is adequate
+4. Track test failures and resolutions
+
+## Test Documentation
+
+All testing documentation resides in:
+
+- **Strategy**: `docs/technical/N8N-Testing-Strategy.md`
+- **Templates**: `docs/technical/N8N-Test-Workflow-Template.md`
+- **Fixtures**: `test-fixtures/*.json`
+- **Results**: `test-results/*.json` (local), Google Sheets (persistent)
+
+## Enforcement Priority
+
+This rule has **HIGH** priority and must be followed for all workflow modifications. Tests are not optional.
+
+## Exception Process
+
+If tests cannot be run (e.g., N8N service down):
+
+1. Document the exception reason
+2. Create a technical debt story for testing
+3. Run tests as soon as service is available
+4. Do NOT commit to main without tests passing
+
+**No exceptions for production deployments.**
