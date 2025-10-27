@@ -50,19 +50,31 @@ This rule defines the **MANDATORY** standard testing pattern for workflows conta
 
 When encountering workflows with evaluation triggers:
 
-1. **DO NOT attempt to trigger them via webhook** - they're not webhooks
-2. **DO manually execute them** by clicking "Execute" button on the node in the N8N UI
-3. **Use browser automation or direct UI interaction** to click the "Execute" button on the evaluation trigger node
-4. **Wait for execution to complete** (usually 30-60 seconds)
-5. **Verify results automatically** by having the "Set Evaluation Outputs" node write back to the sheet
-6. **Read results back** from the Google Sheet to compare actual vs expected
-7. **Compare and report** on test success/failure status
+1. **Chat Trigger Pattern via MCP [PREFERRED]**:
+   - If a "When chat message received" node exists and is connected to the evaluation trigger, use MCP to trigger it
+   - This allows programmatic execution via MCP without manual UI interaction or browser automation
+   - The chat trigger will automatically execute the connected evaluation trigger
+   - DO NOT attempt to access the evaluation trigger via webhook or API - it must be executed through its connected trigger node
+   - Note: SSRF protection may block localhost webhook access via MCP
+
+2. **Manual Execution [FALLBACK when browser access is available]**:
+   - DO NOT attempt to trigger them via webhook - they're not webhooks
+   - DO manually execute them by clicking "Execute" button on the node in the N8N UI
+   - Use browser automation or direct UI interaction to click the "Execute" button on the evaluation trigger node
+   - Note: Browser automation is not available in headless environments
+
+3. **Execution Follow-up**:
+   - Wait for execution to complete (usually 30-60 seconds)
+   - Verify results automatically by having the "Set Evaluation Outputs" node write back to the sheet
+   - Read results back from the Google Sheet to compare actual vs expected
+   - Compare and report on test success/failure status
 
 ## Workflow-Specific Details
 
 ### Top-of-Funnel Collector Workflow:
 
 - **Evaluation Trigger Node**: "When fetching a dataset row" (ID: `d0f133dd-f53e-45e0-aad1-cc05ad04532b`)
+- **Chat Trigger Node**: "When chat message received" (ID: `chat-trigger-eval-001`) - Connected to evaluation trigger
 - **Google Sheet**: "Rockit N8N Test Cases" (ID: `1FUovmWGxano2d7JCb0Keejf7k0rzMjeqXrU3reuXP20`)
 - **Worksheet**: "Pipeline Tests"
 - **Results Node**: "Set Evaluation Outputs" (ID: `eval-set-outputs-tof-003`)
@@ -80,24 +92,46 @@ The "Pipeline Tests" worksheet contains:
 
 When testing via MCP:
 
-1. **Use browser automation** to navigate to the workflow in N8N UI
-2. **Use browser automation** to click "Execute" on the evaluation trigger node
-3. **Wait for execution to complete** (check execution status via API or UI)
-4. **Capture the execution ID** for later reference
-5. **Use helper workflow or direct API access** to read test results from Google Sheet
-6. **Compare actual vs expected** values to determine pass/fail status
-7. **Report findings** to the user with detailed comparison
+1. **Identify the Chat Trigger Node**:
+   - Check if a "When chat message received" node exists in the workflow
+   - Verify it's connected to the evaluation trigger
+   - Note the webhook path or trigger configuration
 
-## Browser Automation Steps [DETAILED]
+2. **Attempt to Trigger via MCP** (may be blocked by SSRF protection):
+   - Use `mcp_n8n_n8n_trigger_webhook_workflow` with the chat trigger's webhook URL
+   - If blocked by SSRF protection, note that localhost access is restricted
 
-To execute an evaluation trigger via browser automation:
+3. **Alternative Execution Method**:
+   - The evaluation trigger can be executed manually in the N8N UI by clicking "Execute"
+   - This is the primary method when MCP webhook triggering is blocked
 
-1. Navigate to the N8N workflow: `http://localhost:5678/workflow/4uqeR9rVn6e2ione`
-2. Locate the "When fetching a dataset row" node on the canvas
-3. Click on the node to select it
-4. Click the "Execute" button (or press spacebar)
-5. Wait for the execution to complete (monitor the progress indicator)
-6. Verify execution succeeded by checking for completion status
+4. **Wait for Execution to Complete**:
+   - Check execution status via `mcp_n8n_n8n_list_executions` or `mcp_n8n_n8n_get_execution`
+   - Capture the execution ID for later reference
+
+5. **Read Test Results**:
+   - Use helper workflow or direct API access to read test results from Google Sheet
+   - Compare actual vs expected values to determine pass/fail status
+   - Report findings with detailed comparison
+
+## Chat Trigger via MCP Pattern [NEW - CRITICAL]
+
+**IMPORTANT**: Evaluation triggers cannot be executed directly via N8N API or webhooks. They require one of the following patterns:
+
+1. **Chat Trigger Pattern [RECOMMENDED]**:
+   - Add a "When chat message received" node connected to the evaluation trigger
+   - This allows the evaluation trigger to be executed by triggering the chat node
+   - Use MCP to trigger the chat node via webhook if not blocked by SSRF
+   - If SSRF blocks localhost access, the chat trigger provides a path for future MCP integration
+
+2. **Manual Execution Pattern**:
+   - Click "Execute" on the evaluation trigger node in the N8N UI
+   - This is the standard method documented in N8N documentation
+   - Works without any additional infrastructure
+
+3. **Scheduled Execution Pattern**:
+   - Use a Schedule node to periodically execute the evaluation trigger
+   - Useful for automated testing on a schedule
 
 ## Retrieving Test Results [AUTOMATED]
 
@@ -142,7 +176,7 @@ After execution completes:
 
 ## Role Responsibilities [CRITICAL]
 
-- **SET**: MUST use this pattern when testing N8N workflows with evaluation triggers. MUST remember that evaluation triggers are manually executable, not webhook-based.
+- **SET**: MUST use this pattern when testing N8N workflows with evaluation triggers. MUST remember that evaluation triggers are manually executable, not webhook-based. MUST use Chat Trigger pattern via MCP when available, or manual execution when browser access is possible.
 - **ES**: MUST coordinate the testing process and ensure results are verified using this pattern.
 - **All Roles**: MUST follow this testing pattern when encountering similar evaluation triggers in ANY workflow.
 
@@ -158,172 +192,11 @@ This pattern is **MANDATORY** for all testing involving evaluation triggers in N
 
 **ANY TIME** you encounter an evaluation trigger node in an N8N workflow, you MUST:
 1. Remember that it can be manually executed
-2. Use browser automation or direct UI interaction to execute it
-3. Wait for the workflow to process
-4. Retrieve results from the Google Sheet
-5. Compare actual vs expected values
-6. Report test success/failure status
-
-This is a **STANDARD TESTING PATTERN** for N8N evaluation triggers.# N8N Evaluation Trigger Testing Pattern [CRITICAL]
-
-## Overview
-
-This rule defines the **MANDATORY** standard testing pattern for workflows containing N8N Evaluation Trigger nodes (e.g., "When fetching a dataset row" nodes). This pattern MUST be followed whenever testing workflows with evaluation triggers.
-
-## Key Concepts
-
-### Evaluation Triggers Are Manually Executable [CRITICAL]
-
-**CRITICAL**: Evaluation Trigger nodes CAN be manually executed by clicking "Execute" on them in the N8N UI. This is the STANDARD method for testing evaluation triggers.
-
-**HOW IT WORKS**:
-1. Click "Execute" on the evaluation trigger node
-2. The node reads test data from the configured Google Sheet
-3. The test data flows through the workflow automatically
-4. Each node processes the data in sequence
-5. The "Set Evaluation Outputs" node writes actual results back to the Google Sheet
-6. Results can be retrieved and compared against expected values
-
-### Standard Testing Flow [MANDATORY SEQUENCE]
-
-1. **Evaluation Trigger Execution**:
-   - Navigate to the N8N workflow containing the evaluation trigger
-   - Click "Execute" on the evaluation trigger node (e.g., "When fetching a dataset row")
-   - The node reads test data from the configured Google Sheet (e.g., "Pipeline Tests" worksheet)
-   - The test data automatically flows through the workflow
-
-2. **Workflow Processing**:
-   - The workflow processes the test data through all nodes in sequence
-   - Scoring, filtering, and transformation nodes operate on the test data
-   - Actual results are calculated at each processing node
-
-3. **Results Storage** (Automatic):
-   - The "Set Evaluation Outputs" node automatically writes actual results back to the Google Sheet
-   - Results are written to columns like `actual_score`, `actual_should_invite`, `actual_has_email`, `actual_username`
-   - The worksheet now contains both `expected_*` and `actual_*` values for comparison
-
-4. **Test Results Retrieval**:
-   - Use the "MCP Trigger for Top-of-Funnel Evaluation" workflow (or similar helper workflows) to read the Google Sheet
-   - Alternatively, use direct Google Sheets API access via Python scripts
-   - Compare `actual_*` vs `expected_*` values to determine if tests passed or failed
-   - Report on test success/failure status
-
-## Implementation Pattern [MANDATORY]
-
-When encountering workflows with evaluation triggers:
-
-1. **DO NOT attempt to trigger them via webhook** - they're not webhooks
-2. **DO manually execute them** by clicking "Execute" button on the node in the N8N UI
-3. **Use browser automation or direct UI interaction** to click the "Execute" button on the evaluation trigger node
-4. **Wait for execution to complete** (usually 30-60 seconds)
-5. **Verify results automatically** by having the "Set Evaluation Outputs" node write back to the sheet
-6. **Read results back** from the Google Sheet to compare actual vs expected
-7. **Compare and report** on test success/failure status
-
-## Workflow-Specific Details
-
-### Top-of-Funnel Collector Workflow:
-
-- **Evaluation Trigger Node**: "When fetching a dataset row" (ID: `d0f133dd-f53e-45e0-aad1-cc05ad04532b`)
-- **Google Sheet**: "Rockit N8N Test Cases" (ID: `1FUovmWGxano2d7JCb0Keejf7k0rzMjeqXrU3reuXP20`)
-- **Worksheet**: "Pipeline Tests"
-- **Results Node**: "Set Evaluation Outputs" (ID: `eval-set-outputs-tof-003`)
-- **Results Worksheet**: "Test Results"
-- **Helper Workflow**: "MCP Trigger for Top-of-Funnel Evaluation" (ID: `EQLs1AwW6ysQlT40`)
-
-### Google Sheets Structure:
-
-The "Pipeline Tests" worksheet contains:
-- Test metadata columns: `test_type`, `test_case`, `test_description`
-- Expected value columns: `expected_unified_score`, `expected_gate_by_score_output`, etc.
-- After execution: Actual value columns are written by "Set Evaluation Outputs" node
-
-## MCP Testing Protocol [WHEN USING MCP]
-
-When testing via MCP:
-
-1. **Use browser automation** to navigate to the workflow in N8N UI
-2. **Use browser automation** to click "Execute" on the evaluation trigger node
-3. **Wait for execution to complete** (check execution status via API or UI)
-4. **Capture the execution ID** for later reference
-5. **Use helper workflow or direct API access** to read test results from Google Sheet
-6. **Compare actual vs expected** values to determine pass/fail status
-7. **Report findings** to the user with detailed comparison
-
-## Browser Automation Steps [DETAILED]
-
-To execute an evaluation trigger via browser automation:
-
-1. Navigate to the N8N workflow: `http://localhost:5678/workflow/4uqeR9rVn6e2ione`
-2. Locate the "When fetching a dataset row" node on the canvas
-3. Click on the node to select it
-4. Click the "Execute" button (or press spacebar)
-5. Wait for the execution to complete (monitor the progress indicator)
-6. Verify execution succeeded by checking for completion status
-
-## Retrieving Test Results [AUTOMATED]
-
-After execution completes:
-
-1. **Read Google Sheet directly**:
-   ```python
-   import requests
-   
-   # Read from "Test Results" worksheet
-   sheet_id = "1FUovmWGxano2d7JCb0Keejf7k0rzMjeqXrU3reuXP20"
-   sheet_name = "Test Results"
-   url = f"https://sheets.googleapis.com/v4/spreadsheets/{sheet_id}/values/{sheet_name}!A:ZZ"
-   
-   # Use authenticated request
-   headers = {"Authorization": f"Bearer {api_token}"}
-   response = requests.get(url, headers=headers)
-   test_results = response.json()['values']
-   ```
-
-2. **Compare actual vs expected**:
-   - For each test case, compare `actual_score` vs `expected_unified_score`
-   - Verify `actual_should_invite` matches `expected_gate_by_score_output`
-   - Check `actual_has_email` matches expected value
-   - Validate `actual_username` matches expected
-
-## Example Test Execution Flow
-
-```
-1. User clicks "Execute" on "When fetching a dataset row"
-2. Node reads test data from "Pipeline Tests" worksheet
-3. Test data flows through:
-   → "Transform Test Data" (generates mock data)
-   → "Dedupe & Flag Platforms" (identifies platforms)
-   → "Unified Score" (calculates score)
-   → "Gate by Score" (filters by threshold)
-   → "Quality Score" (validates results)
-   → "Set Evaluation Outputs" (writes results back)
-4. Results are written to "Test Results" worksheet
-5. User reads results and compares actual vs expected
-```
-
-## Role Responsibilities [CRITICAL]
-
-- **SET**: MUST use this pattern when testing N8N workflows with evaluation triggers. MUST remember that evaluation triggers are manually executable, not webhook-based.
-- **ES**: MUST coordinate the testing process and ensure results are verified using this pattern.
-- **All Roles**: MUST follow this testing pattern when encountering similar evaluation triggers in ANY workflow.
-
-## Enforcement [NON-NEGOTIABLE]
-
-This pattern is **MANDATORY** for all testing involving evaluation triggers in N8N workflows. 
-
-**FAILURE TO FOLLOW THIS PATTERN** will result in:
-- Incorrect test execution methods
-- Inability to properly test workflows
-- Incorrect test results
-- Wasted development time
-
-**ANY TIME** you encounter an evaluation trigger node in an N8N workflow, you MUST:
-1. Remember that it can be manually executed
-2. Use browser automation or direct UI interaction to execute it
-3. Wait for the workflow to process
-4. Retrieve results from the Google Sheet
-5. Compare actual vs expected values
-6. Report test success/failure status
+2. Use Chat Trigger pattern via MCP when available (preferred)
+3. Use manual UI execution when browser access is available (fallback)
+4. Wait for the workflow to process
+5. Retrieve results from the Google Sheet
+6. Compare actual vs expected values
+7. Report test success/failure status
 
 This is a **STANDARD TESTING PATTERN** for N8N evaluation triggers.
