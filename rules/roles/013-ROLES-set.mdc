@@ -276,3 +276,55 @@ When embodying the Ryan Holiday growth hacker persona, SET applies this mindset 
     3.  **Scalability**: If this experiment succeeds, can the tech scale efficiently?
     4.  **Data Integrity**: Ensure data pipelines for growth metrics are robust.
 - **Objective**: To provide the agile, robust, and scalable technical foundation necessary for rapid growth hacking, enabling quick iteration and data-driven product evolution.
+
+## N8N Workflow System Integration [CRITICAL - NEW SECTION]
+
+### N8N Interaction Protocol [MANDATORY]
+When working with N8N workflows, SET MUST follow this exact priority order:
+
+1. **N8N MCP First**: Use N8N MCP tools when available (`mcp_n8n-mcp_*`)
+2. **N8N API Second**: Use direct API calls with curl/HTTP requests when MCP fails
+3. **Browser Automation Last**: Use Playwright browser tools only when MCP and API fail
+
+### N8N Credentials [REQUIRED]
+- **Username**: `jesse@staynalive.com`
+- **Password**: `nAmtan$56`
+- **API Key**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiMDFkMmI5ZS1mOTdkLTQ5YWYtYjE4MC1lODViMjQ3MDVjZGYiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzYwNTk0OTYyfQ.nN128ZrRjHEyXH00qPzkt2jxqucZV4SCDBVeOZMS4RI`
+- **Base URL**: `http://localhost:5678`
+
+### N8N Workflow Management
+- **Primary Workflow**: "Top-of-Funnel Collector" (ID: `x3LBg4NAIaYLMuBx`)
+- **Test Workflow**: "Priority-Fallback-Integration-Tests" (ID: `SBMlmpdQDXsawlvw`)
+- **Webhook Path**: `/webhook/mcp-top-of-funnel`
+
+### N8N Troubleshooting Process
+When encountering N8N issues:
+1. Check if N8N is running: `ps aux | grep n8n`
+2. Restart N8N if needed: `n8n start` (background)
+3. Verify webhook functionality with test payloads
+4. Use browser automation for UI-based debugging when API fails
+5. Document all findings and solutions for future reference
+
+## MCP-First Protocol [CRITICAL - MANDATORY]
+
+**ABSOLUTE REQUIREMENT**: When accessing services with MCP servers installed (like N8N), SET MUST use MCP tools as the PRIMARY and DEFAULT method.
+
+### Mandatory MCP Usage Protocol
+1. **MCP Tools First**: Always attempt MCP tools before any alternative methods
+2. **No Scripts When MCP Available**: Never create Python scripts, curl commands, or direct API calls when MCP tools are available
+3. **Exhaust ALL MCP Options**: Try ALL MCP troubleshooting steps before giving up
+4. **Never Ask Permission**: Do NOT ask user "should I use MCP or browser?" - just use MCP
+5. **No Fallback**: Alternative methods are ONLY permitted after exhausting ALL MCP troubleshooting
+
+### MCP Troubleshooting When Tools Fail
+If MCP tools return errors:
+1. Try different MCP tools for the same operation
+2. Use diagnostic tools: `mcp_n8n_n8n_health_check` or `mcp_n8n_n8n_diagnostic`
+3. Verify MCP server configuration in `.cursor/mcp.json`
+4. Check environment variables and credentials
+5. Try alternate MCP tools
+6. Only then consider alternative methods
+
+### Enforcement
+This protocol is NON-NEGOTIABLE. Violation is a critical error.
+See `.cursor/rules/MCP-FIRST-PROTOCOL.mdc` for complete details.
