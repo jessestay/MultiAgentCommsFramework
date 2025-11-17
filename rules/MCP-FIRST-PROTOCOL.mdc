@@ -47,88 +47,20 @@ Alternative methods (Python scripts, direct API calls, browser automation) are O
 - User **explicitly** requests alternative methods
 - MCP server is genuinely unavailable (after verification)
 
-## Role Responsibilities
+### 6. Single-Use Script Guidelines [NEW - CRITICAL]
+When creating temporary/single-use scripts:
+1. **PREFER one-liners**: Attempt to run code as a single command-line command whenever possible
+2. **Reuse temp files**: When a script file is necessary, ALWAYS reuse the same file based on language:
+   - Python: `temp.py`
+   - JavaScript: `temp.js`
+   - Shell: `temp.sh`
+   - Ruby: `temp.rb`
+   - Perl: `temp.pl`
+   - etc.
+3. **Never create unique temporary files**: Do NOT create files like `test_script.py`, `debug.py`, `temp_2.py`, etc.
+4. **Keep temp files clean**: Overwrite and reuse the same temp file to avoid project clutter
 
-### SET (Software Engineering Team) [PRIMARY ENFORCER]
-- **MUST** use MCP as the first method for ALL service interactions
-- **MUST** attempt ALL MCP troubleshooting steps before using alternatives
-- **MUST** document when and why alternative methods were used
-- **PROHIBITED** from creating API scripts when MCP is available
-- **PROHIBITED** from asking for permission to use MCP
-
-### ES (Executive Secretary) [COORDINATOR]
-- **MUST** verify that SET is attempting MCP first
-- **MUST** coordinate troubleshooting efforts
-- **MUST** document any MCP failures for future reference
-
-## Enforcement [ABSOLUTE]
-This protocol is **NON-NEGOTIABLE** and **CANNOT BE BYPASSED** unless:
-1. All MCP troubleshooting steps have been exhausted, AND
-2. The user explicitly requests alternative methods
-
-Violation of this protocol is considered a critical error and must be corrected immediately.
-
-## Examples of CORRECT Behavior
-
-✅ **CORRECT**: Using `mcp_n8n_n8n_get_workflow` to get workflow data  
-✅ **CORRECT**: Using `mcp_n8n_n8n_update_partial_workflow` to modify workflows  
-✅ **CORRECT**: Using `mcp_n8n_n8n_trigger_webhook_workflow` to trigger workflows  
-✅ **CORRECT**: Attempting multiple MCP tools before giving up  
-✅ **CORRECT**: Running diagnostics when MCP fails
-
-❌ **INCORRECT**: Creating Python scripts to access N8N API  
-❌ **INCORRECT**: Using curl commands when MCP is available  
-❌ **INCORRECT**: Using browser automation as first method  
-❌ **INCORRECT**: Asking user for permission to use MCP  
-❌ **INCORRECT**: Giving up on MCP without trying ALL troubleshooting steps
-
-## Related Rules
-- `.cursor/rules/300-PROJECT-n8n-evaluation-trigger-testing.mdc`: N8N evaluation trigger testing via MCP
-- `.cursor/rules/roles/013-ROLES-set.mdc`: SET role definition with MCP protocol
-# MCP-First Protocol [CRITICAL - NON-NEGOTIABLE]
-
-## Overview
-This rule defines the **MANDATORY** protocol for accessing services through Cursor IDE when MCP servers are installed. This protocol applies to ALL AI roles, with special emphasis on Software Engineering Team (SET).
-
-## Core Principle [ABSOLUTE]
-**ALWAYS use MCP as the PRIMARY and DEFAULT method for accessing any service that has an MCP server installed in Cursor IDE.**
-
-## Protocol Requirements [MANDATORY]
-
-### 1. MCP as First Priority [ALWAYS]
-- When attempting to access a service (e.g., N8N, Canva, etc.), **MCP tools MUST be the first method attempted**
-- Do NOT create Python scripts, curl commands, or direct API calls when MCP is available
-- Do NOT use browser automation when MCP is available
-- MCP is NOT a fallback—it is the PRIMARY method
-
-### 2. MCP Troubleshooting Protocol [MANDATORY]
-When MCP appears unavailable or returns errors:
-
-1. **Verify MCP Server Configuration**: Check `.cursor/mcp.json` for correct configuration
-2. **Test Multiple MCP Tools**: Try different MCP tools to determine scope of issue
-3. **Check MCP Server Status**: Use diagnostic tools like `mcp_n8n_n8n_health_check` or `mcp_n8n_n8n_diagnostic`
-4. **Restart MCP Server**: If possible, restart the MCP server service
-5. **Check Logs**: Look for MCP-related errors in Cursor IDE logs
-6. **Verify Environment**: Ensure environment variables and credentials are correct
-7. **Try Alternate MCP Tools**: Use different MCP tools for the same operation if one fails
-8. **LAST RESORT**: Only after exhausting ALL MCP troubleshooting options, use alternative methods
-
-### 3. Never Ask User for Permission [PROHIBITED]
-- Do NOT ask "Should I use MCP or the browser?"
-- Do NOT ask "Should I create a script or use MCP?"
-- Do NOT ask "Would you like me to try MCP?"
-- If the user says "use MCP", you must NEVER ask again—simply continue using MCP
-
-### 4. Services with MCP Servers
-Currently configured MCP servers (per `.cursor/mcp.json`):
-- **N8N**: `mcp_n8n-*` tools available
-- **Canva**: `canva-*` tools available
-
-### 5. Fallback Protocol [EXCEPTION]
-Alternative methods (Python scripts, direct API calls, browser automation) are ONLY permitted when:
-- **ALL** MCP troubleshooting steps have been exhausted
-- User **explicitly** requests alternative methods
-- MCP server is genuinely unavailable (after verification)
+This prevents future projects from being bogged down by many single-use scripts.
 
 ## Role Responsibilities
 
@@ -158,12 +90,16 @@ Violation of this protocol is considered a critical error and must be corrected 
 ✅ **CORRECT**: Using `mcp_n8n_n8n_trigger_webhook_workflow` to trigger workflows  
 ✅ **CORRECT**: Attempting multiple MCP tools before giving up  
 ✅ **CORRECT**: Running diagnostics when MCP fails
+✅ **CORRECT**: Creating `temp.py` and reusing it for all temporary Python scripts
+✅ **CORRECT**: Using one-line commands instead of script files when possible
 
 ❌ **INCORRECT**: Creating Python scripts to access N8N API  
 ❌ **INCORRECT**: Using curl commands when MCP is available  
 ❌ **INCORRECT**: Using browser automation as first method  
 ❌ **INCORRECT**: Asking user for permission to use MCP  
 ❌ **INCORRECT**: Giving up on MCP without trying ALL troubleshooting steps
+❌ **INCORRECT**: Creating uniquely named temporary scripts (`test_script.py`, `debug.py`, etc.)
+❌ **INCORRECT**: Creating multiple temp files when one could be reused
 
 ## Related Rules
 - `.cursor/rules/300-PROJECT-n8n-evaluation-trigger-testing.mdc`: N8N evaluation trigger testing via MCP

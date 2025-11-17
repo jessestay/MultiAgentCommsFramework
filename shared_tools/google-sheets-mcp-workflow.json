@@ -1,0 +1,153 @@
+{
+  "name": "Google Sheets MCP Server",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "sheets",
+        "authentication": "bearerAuth"
+      },
+      "id": "mcp-trigger-001",
+      "name": "MCP Server Trigger",
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [240, 320],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "1",
+          "name": "Google Sheets MCP Bearer Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "readGoogleSheet",
+        "description": "Read a specific range from a Google Sheet.",
+        "workflowId": "Til8l82bixXS5FGM",
+        "workflowInputs": {
+          "value": {
+            "sheetId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('sheetId', ``, 'string') }}",
+            "sheetName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('sheetName', `Sheet1`, 'string') }}",
+            "range": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('range', `A1:Z1000`, 'string') }}"
+          },
+          "schema": [
+            {
+              "id": "sheetId",
+              "type": "string",
+              "display": true,
+              "required": true,
+              "displayName": "Google Sheet ID",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sheetName",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "Sheet Name",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "range",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "Range (A1 notation)",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "tool-read-001",
+      "name": "Read Sheet Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.1,
+      "position": [460, 240]
+    },
+    {
+      "parameters": {
+        "name": "writeGoogleSheet",
+        "description": "Append or update rows within a Google Sheet.",
+        "workflowId": "h8JrUWd3ykJVuGqg",
+        "workflowInputs": {
+          "value": {
+            "sheetId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('sheetId', ``, 'string') }}",
+            "sheetName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('sheetName', `Sheet1`, 'string') }}",
+            "rows": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('rows', ``, 'json') }}"
+          },
+          "schema": [
+            {
+              "id": "sheetId",
+              "type": "string",
+              "display": true,
+              "required": true,
+              "displayName": "Google Sheet ID",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sheetName",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "Sheet Name",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rows",
+              "type": "json",
+              "display": true,
+              "required": true,
+              "displayName": "Rows",
+              "defaultMatch": false,
+              "canBeUsedToMatch": false
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "tool-write-001",
+      "name": "Write Sheet Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.1,
+      "position": [460, 400]
+    }
+  ],
+  "connections": {
+    "Read Sheet Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Sheet Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

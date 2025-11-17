@@ -1,7 +1,7 @@
 ---
+description: This rule defines the mandatory debugging approach for N8N workflows, emphasizing execution-based testing over static validation.
 alwaysApply: false
 ---
-
 # N8N Workflow Debugging Protocol [MANDATORY]
 
 ## Overview
