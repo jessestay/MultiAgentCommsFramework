@@ -260,6 +260,7 @@ async function callN8nWorkflow(workflowId, inputData, messageId) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json, text/event-stream',
         'X-N8N-API-KEY': N8N_API_KEY
       }
     };
@@ -269,59 +270,82 @@ async function callN8nWorkflow(workflowId, inputData, messageId) {
       res.on('data', (chunk) => {
         data += chunk;
       });
-      res.on('end', () => {
-        try {
-          if (res.statusCode === 200 || res.statusCode === 201) {
-            const result = JSON.parse(data);
-            // Extract the output from the workflow execution
-            // For executeWorkflowTrigger workflows, the output is in resultData.runData
-            let output = null;
-            if (result.data?.resultData?.runData) {
-              const nodeNames = Object.keys(result.data.resultData.runData);
-              if (nodeNames.length > 0) {
-                const lastNode = nodeNames[nodeNames.length - 1];
-                const nodeData = result.data.resultData.runData[lastNode];
-                if (nodeData && nodeData.length > 0 && nodeData[0].data?.main) {
-                  output = nodeData[0].data.main[0];
+        res.on('end', () => {
+          try {
+            if (res.statusCode === 200 || res.statusCode === 201) {
+              // Check if response is SSE (text/event-stream) or JSON
+              const contentType = res.headers['content-type'] || '';
+              let result;
+              
+              if (contentType.includes('text/event-stream') || data.startsWith('data:')) {
+                // Parse SSE format: data: {...}\n\n
+                const lines = data.split('\n');
+                let jsonData = '';
+                for (const line of lines) {
+                  if (line.startsWith('data: ')) {
+                    jsonData = line.substring(6); // Remove 'data: ' prefix
+                    break;
+                  }
+                }
+                if (jsonData) {
+                  result = JSON.parse(jsonData);
+                } else {
+                  // Try parsing entire response as JSON
+                  result = JSON.parse(data);
+                }
+              } else {
+                result = JSON.parse(data);
+              }
+              
+              // Extract the output from the workflow execution
+              // For executeWorkflowTrigger workflows, the output is in resultData.runData
+              let output = null;
+              if (result.data?.resultData?.runData) {
+                const nodeNames = Object.keys(result.data.resultData.runData);
+                if (nodeNames.length > 0) {
+                  const lastNode = nodeNames[nodeNames.length - 1];
+                  const nodeData = result.data.resultData.runData[lastNode];
+                  if (nodeData && nodeData.length > 0 && nodeData[0].data?.main) {
+                    output = nodeData[0].data.main[0];
+                  }
                 }
               }
+              
+              sendResponse({
+                jsonrpc: '2.0',
+                id: messageId,
+                result: {
+                  content: [
+                    {
+                      type: 'text',
+                      text: JSON.stringify(output || result, null, 2)
+                    }
+                  ]
+                }
+              });
+            } else {
+              const errorData = data ? JSON.parse(data) : { message: `HTTP ${res.statusCode}` };
+              sendResponse({
+                jsonrpc: '2.0',
+                id: messageId,
+                error: {
+                  code: -32000,
+                  message: `n8n API error (${res.statusCode}): ${errorData.message || 'Unknown error'}`
+                }
+              });
             }
-            
-            sendResponse({
-              jsonrpc: '2.0',
-              id: messageId,
-              result: {
-                content: [
-                  {
-                    type: 'text',
-                    text: JSON.stringify(output || result, null, 2)
-                  }
-                ]
-              }
-            });
-          } else {
-            const errorData = data ? JSON.parse(data) : { message: `HTTP ${res.statusCode}` };
+          } catch (e) {
             sendResponse({
               jsonrpc: '2.0',
               id: messageId,
               error: {
                 code: -32000,
-                message: `n8n API error (${res.statusCode}): ${errorData.message || 'Unknown error'}`
+                message: `Failed to parse n8n response: ${e.message}. Raw response: ${data.substring(0, 200)}`
               }
             });
           }
-        } catch (e) {
-          sendResponse({
-            jsonrpc: '2.0',
-            id: messageId,
-            error: {
-              code: -32000,
-              message: `Failed to parse n8n response: ${e.message}. Raw response: ${data.substring(0, 200)}`
-            }
-          });
-        }
-        resolve();
-      });
+          resolve();
+        });
     });
 
     req.on('error', (error) => {

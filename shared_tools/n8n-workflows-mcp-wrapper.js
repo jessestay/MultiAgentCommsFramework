@@ -93,9 +93,21 @@ async function discoverWorkflowTools() {
             const workflows = JSON.parse(data).data || [];
             const tools = [];
             
+            // List of workflow IDs that are dedicated MCP servers (exclude from n8n-workflows)
+            // These workflows have their own dedicated MCP servers and should not be exposed here
+            const DEDICATED_MCP_SERVER_WORKFLOWS = [
+              'NP3LA2iOlZubV7DA', // Google Sheets MCP Server
+              'rGkfrlUD4kzt8jz2'  // n8n Workflows MCP Server (this workflow itself)
+            ];
+            
             // Find all active workflows with MCP Server Trigger nodes
             for (const workflow of workflows) {
               if (!workflow.active) continue;
+              
+              // Skip dedicated MCP server workflows - they have their own MCP servers
+              if (DEDICATED_MCP_SERVER_WORKFLOWS.includes(workflow.id)) {
+                continue;
+              }
               
               // Find MCP Server Trigger nodes
               const mcpTriggers = (workflow.nodes || []).filter(
@@ -118,39 +130,56 @@ async function discoverWorkflowTools() {
                   }
                 }
                 
-                // Create tool for each toolWorkflow node
-                for (const toolWorkflow of toolWorkflows) {
-                  const toolName = toolWorkflow.parameters?.name || path;
-                  const toolDescription = toolWorkflow.parameters?.toolDescription || 
-                                         toolWorkflow.parameters?.description || 
-                                         `Execute workflow: ${workflow.name}`;
-                  
-                  // Extract input schema from workflowInputs
-                  const inputSchema = {
-                    type: 'object',
-                    properties: {}
-                  };
-                  
-                  if (toolWorkflow.parameters?.workflowInputs?.schema) {
-                    for (const field of toolWorkflow.parameters.workflowInputs.schema) {
-                      inputSchema.properties[field.id] = {
-                        type: field.type === 'string' ? 'string' : 
-                              field.type === 'array' ? 'array' : 
-                              field.type === 'number' ? 'number' : 'string',
-                        description: field.displayName || field.id
-                      };
-                      if (field.required) {
-                        if (!inputSchema.required) inputSchema.required = [];
-                        inputSchema.required.push(field.id);
-                      }
-                    }
-                  }
+                // If no toolWorkflow nodes, create a tool directly from the MCP Server Trigger path
+                // This allows MCP Server Triggers to be exposed as tools even without toolWorkflow nodes
+                if (toolWorkflows.length === 0) {
+                  // Create a tool from the MCP Server Trigger itself
+                  const toolName = path;
+                  const toolDescription = `Execute workflow: ${workflow.name} via MCP Server Trigger (${path})`;
                   
                   tools.push({
                     name: toolName,
                     description: toolDescription,
-                    inputSchema
+                    inputSchema: {
+                      type: 'object',
+                      properties: {}
+                    }
                   });
+                } else {
+                  // Create tool for each toolWorkflow node
+                  for (const toolWorkflow of toolWorkflows) {
+                    const toolName = toolWorkflow.parameters?.name || path;
+                    const toolDescription = toolWorkflow.parameters?.toolDescription || 
+                                           toolWorkflow.parameters?.description || 
+                                           `Execute workflow: ${workflow.name}`;
+                    
+                    // Extract input schema from workflowInputs
+                    const inputSchema = {
+                      type: 'object',
+                      properties: {}
+                    };
+                    
+                    if (toolWorkflow.parameters?.workflowInputs?.schema) {
+                      for (const field of toolWorkflow.parameters.workflowInputs.schema) {
+                        inputSchema.properties[field.id] = {
+                          type: field.type === 'string' ? 'string' : 
+                                field.type === 'array' ? 'array' : 
+                                field.type === 'number' ? 'number' : 'string',
+                          description: field.displayName || field.id
+                        };
+                        if (field.required) {
+                          if (!inputSchema.required) inputSchema.required = [];
+                          inputSchema.required.push(field.id);
+                        }
+                      }
+                    }
+                    
+                    tools.push({
+                      name: toolName,
+                      description: toolDescription,
+                      inputSchema
+                    });
+                  }
                 }
               }
             }
@@ -202,9 +231,20 @@ async function executeWorkflowTool(toolName, arguments_) {
           if (res.statusCode === 200) {
             const workflows = JSON.parse(data).data || [];
             
+            // List of workflow IDs that are dedicated MCP servers (exclude from n8n-workflows)
+            const DEDICATED_MCP_SERVER_WORKFLOWS = [
+              'NP3LA2iOlZubV7DA', // Google Sheets MCP Server
+              'rGkfrlUD4kzt8jz2'  // n8n Workflows MCP Server (this workflow itself)
+            ];
+            
             // Find the workflow with this tool
             for (const workflow of workflows) {
               if (!workflow.active) continue;
+              
+              // Skip dedicated MCP server workflows
+              if (DEDICATED_MCP_SERVER_WORKFLOWS.includes(workflow.id)) {
+                continue;
+              }
               
               // Find MCP Server Trigger nodes
               const mcpTriggers = (workflow.nodes || []).filter(
@@ -212,6 +252,22 @@ async function executeWorkflowTool(toolName, arguments_) {
               );
               
               for (const trigger of mcpTriggers) {
+                const path = trigger.parameters?.path || trigger.name;
+                
+                // Check if tool name matches the MCP Server Trigger path (for triggers without toolWorkflow nodes)
+                if (path === toolName) {
+                  // Found the tool! For parent workflows with MCP Server Triggers,
+                  // call the MCP Server Trigger webhook with proper JSON-RPC format
+                  const webhookPath = path || trigger.webhookId;
+                  const webhookUrl = `${N8N_API_URL}/webhook/${webhookPath}`;
+                  
+                  // Call the MCP Server Trigger webhook with JSON-RPC format
+                  callMCPTriggerWebhookJSONRPC(webhookUrl, toolName, arguments_)
+                    .then(resolve)
+                    .catch(reject);
+                  return;
+                }
+                
                 // Find toolWorkflow nodes connected to this trigger
                 const connections = workflow.connections?.[trigger.name]?.main || [];
                 
@@ -223,7 +279,7 @@ async function executeWorkflowTool(toolName, arguments_) {
                       
                       if (connectedToolName === toolName) {
                         // Found the tool! Execute via MCP Server Trigger webhook
-                        const webhookPath = trigger.parameters?.path || trigger.webhookId;
+                        const webhookPath = path || trigger.webhookId;
                         const webhookUrl = `${N8N_API_URL}/webhook/${webhookPath}`;
                         
                         // Call the MCP Server Trigger webhook with tool name and arguments
@@ -257,7 +313,118 @@ async function executeWorkflowTool(toolName, arguments_) {
 }
 
 /**
- * Call MCP Server Trigger webhook with tool execution request
+ * Execute n8n workflow via API
+ */
+async function executeN8nWorkflow(workflowId, inputData) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(`${N8N_API_URL}/api/v1/executions/workflow`);
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-N8N-API-KEY': N8N_API_KEY
+      }
+    };
+
+    const req = http.request(url, options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      res.on('end', () => {
+        try {
+          if (res.statusCode === 200 || res.statusCode === 201) {
+            const result = JSON.parse(data);
+            resolve(result);
+          } else {
+            reject(new Error(`n8n API error (${res.statusCode}): ${data}`));
+          }
+        } catch (e) {
+          reject(new Error(`Failed to parse n8n response: ${e.message}`));
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(new Error(`n8n API request failed: ${error.message}`));
+    });
+
+    req.write(JSON.stringify({
+      workflowId: workflowId,
+      data: inputData || {}
+    }));
+    req.end();
+  });
+}
+
+/**
+ * Call MCP Server Trigger webhook with JSON-RPC format (for parent workflows)
+ */
+async function callMCPTriggerWebhookJSONRPC(webhookUrl, toolName, arguments_) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(webhookUrl);
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json, text/event-stream'
+      }
+    };
+
+    const req = http.request(url, options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      res.on('end', () => {
+        try {
+          if (res.statusCode === 200 || res.statusCode === 201) {
+            // MCP Server Trigger returns JSON-RPC response or SSE stream
+            // Try to parse as JSON first
+            try {
+              const result = JSON.parse(data);
+              // If it's a JSON-RPC response, extract the result
+              if (result.jsonrpc === '2.0' && result.result) {
+                resolve(result.result);
+              } else {
+                resolve(result);
+              }
+            } catch (e) {
+              // If not JSON, might be SSE - return as text
+              resolve({ output: data });
+            }
+          } else {
+            reject(new Error(`Webhook error (${res.statusCode}): ${data}`));
+          }
+        } catch (e) {
+          reject(new Error(`Failed to parse webhook response: ${e.message}`));
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(new Error(`Webhook request failed: ${error.message}`));
+    });
+
+    // MCP Server Trigger expects JSON-RPC format
+    const jsonrpcRequest = {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: toolName,
+        arguments: arguments_ || {}
+      }
+    };
+    
+    req.write(JSON.stringify(jsonrpcRequest));
+    req.end();
+  });
+}
+
+/**
+ * Call MCP Server Trigger webhook with tool execution request (for toolWorkflow nodes)
  */
 async function callMCPTriggerWebhook(webhookUrl, toolName, arguments_) {
   return new Promise((resolve, reject) => {
