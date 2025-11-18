@@ -1,6 +1,5 @@
 ---
-description: This rule defines the **MANDATORY** protocol for accessing services through Cursor IDE when MCP servers are installed. This protocol applies to ALL AI roles, with special emphasis on Software Engineering Team (SET).
-alwaysApply: false
+alwaysApply: true
 ---
 # MCP-First Protocol [CRITICAL - NON-NEGOTIABLE]
 
@@ -38,7 +37,9 @@ When MCP appears unavailable or returns errors:
 
 ### 4. Services with MCP Servers
 Currently configured MCP servers (per `.cursor/mcp.json`):
-- **N8N**: `mcp_n8n-*` tools available
+- **Google Sheets**: `mcp_google-sheets-mcp_*` tools available (MUST use for ALL Google Sheets read/write operations)
+- **N8N**: `mcp_n8n-*` tools available (general n8n management)
+- **N8N Workflows**: `mcp_n8n-workflows_*` tools available (workflow-specific tools)
 - **Canva**: `canva-*` tools available
 
 ### 5. Fallback Protocol [EXCEPTION]
@@ -83,8 +84,39 @@ This protocol is **NON-NEGOTIABLE** and **CANNOT BE BYPASSED** unless:
 
 Violation of this protocol is considered a critical error and must be corrected immediately.
 
+## Service-Specific MCP Usage [CRITICAL]
+
+### Google Sheets Operations [MANDATORY]
+**ALL Google Sheets operations MUST use `google-sheets-mcp` MCP server:**
+- ✅ **CORRECT**: Using `mcp_google-sheets-mcp_read_google_sheet` to read sheet data
+- ✅ **CORRECT**: Using `mcp_google-sheets-mcp_write_google_sheet` to update sheet data
+- ❌ **INCORRECT**: Creating Python scripts to access Google Sheets API
+- ❌ **INCORRECT**: Using curl commands to access Google Sheets
+- ❌ **INCORRECT**: Using n8n MCP server for Google Sheets operations (use `google-sheets-mcp` instead)
+- ❌ **INCORRECT**: Using webhook-based workflows for Google Sheets operations (use MCP Server Trigger nodes only)
+
+**Reference**: See `.cursor/rules/310-PROJECT-n8n-mcp-workflow-pattern.mdc` for complete MCP server organization.
+
+### N8N Workflow Execution [MANDATORY]
+**ALL n8n workflow execution MUST use MCP Server Trigger nodes (`@n8n/n8n-nodes-langchain.mcpTrigger`) - Webhook Trigger nodes (`n8n-nodes-base.webhook`) are PROHIBITED:**
+- ✅ **CORRECT**: Using workflows with `@n8n/n8n-nodes-langchain.mcpTrigger` nodes exposed via `n8n-workflows` MCP server
+- ✅ **CORRECT**: Using `google-sheets-mcp` MCP server which uses MCP Server Trigger internally
+- ✅ **CORRECT**: Adding MCP Server Trigger nodes to workflows with Schedule or Evaluation triggers
+- ❌ **INCORRECT**: Creating workflows with `n8n-nodes-base.webhook` nodes for programmatic access
+- ❌ **INCORRECT**: Attempting to register or call webhooks directly
+- ❌ **INCORRECT**: Using webhook triggers when MCP Server Trigger nodes should be used
+- ❌ **INCORRECT**: Calling webhook URLs directly instead of using MCP Server Trigger webhook IDs
+
+**Node Type Requirements:**
+- **MCP Server Trigger**: `@n8n/n8n-nodes-langchain.mcpTrigger` (typeVersion: 2) - **REQUIRED**
+- **Webhook Trigger**: `n8n-nodes-base.webhook` - **PROHIBITED** for programmatic access
+
+**Why**: MCP Server Triggers automatically expose workflows as tools, require no manual registration, and are discoverable by MCP wrappers. Webhooks require manual UI activation and are not discoverable.
+
 ## Examples of CORRECT Behavior
 
+✅ **CORRECT**: Using `mcp_google-sheets-mcp_read_google_sheet` to read Google Sheets data  
+✅ **CORRECT**: Using `mcp_google-sheets-mcp_write_google_sheet` to update Google Sheets data  
 ✅ **CORRECT**: Using `mcp_n8n_n8n_get_workflow` to get workflow data  
 ✅ **CORRECT**: Using `mcp_n8n_n8n_update_partial_workflow` to modify workflows  
 ✅ **CORRECT**: Using `mcp_n8n_n8n_trigger_webhook_workflow` to trigger workflows  
@@ -93,6 +125,7 @@ Violation of this protocol is considered a critical error and must be corrected 
 ✅ **CORRECT**: Creating `temp.py` and reusing it for all temporary Python scripts
 ✅ **CORRECT**: Using one-line commands instead of script files when possible
 
+❌ **INCORRECT**: Creating Python scripts to access Google Sheets API (use `google-sheets-mcp` instead)  
 ❌ **INCORRECT**: Creating Python scripts to access N8N API  
 ❌ **INCORRECT**: Using curl commands when MCP is available  
 ❌ **INCORRECT**: Using browser automation as first method  
@@ -102,5 +135,6 @@ Violation of this protocol is considered a critical error and must be corrected 
 ❌ **INCORRECT**: Creating multiple temp files when one could be reused
 
 ## Related Rules
+- `.cursor/rules/310-PROJECT-n8n-mcp-workflow-pattern.mdc`: Complete MCP server organization and tool selection rules (MANDATORY reference for Google Sheets operations)
 - `.cursor/rules/300-PROJECT-n8n-evaluation-trigger-testing.mdc`: N8N evaluation trigger testing via MCP
 - `.cursor/rules/roles/013-ROLES-set.mdc`: SET role definition with MCP protocol

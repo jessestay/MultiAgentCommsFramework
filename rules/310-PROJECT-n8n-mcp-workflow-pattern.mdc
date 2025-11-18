@@ -1,0 +1,256 @@
+---
+description: This rule defines the mandatory pattern for exposing n8n workflows as MCP tools and organizing MCP servers for different use cases.
+alwaysApply: false
+---
+# N8N MCP Workflow Pattern [MANDATORY]
+
+## Overview
+This rule defines the mandatory pattern for exposing n8n workflows as MCP tools and organizing MCP servers for different use cases.
+
+## MCP Server Organization
+
+### Three MCP Servers for n8n Operations
+
+1. **`google-sheets-mcp`**: 
+   - **Purpose**: Google Sheets read/write operations
+   - **Usage**: ALL Google Sheets operations (reading, writing, updating data)
+   - **Tools**: `read_google_sheet`, `write_google_sheet`, `trigger_evaluation`
+   - **Location**: `.cursor/shared_tools/google-sheets-mcp-wrapper.js`
+
+2. **`n8n`**:
+   - **Purpose**: General n8n workflow management and operations
+   - **Usage**: Creating workflows, listing workflows, executing workflows, validation, etc.
+   - **Tools**: All n8n MCP management tools (create_workflow, update_workflow, list_workflows, etc.)
+   - **Location**: `n8n-mcp` command (official n8n MCP package)
+
+3. **`n8n-workflows`**:
+   - **Purpose**: Workflow-specific tools (one tool per workflow)
+   - **Usage**: Tools that expose specific workflow functionality
+   - **Tools**: Only workflow-specific tools from workflows with MCP Server Trigger nodes (filters out general n8n management tools)
+   - **Location**: `.cursor/shared_tools/n8n-workflows-mcp-wrapper.js` (custom wrapper that discovers and exposes only workflow tools)
+
+## Workflow MCP Integration Pattern [MANDATORY]
+
+### CRITICAL: MCP Server Triggers Only - NO Webhooks
+
+**ALL n8n workflows that require programmatic access MUST use MCP Server Trigger nodes (`@n8n/n8n-nodes-langchain.mcpTrigger`). Webhook Trigger nodes (`n8n-nodes-base.webhook`) are PROHIBITED for workflow execution.**
+
+**Node Type Requirements:**
+- ✅ **CORRECT**: `@n8n/n8n-nodes-langchain.mcpTrigger` - MCP Server Trigger node
+- ❌ **INCORRECT**: `n8n-nodes-base.webhook` - Webhook Trigger node (PROHIBITED)
+- ❌ **INCORRECT**: Any other trigger type for programmatic access
+
+**Why MCP Server Triggers:**
+- MCP Server Triggers automatically expose workflows as tools in MCP servers
+- Tools are auto-discovered by MCP wrappers
+- No manual webhook registration required
+- Consistent tool interface across all workflows
+- Better integration with AI agents
+- Automatically registered when workflow is active
+
+**Why NOT Webhooks:**
+- Webhooks require manual activation in n8n UI to register
+- Cannot be programmatically activated via API
+- Inconsistent with MCP tool pattern
+- Additional maintenance overhead
+- Not discoverable by MCP wrappers
+- SSRF protection blocks localhost access
+
+### When Creating or Modifying Workflows
+
+**ALL workflows MUST include MCP Server Trigger nodes in the following scenarios:**
+
+1. **Schedule Nodes**: 
+   - If a workflow has a Schedule Trigger node, add an MCP Server Trigger node
+   - This allows programmatic execution of scheduled workflows
+   - Connect the MCP Server Trigger to the same downstream nodes as the Schedule Trigger
+
+2. **Evaluation Trigger Nodes**:
+   - If a workflow has an Evaluation Trigger (e.g., "When fetching a dataset row"), add an MCP Server Trigger node
+   - This allows programmatic execution of evaluation workflows
+   - Connect the MCP Server Trigger to the same downstream nodes as the Evaluation Trigger
+
+3. **Any Workflow Requiring Programmatic Access**:
+   - If a workflow needs to be callable from AI agents, add an MCP Server Trigger node
+   - Use a descriptive path that matches the workflow's purpose (e.g., `update-reddit-expectations`)
+
+### MCP Server Trigger Configuration
+
+**Required Parameters:**
+- **Path**: Use kebab-case matching the workflow's purpose (e.g., `update-reddit-expectations`, `top-of-funnel-collector`)
+- **Type**: `@n8n/n8n-nodes-langchain.mcpTrigger`
+- **TypeVersion**: `2`
+
+**Tool Exposure:**
+- MCP Server Triggers automatically expose workflows as tools in the `n8n-workflows` MCP server
+- The tool name will be derived from the path (e.g., `update-reddit-expectations`)
+- Tools are automatically discovered by the `n8n-mcp` command when workflows are active
+
+### Workflow-Specific Tool Workflows
+
+For workflows that need to expose specific functionality as tools:
+
+1. **Create a wrapper workflow** with:
+   - MCP Server Trigger node (path: `workflow-name`)
+   - ToolWorkflow nodes that call the actual workflow logic
+   - Proper error handling and response formatting
+   - **NO Webhook Trigger nodes** - use MCP Server Trigger exclusively
+
+2. **Add to n8n-workflows MCP Server**:
+   - The `n8n-workflows` MCP server automatically discovers all active workflows with MCP Server Trigger nodes
+   - The custom wrapper (`.cursor/shared_tools/n8n-workflows-mcp-wrapper.js`) queries the n8n API to find workflows with MCP Server Trigger nodes and exposes their toolWorkflow nodes as tools
+   - No manual configuration needed in `.cursor/mcp.json` - tools are auto-discovered when workflows are active
+
+### Google Sheets MCP Server Pattern
+
+The `google-sheets-mcp` MCP server uses a dedicated MCP Server Trigger workflow:
+- **Workflow ID**: `NP3LA2iOlZubV7DA`
+- **Workflow Name**: "Google Sheets MCP Server"
+- **MCP Server Trigger Webhook ID**: `b6d67a89-19e2-44f2-8a07-9ed84c7633c1`
+- **Tools Exposed**: `read_google_sheet`, `write_google_sheet`
+
+**Implementation:**
+- The wrapper (`.cursor/shared_tools/google-sheets-mcp-wrapper.js`) calls the MCP Server Trigger webhook with:
+  - `tool`: Tool name (`read_google_sheet` or `write_google_sheet`)
+  - `arguments`: Input data for the tool
+- This is the ONLY method used - webhooks are NOT used
+
+## Agent Tool Selection Rules [MANDATORY]
+
+When agents need to perform n8n operations, they MUST follow this priority:
+
+1. **Google Sheets Operations**:
+   - **MUST use**: `google-sheets-mcp` MCP server
+   - **Tools**: `read_google_sheet`, `write_google_sheet`, `trigger_evaluation`
+   - **Examples**: Reading test data, updating expected values, triggering evaluations
+
+2. **Workflow-Specific Operations**:
+   - **MUST use**: `n8n-workflows` MCP server
+   - **Tools**: Automatically discovered from workflows with MCP Server Trigger nodes
+   - **Examples**: `update_reddit_expectations`, workflow-specific execution tools
+
+3. **General n8n Management**:
+   - **MUST use**: `n8n` MCP server
+   - **Tools**: All n8n management tools (create, update, list, validate, execute workflows)
+   - **Examples**: Creating new workflows, updating workflow configurations, listing workflows
+
+## Implementation Requirements
+
+### For Software Engineering Team (SET)
+
+When creating or modifying n8n workflows:
+
+1. **Identify if workflow needs MCP access**:
+   - Does it need to be called programmatically?
+   - Does it have a Schedule or Evaluation Trigger?
+   - Is it a workflow that agents need to interact with?
+
+2. **Add MCP Server Trigger**:
+   - Add `@n8n/n8n-nodes-langchain.mcpTrigger` node
+   - Set path to kebab-case workflow identifier
+   - Connect to appropriate downstream nodes
+   - Ensure workflow is active for tool discovery
+
+3. **Verify tool discovery**:
+   - After adding MCP Server Trigger, verify workflow is active
+   - Tool should appear in `n8n-workflows` MCP server after Cursor refresh
+   - Test tool execution to ensure it works correctly
+
+### For Executive Secretary (ES)
+
+When coordinating workflow development:
+
+1. **Ensure MCP integration**:
+   - Verify SET has added MCP Server Trigger nodes where needed
+   - Confirm workflows are active for tool discovery
+   - Coordinate testing of MCP tool availability
+
+2. **Tool selection guidance**:
+   - Direct agents to use correct MCP server based on operation type
+   - Verify agents are using `google-sheets-mcp` for Google Sheets operations
+   - Verify agents are using `n8n-workflows` for workflow-specific tools
+
+## Current Workflow MCP Server
+
+**Workflow ID**: `rGkfrlUD4kzt8jz2`
+**Workflow Name**: "n8n Workflows MCP Server"
+**Status**: Active
+**Path**: `n8n-workflows`
+
+This workflow serves as the master MCP server for all workflow-specific tools. It automatically discovers and exposes tools from all active workflows with MCP Server Trigger nodes.
+
+## Examples
+
+### Example 1: Adding MCP to Schedule Workflow
+
+```json
+{
+  "nodes": [
+    {
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "name": "Schedule Trigger"
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "name": "MCP Server Trigger",
+      "parameters": {
+        "path": "workflow-name"
+      }
+    },
+    {
+      "type": "n8n-nodes-base.set",
+      "name": "Process Data"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [[{"node": "Process Data"}]]
+    },
+    "MCP Server Trigger": {
+      "main": [[{"node": "Process Data"}]]
+    }
+  }
+}
+```
+
+### Example 2: Adding MCP to Evaluation Workflow
+
+```json
+{
+  "nodes": [
+    {
+      "type": "n8n-nodes-base.evaluationTrigger",
+      "name": "Evaluation Trigger"
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "name": "MCP Server Trigger",
+      "parameters": {
+        "path": "evaluation-workflow-name"
+      }
+    },
+    {
+      "type": "n8n-nodes-base.set",
+      "name": "Process Evaluation"
+    }
+  ],
+  "connections": {
+    "Evaluation Trigger": {
+      "main": [[{"node": "Process Evaluation"}]]
+    },
+    "MCP Server Trigger": {
+      "main": [[{"node": "Process Evaluation"}]]
+    }
+  }
+}
+```
+
+## Enforcement
+
+This pattern is MANDATORY for all n8n workflows that require programmatic access. SET is responsible for implementing MCP Server Trigger nodes, and ES is responsible for ensuring compliance with this pattern.
+
+## Related Rules
+
+- `MCP-FIRST-PROTOCOL.mdc`: Use MCP tools as primary method for service access
+- `300-PROJECT-n8n-evaluation-trigger-testing.mdc`: Testing patterns for Evaluation triggers
+- `N8N-workflow-debugging-protocol.mdc`: Debugging approach for n8n workflows
