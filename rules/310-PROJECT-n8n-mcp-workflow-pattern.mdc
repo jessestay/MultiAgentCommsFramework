@@ -335,6 +335,13 @@ For workflows that need to expose specific functionality as tools:
 - **Pattern 2 (HTTP Request)**: Only for Evaluation Triggers that need webhook calls
 - **Pattern 3 (Execute Workflow)**: When you need explicit input data mapping to sub-workflow
 
+**Critical Implementation Notes:**
+1. **Connection Direction**: toolWorkflow and HTTP Request nodes connect TO the MCP Server Trigger via `ai_tool` port, not the other way around. The wrapper checks all nodes for `ai_tool` connections pointing to the trigger.
+2. **workflowId Format**: toolWorkflow nodes store `workflowId` as an object: `{ "__rl": true, "value": "workflow-id", "mode": "list" }`. The wrapper extracts `workflowId.value`.
+3. **Webhook Registration**: Parent workflows MUST be manually activated in n8n UI to register their MCP Server Trigger webhooks. The wrapper cannot register webhooks programmatically.
+4. **Execution Limitations**: Workflows with Schedule/Evaluation triggers cannot be executed directly via n8n API. The parent workflow's connected nodes (toolWorkflow/HTTP Request) handle execution when the parent workflow is called via its MCP Server Trigger webhook.
+5. **MCP Server Trigger Initialization**: MCP Server Triggers use Server-Sent Events (SSE) and require initialization. Cursor's MCP client handles this automatically when discovering tools, but the wrapper must call the webhook correctly using JSON-RPC format.
+
 ### Excluding Dedicated MCP Server Workflows [CRITICAL]
 
 **The `n8n-workflows` MCP server MUST exclude dedicated MCP server workflows:**
