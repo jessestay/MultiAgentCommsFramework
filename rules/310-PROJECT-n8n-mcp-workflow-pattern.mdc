@@ -167,14 +167,14 @@ For workflows that need to expose specific functionality as tools:
 
 1. **Parent Workflow Structure**:
    - MCP Server Trigger node (path: `workflow-name` or `workflow-name-trigger-type`)
-   - Execute Workflow node that calls the sub-workflow
+   - **One of three connection patterns** (see below)
    - Proper error handling and response formatting
-   - **NO webhooks** - use MCP Server Trigger exclusively
+   - **CRITICAL**: Parent workflows must be manually activated in n8n UI to register MCP Server Trigger webhooks
 
 2. **Sub-Workflow**:
    - Keep the original workflow logic
    - May have its own triggers (Schedule, Evaluation, etc.)
-   - Called by parent workflow via "Execute Workflow" node
+   - Called by parent workflow via one of the connection patterns below
    - MCP Server Triggers in sub-workflow can be removed if parent workflow handles all MCP access
 
 3. **Tool Exposure**:
@@ -182,7 +182,6 @@ For workflows that need to expose specific functionality as tools:
    - Tool appears in `n8n-workflows` MCP server automatically
    - Parent workflow must be active for tool discovery
    - **One parent workflow per MCP Server Trigger** (e.g., separate parents for eval and schedule)
-   - **CRITICAL**: Parent workflows must be manually activated in n8n UI to register MCP Server Trigger webhooks
 
 4. **When to Use Parent Workflows**:
    - Complex workflows with multiple trigger types (Evaluation + Schedule)
@@ -190,7 +189,113 @@ For workflows that need to expose specific functionality as tools:
    - Workflows that need adapter nodes but parent workflow simplifies the structure
    - **Default approach**: Try direct MCP Server Trigger first, use parent workflow if it doesn't work
 
-**Example Parent Workflow:**
+**Three Parent Workflow Connection Patterns:**
+
+#### Pattern 1: toolWorkflow Node (For Schedule/Standard Triggers) [RECOMMENDED]
+
+**Use for**: Workflows with Schedule triggers or standard workflow execution
+
+**Structure**:
+- MCP Server Trigger node
+- `toolWorkflow` node (type: `@n8n/n8n-nodes-langchain.toolWorkflow`) connected via `ai_tool` port
+- `toolWorkflow` node calls the sub-workflow by workflow ID
+
+**Example:**
+```json
+{
+  "nodes": [
+    {
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "name": "MCP Server Trigger",
+      "parameters": {
+        "path": "workflow-name-schedule"
+      }
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "name": "Call 'Sub-Workflow Name'",
+      "parameters": {
+        "description": "Call this tool to run the workflow in n8n",
+        "workflowId": {
+          "__rl": true,
+          "value": "sub-workflow-id",
+          "mode": "list"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {}
+        }
+      }
+    }
+  ],
+  "connections": {
+    "MCP Server Trigger": {
+      "main": [[]]
+    },
+    "Call 'Sub-Workflow Name'": {
+      "ai_tool": [[{"node": "MCP Server Trigger", "type": "ai_tool", "index": 0}]]
+    }
+  }
+}
+```
+
+**How it works**: The `n8n-workflows-mcp-wrapper.js` detects `toolWorkflow` nodes connected via `ai_tool` port and executes the sub-workflow directly via n8n API.
+
+#### Pattern 2: HTTP Request Node (For Evaluation Triggers) [SPECIAL CASE]
+
+**Use for**: Workflows with Evaluation Triggers that need webhook calls to trigger evaluation
+
+**Structure**:
+- MCP Server Trigger node
+- HTTP Request node (type: `n8n-nodes-base.httpRequestTool` or `n8n-nodes-base.httpRequest`) connected via `ai_tool` port
+- HTTP Request node calls a webhook URL that triggers the Evaluation Trigger
+
+**Example:**
+```json
+{
+  "nodes": [
+    {
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "name": "MCP Server Trigger",
+      "parameters": {
+        "path": "workflow-name-eval"
+      }
+    },
+    {
+      "type": "n8n-nodes-base.httpRequestTool",
+      "name": "HTTP Request",
+      "parameters": {
+        "toolDescription": "Call the workflow evaluation trigger webhook",
+        "url": "http://localhost:5678/webhook/webhook-id",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "MCP Server Trigger": {
+      "main": [[]]
+    },
+    "HTTP Request": {
+      "ai_tool": [[{"node": "MCP Server Trigger", "type": "ai_tool", "index": 0}]]
+    }
+  }
+}
+```
+
+**How it works**: The `n8n-workflows-mcp-wrapper.js` detects HTTP Request nodes connected via `ai_tool` port and calls the HTTP Request URL directly, bypassing the MCP Server Trigger webhook.
+
+**Note**: This pattern is a special case for Evaluation Triggers. The webhook URL typically points to a webhook node in the sub-workflow that triggers the Evaluation Trigger.
+
+#### Pattern 3: Execute Workflow Node (For Direct Sub-Workflow Execution) [ALTERNATIVE]
+
+**Use for**: Workflows that need direct sub-workflow execution with input data mapping
+
+**Structure**:
+- MCP Server Trigger node
+- Execute Workflow node (type: `n8n-nodes-base.executeWorkflow`) connected via `main` port
+- Execute Workflow node calls the sub-workflow by workflow ID with mapped inputs
+
+**Example:**
 ```json
 {
   "nodes": [
@@ -222,6 +327,13 @@ For workflows that need to expose specific functionality as tools:
   }
 }
 ```
+
+**How it works**: The `n8n-workflows-mcp-wrapper.js` detects Execute Workflow nodes connected via `main` port and executes the sub-workflow directly via n8n API.
+
+**Which Pattern to Use:**
+- **Pattern 1 (toolWorkflow)**: Recommended for most cases, especially Schedule triggers
+- **Pattern 2 (HTTP Request)**: Only for Evaluation Triggers that need webhook calls
+- **Pattern 3 (Execute Workflow)**: When you need explicit input data mapping to sub-workflow
 
 ### Excluding Dedicated MCP Server Workflows [CRITICAL]
 
