@@ -239,7 +239,7 @@ For workflows that need to expose specific functionality as tools:
 }
 ```
 
-**How it works**: The `n8n-workflows-mcp-wrapper.js` detects `toolWorkflow` nodes connected via `ai_tool` port and executes the sub-workflow directly via n8n API.
+**How it works**: The `n8n-workflows-mcp-wrapper.js` detects `toolWorkflow` nodes connected via `ai_tool` port. However, workflows with Schedule/Evaluation triggers cannot be executed directly via n8n API. The wrapper attempts to execute the sub-workflow via `/rest/workflows/{id}/execute`, but this endpoint may not exist or may not work for workflows with triggers. **The recommended approach is to let Cursor's MCP client handle execution via the MCP Server Trigger webhook.**
 
 #### Pattern 2: HTTP Request Node (For Evaluation Triggers) [SPECIAL CASE]
 
@@ -282,9 +282,9 @@ For workflows that need to expose specific functionality as tools:
 }
 ```
 
-**How it works**: The `n8n-workflows-mcp-wrapper.js` detects HTTP Request nodes connected via `ai_tool` port and calls the HTTP Request URL directly, bypassing the MCP Server Trigger webhook.
+**How it works**: The `n8n-workflows-mcp-wrapper.js` detects HTTP Request nodes connected via `ai_tool` port and calls the HTTP Request URL directly. **CRITICAL**: The webhook URL must point to an active, registered webhook in the sub-workflow that triggers the Evaluation Trigger. If the webhook is not registered (returns 404), the workflow cannot be executed via this method.
 
-**Note**: This pattern is a special case for Evaluation Triggers. The webhook URL typically points to a webhook node in the sub-workflow that triggers the Evaluation Trigger.
+**Note**: This pattern is a special case for Evaluation Triggers. The webhook URL typically points to a webhook node in the sub-workflow that triggers the Evaluation Trigger. The webhook MUST be manually activated in the n8n UI to be registered.
 
 #### Pattern 3: Execute Workflow Node (For Direct Sub-Workflow Execution) [ALTERNATIVE]
 
@@ -340,7 +340,11 @@ For workflows that need to expose specific functionality as tools:
 2. **workflowId Format**: toolWorkflow nodes store `workflowId` as an object: `{ "__rl": true, "value": "workflow-id", "mode": "list" }`. The wrapper extracts `workflowId.value`.
 3. **Webhook Registration**: Parent workflows MUST be manually activated in n8n UI to register their MCP Server Trigger webhooks. The wrapper cannot register webhooks programmatically.
 4. **Execution Limitations**: Workflows with Schedule/Evaluation triggers cannot be executed directly via n8n API. The parent workflow's connected nodes (toolWorkflow/HTTP Request) handle execution when the parent workflow is called via its MCP Server Trigger webhook.
-5. **MCP Server Trigger Initialization**: MCP Server Triggers use Server-Sent Events (SSE) and require initialization. Cursor's MCP client handles this automatically when discovering tools, but the wrapper must call the webhook correctly using JSON-RPC format.
+5. **MCP Server Trigger Initialization [CRITICAL]**: MCP Server Triggers use Server-Sent Events (SSE) and require MCP protocol initialization. They **CANNOT** be called via simple HTTP POST requests. The wrapper executes parent workflows by:
+   - **For toolWorkflow nodes**: Attempting to execute the sub-workflow directly via n8n API. **LIMITATION**: The `/rest/workflows/{id}/execute` endpoint does not exist in n8n. Workflows with Schedule/Evaluation triggers cannot be executed directly via API. **SOLUTION**: The wrapper should expose tools, and Cursor's MCP client should handle execution via its MCP connection to n8n's MCP Server Trigger webhooks.
+   - **For HTTP Request nodes**: Calling the HTTP Request URL directly (which should be a webhook in the sub-workflow). **REQUIREMENT**: The webhook MUST be registered (workflow must be active and webhook node must be activated in n8n UI).
+   - **Note**: If the sub-workflow has Schedule/Evaluation triggers, it cannot be executed directly via API. The HTTP Request node's URL must point to an active webhook that triggers the Evaluation Trigger.
+6. **Cursor MCP Client Integration [RECOMMENDED APPROACH]**: Cursor's MCP client automatically discovers and can call MCP Server Trigger tools when properly configured. The wrapper exposes tools, and Cursor handles execution via its MCP connection to n8n. **This is the recommended approach for executing workflows with MCP Server Triggers.** For programmatic execution from the wrapper, the sub-workflow execution approach (bypassing the MCP Server Trigger) is attempted, but may fail for workflows with Schedule/Evaluation triggers due to n8n API limitations.
 
 ### Excluding Dedicated MCP Server Workflows [CRITICAL]
 
@@ -560,6 +564,44 @@ This workflow serves as the master MCP server for all workflow-specific tools. I
 - Workflows with MCP Server Trigger nodes MUST be manually activated in the n8n UI
 - API activation (`active: true` in workflow settings) does not register MCP Server Trigger webhooks
 - After manual activation, MCP Server Trigger webhooks are registered and tools become available
+- **For Evaluation Triggers**: The webhook node in the sub-workflow that triggers the Evaluation Trigger MUST also be manually activated to register the webhook
+- **CRITICAL**: Even if a webhook node is enabled programmatically, the webhook will NOT be registered until the workflow is manually activated in the n8n UI. This is a limitation of n8n's webhook registration system.
+
+## MCP Server Trigger Execution Limitations and Solutions [CRITICAL]
+
+### Current Limitations
+
+1. **MCP Server Triggers Cannot Be Called Via HTTP POST**: MCP Server Triggers use Server-Sent Events (SSE) and require MCP protocol initialization. They cannot be called via simple HTTP POST requests from wrapper scripts.
+
+2. **No Direct Workflow Execution API**: n8n does not provide a `/rest/workflows/{id}/execute` or `/api/v1/workflows/{id}/execute` endpoint. Workflows must be triggered via webhooks or their specific trigger mechanisms (Schedule, Evaluation, etc.).
+
+3. **Schedule/Evaluation Triggers Cannot Be Executed Directly**: Workflows with Schedule or Evaluation triggers cannot be executed directly via n8n API. They must be triggered via their specific mechanisms:
+   - **Schedule Triggers**: Run automatically on schedule
+   - **Evaluation Triggers**: Triggered by writing to Google Sheets (for dataset-based evaluations)
+
+### Recommended Solution: Cursor MCP Client Integration
+
+**The recommended approach is to let Cursor's MCP client handle execution:**
+
+1. **Tool Discovery**: The `n8n-workflows-mcp-wrapper.js` discovers workflows with MCP Server Trigger nodes and exposes them as tools.
+
+2. **Automatic Execution**: When Cursor's MCP client calls a tool, it uses its MCP connection to n8n to execute the workflow via the MCP Server Trigger webhook. This works because:
+   - Cursor's MCP client establishes an SSE connection to the MCP Server Trigger webhook
+   - The MCP Server Trigger initializes properly via the MCP protocol
+   - The parent workflow executes and calls its connected nodes (toolWorkflow/HTTP Request)
+   - The sub-workflow is executed as intended
+
+3. **No Wrapper Execution Needed**: The wrapper does NOT need to execute workflows directly. It only needs to expose them as tools.
+
+### Alternative: Direct Sub-Workflow Execution (Limited)
+
+For programmatic execution from the wrapper (when Cursor's MCP client is not available), the wrapper attempts to:
+
+1. **For toolWorkflow nodes**: Execute the sub-workflow directly. **LIMITATION**: This fails for workflows with Schedule/Evaluation triggers because n8n has no direct execution API.
+
+2. **For HTTP Request nodes**: Call the HTTP Request URL directly. **REQUIREMENT**: The webhook MUST be registered (workflow active, webhook node activated in n8n UI).
+
+**Current Status**: The wrapper's direct execution approach is limited and may fail for workflows with Schedule/Evaluation triggers. **The recommended solution is to use Cursor's MCP client for execution.**
 
 ## Enforcement
 

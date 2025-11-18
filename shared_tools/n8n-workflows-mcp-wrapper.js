@@ -256,17 +256,56 @@ async function executeWorkflowTool(toolName, arguments_) {
                 
                 // Check if tool name matches the MCP Server Trigger path
                 if (path === toolName) {
-                  // Found the tool! Execute the parent workflow via n8n API.
-                  // The parent workflow's MCP Server Trigger will receive the tool call
-                  // and execute its connected nodes (toolWorkflow, HTTP Request, etc.) internally.
-                  // Pass tool name and arguments as input data to the workflow
-                  const inputData = {
-                    tool: toolName,
-                    arguments: arguments_ || {}
-                  };
-                  return executeSubWorkflowViaAPI(workflow.id, inputData)
-                    .then(resolve)
-                    .catch(reject);
+                  // Found the tool! For parent workflows, we need to find the sub-workflow
+                  // that the parent workflow calls and execute it directly.
+                  // Check for connected nodes that indicate which sub-workflow to call
+                  const connections = workflow.connections?.[trigger.name] || {};
+                  let subWorkflowId = null;
+                  let httpRequestUrl = null;
+                  
+                  // Check for toolWorkflow nodes connected via ai_tool port
+                  for (const node of workflow.nodes) {
+                    const nodeConnections = workflow.connections?.[node.name] || {};
+                    const aiToolConnections = nodeConnections.ai_tool || [];
+                    
+                    for (const connectionArray of aiToolConnections) {
+                      for (const connection of connectionArray) {
+                        if (connection.node === trigger.name && connection.type === 'ai_tool') {
+                          if (node.type === '@n8n/n8n-nodes-langchain.toolWorkflow') {
+                            const workflowIdParam = node.parameters?.workflowId;
+                            if (typeof workflowIdParam === 'string') {
+                              subWorkflowId = workflowIdParam;
+                            } else if (workflowIdParam && typeof workflowIdParam === 'object') {
+                              subWorkflowId = workflowIdParam.value || workflowIdParam.id;
+                            }
+                            break;
+                          } else if (node.type === 'n8n-nodes-base.httpRequestTool' || 
+                                     node.type === 'n8n-nodes-base.httpRequest') {
+                            httpRequestUrl = node.parameters?.url;
+                            break;
+                          }
+                        }
+                      }
+                      if (subWorkflowId || httpRequestUrl) break;
+                    }
+                    if (subWorkflowId || httpRequestUrl) break;
+                  }
+                  
+                  // Execute the sub-workflow directly (bypassing parent workflow's MCP Server Trigger)
+                  if (subWorkflowId) {
+                    // Execute sub-workflow via n8n API
+                    return executeSubWorkflowViaAPI(subWorkflowId, arguments_ || {})
+                      .then(resolve)
+                      .catch(reject);
+                  } else if (httpRequestUrl) {
+                    // Call HTTP Request URL directly (for Evaluation Triggers)
+                    return callHttpRequestUrl(httpRequestUrl, arguments_ || {})
+                      .then(resolve)
+                      .catch(reject);
+                  } else {
+                    // No connected node found - this shouldn't happen for parent workflows
+                    return reject(new Error(`Parent workflow "${workflow.name}" has no connected nodes to execute`));
+                  }
                 }
                 
                 // Find toolWorkflow nodes connected to this trigger (via ai_tool port)
@@ -319,10 +358,10 @@ async function executeWorkflowTool(toolName, arguments_) {
  */
 async function executeSubWorkflowViaAPI(workflowId, inputData) {
   return new Promise((resolve, reject) => {
-    // Use the workflow execution endpoint
-    // Note: This endpoint may not work for workflows with Schedule/Evaluation triggers
-    // For those, the parent workflow's toolWorkflow node should handle execution
-    const url = new URL(`${N8N_API_URL}/api/v1/executions/workflow`);
+    // Use the correct n8n workflow execution endpoint
+    // Note: This endpoint works for workflows with Manual Triggers or when called from parent workflows
+    // For workflows with Schedule/Evaluation triggers, they must be called via parent workflows
+    const url = new URL(`${N8N_API_URL}/rest/workflows/${workflowId}/execute`);
     const options = {
       method: 'POST',
       headers: {
@@ -359,10 +398,9 @@ async function executeSubWorkflowViaAPI(workflowId, inputData) {
     });
 
     // Pass workflow ID and input data
-    req.write(JSON.stringify({
-      workflowId: workflowId,
-      data: inputData || {}
-    }));
+    // n8n REST API expects the input data directly in the request body
+    // For workflows with MCP Server Triggers, pass tool name and arguments
+    req.write(JSON.stringify(inputData || {}));
     req.end();
   });
 }
