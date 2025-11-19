@@ -227,41 +227,34 @@ async function handleMessage(message) {
 
 async function callN8nWorkflow(workflowId, inputData, messageId) {
   return new Promise((resolve, reject) => {
-    let url, requestBody;
-    
-    // ALWAYS use MCP Server Trigger for Google Sheets operations
-    // This is the ONLY supported method - webhooks are NOT used
+    // Determine tool name based on workflow ID
+    let toolName;
     if (workflowId === WRITE_WORKFLOW_ID) {
-      // Use MCP Server Trigger for write operations
-      const toolName = 'write_google_sheet';
-      url = new URL(`${N8N_API_URL}/webhook/${MCP_SERVER_TRIGGER_WEBHOOK_ID}`);
-      requestBody = {
-        tool: toolName,
-        arguments: inputData
-      };
+      toolName = 'write_google_sheet';
     } else if (workflowId === READ_WORKFLOW_ID) {
-      // Use MCP Server Trigger for read operations
-      const toolName = 'read_google_sheet';
-      url = new URL(`${N8N_API_URL}/webhook/${MCP_SERVER_TRIGGER_WEBHOOK_ID}`);
-      requestBody = {
-        tool: toolName,
-        arguments: inputData
-      };
+      toolName = 'read_google_sheet';
     } else {
-      // For other workflows, try execution endpoint
-      url = new URL(`${N8N_API_URL}/api/v1/executions/workflow`);
-      requestBody = {
-        workflowId: workflowId,
-        data: inputData
-      };
+      sendResponse({
+        jsonrpc: '2.0',
+        id: messageId,
+        error: {
+          code: -32000,
+          message: `Unknown workflow ID: ${workflowId}`
+        }
+      });
+      resolve();
+      return;
     }
+    
+    // Call the Google Sheets MCP Server workflow's MCP Server Trigger webhook
+    // The workflow has toolWorkflow nodes that route to the appropriate sub-workflow
+    const url = new URL(`${N8N_API_URL}/webhook/${MCP_SERVER_TRIGGER_WEBHOOK_ID}`);
     
     const options = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json, text/event-stream',
-        'X-N8N-API-KEY': N8N_API_KEY
+        'Accept': 'application/json, text/event-stream'
       }
     };
 
@@ -270,82 +263,81 @@ async function callN8nWorkflow(workflowId, inputData, messageId) {
       res.on('data', (chunk) => {
         data += chunk;
       });
-        res.on('end', () => {
-          try {
-            if (res.statusCode === 200 || res.statusCode === 201) {
-              // Check if response is SSE (text/event-stream) or JSON
-              const contentType = res.headers['content-type'] || '';
-              let result;
-              
-              if (contentType.includes('text/event-stream') || data.startsWith('data:')) {
-                // Parse SSE format: data: {...}\n\n
-                const lines = data.split('\n');
-                let jsonData = '';
-                for (const line of lines) {
-                  if (line.startsWith('data: ')) {
-                    jsonData = line.substring(6); // Remove 'data: ' prefix
-                    break;
-                  }
+      res.on('end', () => {
+        try {
+          if (res.statusCode === 200 || res.statusCode === 201) {
+            // MCP Server Trigger returns SSE (text/event-stream) or JSON
+            const contentType = res.headers['content-type'] || '';
+            let result;
+            
+            if (contentType.includes('text/event-stream') || data.startsWith('data:')) {
+              // Parse SSE format: data: {...}\n\n
+              const lines = data.split('\n');
+              let jsonData = '';
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  jsonData = line.substring(6); // Remove 'data: ' prefix
+                  break;
                 }
-                if (jsonData) {
-                  result = JSON.parse(jsonData);
-                } else {
-                  // Try parsing entire response as JSON
-                  result = JSON.parse(data);
-                }
+              }
+              if (jsonData) {
+                result = JSON.parse(jsonData);
               } else {
+                // Try parsing entire response as JSON
                 result = JSON.parse(data);
               }
-              
-              // Extract the output from the workflow execution
-              // For executeWorkflowTrigger workflows, the output is in resultData.runData
-              let output = null;
-              if (result.data?.resultData?.runData) {
-                const nodeNames = Object.keys(result.data.resultData.runData);
-                if (nodeNames.length > 0) {
-                  const lastNode = nodeNames[nodeNames.length - 1];
-                  const nodeData = result.data.resultData.runData[lastNode];
-                  if (nodeData && nodeData.length > 0 && nodeData[0].data?.main) {
-                    output = nodeData[0].data.main[0];
-                  }
+            } else {
+              result = JSON.parse(data);
+            }
+            
+            // Extract the output from the workflow execution
+            let output = null;
+            if (result.data?.resultData?.runData) {
+              const nodeNames = Object.keys(result.data.resultData.runData);
+              if (nodeNames.length > 0) {
+                const lastNode = nodeNames[nodeNames.length - 1];
+                const nodeData = result.data.resultData.runData[lastNode];
+                if (nodeData && nodeData.length > 0 && nodeData[0].data?.main) {
+                  output = nodeData[0].data.main[0];
                 }
               }
-              
-              sendResponse({
-                jsonrpc: '2.0',
-                id: messageId,
-                result: {
-                  content: [
-                    {
-                      type: 'text',
-                      text: JSON.stringify(output || result, null, 2)
-                    }
-                  ]
-                }
-              });
-            } else {
-              const errorData = data ? JSON.parse(data) : { message: `HTTP ${res.statusCode}` };
-              sendResponse({
-                jsonrpc: '2.0',
-                id: messageId,
-                error: {
-                  code: -32000,
-                  message: `n8n API error (${res.statusCode}): ${errorData.message || 'Unknown error'}`
-                }
-              });
             }
-          } catch (e) {
+            
+            sendResponse({
+              jsonrpc: '2.0',
+              id: messageId,
+              result: {
+                content: [
+                  {
+                    type: 'text',
+                    text: JSON.stringify(output || result, null, 2)
+                  }
+                ]
+              }
+            });
+          } else {
+            const errorData = data ? JSON.parse(data) : { message: `HTTP ${res.statusCode}` };
             sendResponse({
               jsonrpc: '2.0',
               id: messageId,
               error: {
                 code: -32000,
-                message: `Failed to parse n8n response: ${e.message}. Raw response: ${data.substring(0, 200)}`
+                message: `n8n API error (${res.statusCode}): ${errorData.message || 'Unknown error'}`
               }
             });
           }
-          resolve();
-        });
+        } catch (e) {
+          sendResponse({
+            jsonrpc: '2.0',
+            id: messageId,
+            error: {
+              code: -32000,
+              message: `Failed to parse n8n response: ${e.message}. Raw response: ${data.substring(0, 200)}`
+            }
+          });
+        }
+        resolve();
+      });
     });
 
     req.on('error', (error) => {
@@ -360,7 +352,11 @@ async function callN8nWorkflow(workflowId, inputData, messageId) {
       resolve();
     });
 
-    req.write(JSON.stringify(requestBody));
+    // MCP Server Trigger expects tool name and arguments
+    req.write(JSON.stringify({
+      tool: toolName,
+      arguments: inputData
+    }));
     req.end();
   });
 }
