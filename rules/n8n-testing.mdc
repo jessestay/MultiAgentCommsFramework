@@ -1,3 +1,7 @@
+---
+description: All N8N workflow modifications require testing before deployment. This rule defines the testing protocol for N8N workflows.
+alwaysApply: false
+---
 # N8N Workflow Testing Requirements [MANDATORY]
 
 ## Overview

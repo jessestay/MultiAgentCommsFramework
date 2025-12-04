@@ -1,25 +1,5 @@
 {
   "mcpServers": {
-    "n8n": {
-      "command": "n8n-mcp",
-      "args": [],
-      "env": {
-        "NODE_ENV": "production",
-        "N8N_API_URL": "http://localhost:5678",
-        "N8N_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiMDFkMmI5ZS1mOTdkLTQ5YWYtYjE4MC1lODViMjQ3MDVjZGYiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzYwNTk0OTYyfQ.nN128ZrRjHEyXH00qPzkt2jxqucZV4SCDBVeOZMS4RI"
-      }
-    },
-    "google-sheets-mcp": {
-      "command": "/home/stay/.nvm/versions/node/v20.19.5/bin/node",
-      "args": [
-        "/home/stay/GithubRepos/Rockit/.cursor/shared_tools/google-sheets-mcp-wrapper.js"
-      ],
-      "env": {
-        "N8N_API_URL": "http://localhost:5678",
-        "N8N_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiMDFkMmI5ZS1mOTdkLTQ5YWYtYjE4MC1lODViMjQ3MDVjZGYiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzYwNTk0OTYyfQ.nN128ZrRjHEyXH00qPzkt2jxqucZV4SCDBVeOZMS4RI"
-      },
-      "description": "Google Sheets MCP server via n8n workflows"
-    },
     "n8n-workflows": {
       "command": "/home/stay/.nvm/versions/node/v20.19.5/bin/node",
       "args": [
@@ -30,14 +10,6 @@
         "N8N_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiMDFkMmI5ZS1mOTdkLTQ5YWYtYjE4MC1lODViMjQ3MDVjZGYiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzYwNTk0OTYyfQ.nN128ZrRjHEyXH00qPzkt2jxqucZV4SCDBVeOZMS4RI"
       },
       "description": "Master MCP server for all n8n workflow-specific tools. Only exposes tools from workflows with MCP Server Trigger nodes (filters out general n8n management tools)."
-    },
-    "canva": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@canva/cli@latest",
-        "mcp"
-      ]
     }
   }
 }

@@ -11,10 +11,29 @@
  */
 
 const http = require('http');
+const fs = require('fs');
 const { URL } = require('url');
 
 const N8N_API_URL = process.env.N8N_API_URL || 'http://localhost:5678';
 const N8N_API_KEY = process.env.N8N_API_KEY || '';
+const DEBUG_LOG_PATH = process.env.N8N_MCP_DEBUG_LOG || '/home/stay/GithubRepos/Rockit/mcp-debug-n8n-workflows.log';
+
+function logDebug(message, details = null) {
+  try {
+    const entry = {
+      timestamp: new Date().toISOString(),
+      message,
+      ...(details ? { details } : {})
+    };
+    fs.appendFileSync(DEBUG_LOG_PATH, JSON.stringify(entry) + '\n');
+  } catch (err) {
+    // Avoid crashing if logging fails
+  }
+}
+
+logDebug('n8n-workflows MCP wrapper starting', {
+  apiUrl: N8N_API_URL
+});
 
 // Cache for discovered workflow tools
 let workflowToolsCache = null;
@@ -29,11 +48,13 @@ function sendResponse(response) {
   if (response.id === undefined || response.id === null) {
     // Can't send response without valid id - log to stderr instead
     process.stderr.write(`Cannot send response without valid id: ${JSON.stringify(response)}\n`);
+    logDebug('Skipped sendResponse due to invalid id', response);
     return;
   }
   
   const output = JSON.stringify(response) + '\n';
   process.stdout.write(output);
+  logDebug('Sent response', { id: response.id, hasError: !!response.error });
   // Note: Node.js stdout is automatically flushed, no need for flush()
 }
 
@@ -45,6 +66,7 @@ function sendErrorResponse(id, code, message, data = null) {
   if (id === undefined || id === null) {
     // Log to stderr instead
     process.stderr.write(`Error (code ${code}): ${message}${data ? ' - ' + JSON.stringify(data) : ''}\n`);
+    logDebug('Dropped error response due to missing id', { code, message });
     return;
   }
   
@@ -54,6 +76,7 @@ function sendErrorResponse(id, code, message, data = null) {
     ...(data && { data })
   };
   
+  logDebug('Sending error response', { id, code, message });
   sendResponse({
     jsonrpc: '2.0',
     id: id,
@@ -308,29 +331,18 @@ async function executeWorkflowTool(toolName, arguments_) {
                   }
                 }
                 
-                // Find toolWorkflow nodes connected to this trigger (via ai_tool port)
-                const aiToolConnections = workflow.connections?.[trigger.name]?.ai_tool || [];
+                // For parent workflows with MCP Server Triggers, call the webhook directly
+                // The webhook will route to connected nodes (HTTP Request or toolWorkflow)
+                const webhookPath = path || trigger.webhookId;
+                const webhookUrl = `${N8N_API_URL}/webhook/${webhookPath}`;
                 
-                for (const connectionArray of aiToolConnections) {
-                  for (const connection of connectionArray) {
-                    const connectedNode = workflow.nodes.find(n => n.name === connection.node);
-                    if (connectedNode?.type === '@n8n/n8n-nodes-langchain.toolWorkflow') {
-                      const connectedToolName = connectedNode.parameters?.name;
-                      
-                      if (connectedToolName === toolName) {
-                        // Found the tool! Execute via MCP Server Trigger webhook
-                        const webhookPath = path || trigger.webhookId;
-                        const webhookUrl = `${N8N_API_URL}/webhook/${webhookPath}`;
-                        
-                        // Call the MCP Server Trigger webhook with tool name and arguments
-                        callMCPTriggerWebhook(webhookUrl, toolName, arguments_)
-                          .then(resolve)
-                          .catch(reject);
-                        return;
-                      }
-                    }
-                  }
-                }
+                // Call the MCP Server Trigger webhook with tool name and arguments
+                // First initialize, then call the tool
+                initializeMCPTrigger(webhookUrl)
+                  .then(() => callMCPTriggerWebhookJSONRPC(webhookUrl, toolName, arguments_))
+                  .then(resolve)
+                  .catch(reject);
+                return;
               }
             }
             
@@ -446,6 +458,129 @@ async function callHttpRequestUrl(url, inputData) {
 
     // Pass input data to the HTTP request
     req.write(JSON.stringify(inputData || {}));
+    req.end();
+  });
+}
+
+/**
+ * Initialize MCP Server Trigger webhook
+ */
+async function initializeMCPTrigger(webhookUrl) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(webhookUrl);
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json, text/event-stream'
+      }
+    };
+
+    const req = http.request(url, options, (res) => {
+      let buffer = '';
+      
+      res.on('data', (chunk) => {
+        buffer += chunk.toString();
+        
+        // For SSE, process complete lines as they arrive
+        if (res.headers['content-type']?.includes('text/event-stream')) {
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // Keep incomplete line
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const jsonData = line.substring(6);
+                const event = JSON.parse(jsonData);
+                if (event.jsonrpc === '2.0' && event.result) {
+                  resolve(event.result);
+                  return;
+                } else if (event.error) {
+                  // If already initialized, that's okay
+                  if (event.error.message && event.error.message.includes('already initialized')) {
+                    resolve({ initialized: true });
+                    return;
+                  } else {
+                    reject(new Error(event.error.message || 'MCP Server Trigger initialization error'));
+                    return;
+                  }
+                }
+              } catch (e) {
+                // Continue parsing other lines
+              }
+            }
+          }
+        }
+      });
+      
+      res.on('end', () => {
+        try {
+          if (res.statusCode === 200 || res.statusCode === 201) {
+            // If we already resolved from SSE, don't process again
+            if (buffer) {
+              // Try to parse as JSON (non-SSE response)
+              try {
+                const result = JSON.parse(buffer);
+                if (result.jsonrpc === '2.0' && result.result) {
+                  resolve(result.result);
+                } else if (result.error) {
+                  // If already initialized, that's okay
+                  if (result.error.message && result.error.message.includes('already initialized')) {
+                    resolve({ initialized: true });
+                  } else {
+                    reject(new Error(result.error.message || 'MCP Server Trigger initialization error'));
+                  }
+                } else {
+                  resolve({ initialized: true });
+                }
+              } catch (e) {
+                // If not JSON, try to parse as SSE
+                const lines = buffer.split('\n');
+                for (const line of lines) {
+                  if (line.startsWith('data: ')) {
+                    try {
+                      const jsonData = line.substring(6);
+                      const event = JSON.parse(jsonData);
+                      if (event.jsonrpc === '2.0' && event.result) {
+                        resolve(event.result);
+                        return;
+                      }
+                    } catch (e2) {
+                      // Continue
+                    }
+                  }
+                }
+                // If no valid SSE events, assume success
+                resolve({ initialized: true });
+              }
+            }
+          } else {
+            reject(new Error(`Initialization error (${res.statusCode}): ${buffer}`));
+          }
+        } catch (e) {
+          reject(new Error(`Failed to parse initialization response: ${e.message}`));
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(new Error(`Initialization request failed: ${error.message}`));
+    });
+
+    // Send initialize message
+    req.write(JSON.stringify({
+      jsonrpc: '2.0',
+      id: 0,
+      method: 'initialize',
+      params: {
+        protocolVersion: '2024-11-05',
+        capabilities: {},
+        clientInfo: {
+          name: 'n8n-workflows-mcp-wrapper',
+          version: '1.0.0'
+        }
+      }
+    }));
     req.end();
   });
 }
@@ -586,6 +721,7 @@ process.stdin.on('data', (chunk) => {
     let message = null;
     try {
       message = JSON.parse(line);
+      logDebug('Received message', { id: message.id, method: message.method });
       
       // Validate JSON-RPC message
       if (!message.jsonrpc || message.jsonrpc !== '2.0') {
@@ -595,10 +731,20 @@ process.stdin.on('data', (chunk) => {
         continue;
       }
       
-      // Ensure message has an id for responses
+      // Handle notifications (messages without id) - these don't require responses
       if (message.id === undefined || message.id === null) {
-        // Skip messages without id as we can't respond to them
-        continue;
+        if (message.method === 'notifications/initialized') {
+          // This is expected after initialize - just acknowledge silently
+          logDebug('Received initialized notification', {});
+          continue;
+        } else if (message.method) {
+          // Unknown notification - log but don't respond (notifications don't require responses)
+          logDebug('Received unknown notification', { method: message.method });
+          continue;
+        } else {
+          // Invalid message - skip silently
+          continue;
+        }
       }
       
       if (message.method === 'initialize') {
@@ -633,12 +779,14 @@ process.stdin.on('data', (chunk) => {
           })
           .catch(error => {
             sendErrorResponse(message.id, -32000, `Failed to discover workflow tools: ${error.message}`);
+            logDebug('discoverWorkflowTools failed', { error: error.message });
           });
       } else if (message.method === 'tools/call') {
         const { name, arguments: args } = message.params || {};
         
         if (!name) {
           sendErrorResponse(message.id, -32602, 'Invalid params: tool name is required');
+          logDebug('tools/call missing name', { id: message.id });
           continue;
         }
         
@@ -656,19 +804,30 @@ process.stdin.on('data', (chunk) => {
                 ]
               }
             });
+            logDebug('tools/call success', { id: message.id, tool: name });
           })
           .catch(error => {
             sendErrorResponse(message.id, -32000, `Tool execution failed: ${error.message}`);
+            logDebug('tools/call error', { id: message.id, tool: name, error: error.message });
           });
       } else {
         sendErrorResponse(message.id, -32601, `Method not found: ${message.method}`);
+        logDebug('Unknown method', { method: message.method });
       }
     } catch (e) {
       // Invalid JSON - try to send error if we have a message with id
-      if (message && message.id !== undefined && message.id !== null) {
-        sendErrorResponse(message.id, -32700, `Parse error: ${e.message}`);
+      // Double-check that message exists and has a valid id before responding
+      if (message && typeof message === 'object' && message.id !== undefined && message.id !== null) {
+        try {
+          sendErrorResponse(message.id, -32700, `Parse error: ${e.message}`);
+        } catch (responseError) {
+          // If sending error response fails, log to stderr and continue
+          process.stderr.write(`Failed to send error response: ${responseError.message}\n`);
+        }
       }
-      // Otherwise, skip invalid messages silently
+      // Otherwise, skip invalid messages silently - log to stderr for debugging
+      process.stderr.write(`Skipping invalid message (no valid id): ${line.substring(0, 100)}\n`);
+      logDebug('Parse error or invalid message', { line: line.substring(0, 100), error: e.message });
     }
   }
 });
