@@ -20,14 +20,19 @@ This rule defines the **MANDATORY** protocol for accessing services through Curs
 ### 2. MCP Troubleshooting Protocol [MANDATORY]
 When MCP appears unavailable or returns errors:
 
-1. **Verify MCP Server Configuration**: Check `.cursor/mcp.json` for correct configuration
-2. **Test Multiple MCP Tools**: Try different MCP tools to determine scope of issue
-3. **Check MCP Server Status**: Use diagnostic tools like `mcp_n8n_n8n_health_check` or `mcp_n8n_n8n_diagnostic`
-4. **Restart MCP Server**: If possible, restart the MCP server service
-5. **Check Logs**: Look for MCP-related errors in Cursor IDE logs
-6. **Verify Environment**: Ensure environment variables and credentials are correct
-7. **Try Alternate MCP Tools**: Use different MCP tools for the same operation if one fails
-8. **LAST RESORT**: Only after exhausting ALL MCP troubleshooting options, use alternative methods
+1. **PRIORITY: Fix MCP Server First [CRITICAL]**: MCP servers MUST be fixed before attempting alternative methods. This is the highest priority when MCP tools are not working.
+2. **Verify MCP Server Configuration**: Check `.cursor/mcp.json` for correct configuration
+3. **Test Multiple MCP Tools**: Try different MCP tools to determine scope of issue
+4. **Check MCP Server Status**: Use diagnostic tools like `mcp_n8n_n8n_health_check` or `mcp_n8n_n8n_diagnostic`
+5. **Check Workflow Status**: For n8n-based MCP servers, verify:
+   - Parent workflows are active
+   - Sub-workflows are unarchived (if applicable)
+   - MCP Server Trigger webhooks are registered (may require manual activation in n8n UI)
+6. **Restart MCP Server**: If possible, restart the MCP server service
+7. **Check Logs**: Look for MCP-related errors in Cursor IDE logs
+8. **Verify Environment**: Ensure environment variables and credentials are correct
+9. **Try Alternate MCP Tools**: Use different MCP tools for the same operation if one fails
+10. **LAST RESORT**: Only after exhausting ALL MCP troubleshooting options, use alternative methods
 
 ### 3. Never Ask User for Permission [PROHIBITED]
 - Do NOT ask "Should I use MCP or the browser?"
