@@ -1,0 +1,15 @@
+[Unit]
+Description=Browser Demo Runner
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/stay/GithubRepos/Content Creation/.cursor/runner
+ExecStart=/usr/bin/node src/server.js
+Restart=on-failure
+Environment=NODE_ENV=production
+EnvironmentFile=/home/stay/GithubRepos/Content Creation/.cursor/runner/.env
+
+[Install]
+WantedBy=default.target
+

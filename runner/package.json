@@ -1,0 +1,18 @@
+{
+  "name": "browser-demo-runner",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Runner service for transcript-driven browser demos (uses Browserless + Auth Broker).",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "NODE_ENV=development node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "morgan": "^1.10.0",
+    "node-fetch": "^3.3.2",
+    "uuid": "^9.0.1"
+  }
+}
+
