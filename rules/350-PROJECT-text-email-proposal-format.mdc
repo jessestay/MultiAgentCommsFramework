@@ -1,0 +1,222 @@
+---
+description: Defines the mandatory format and communication style for text-based email proposals. This format is distinct from Canva/PDF proposals and emphasizes personal, conversational tone suitable for direct email delivery.
+alwaysApply: false
+---
+# Text Email Proposal Format [MANDATORY]
+
+## Overview
+This rule defines the standardized format and communication style for text-based email proposals. **This format is DISTINCT from Canva/PDF proposals** and should be used when sending proposals directly via email as plain text.
+
+**Key Distinction**: Text email proposals use a **personal, conversational tone** suitable for direct client communication via email, while Canva/PDF proposals use a more formal, structured format designed for visual presentation.
+
+## When to Use Text Email Proposals
+
+- Client prefers text-based communication
+- Quick delivery needed (no design time required)
+- Personal relationship has been established
+- Proposal needs to be easily readable in email clients
+- Mobile-friendly format is priority
+
+## Communication Style & Tone [CRITICAL]
+
+### Opening (Personal & Conversational)
+- **Start with casual greeting**: Use "Hey [First Name]," not "Dear [Client Name],"
+- **Include personal context**: Reference delays, schedule, or personal circumstances that affected timing
+- **Be transparent**: Explain why you're sending it now (e.g., "I wanted to be sure I could commit the time to you for this when I sent it")
+- **Show availability**: Express readiness to engage (e.g., "I'm ready to go on this today if you want")
+
+### Tone Characteristics
+- **Conversational**: Write like you're talking to a colleague or friend
+- **Personal**: Include personal context and human elements
+- **Transparent**: Be honest about timing, availability, and limitations
+- **Inviting**: Encourage questions and adjustments ("please let me know if you have any questions or need to adjust any of these based on your needs and vision")
+- **Direct**: Get to the point quickly without excessive formalities
+- **Friendly**: Use natural language that builds rapport
+
+### Language Examples
+✅ **GOOD** (Text Email Style):
+- "Hey Simon, sorry for the delay. My schedule has been crazy lately..."
+- "I wanted to be sure I could commit the time to you for this when I sent it"
+- "If you have any questions, please let me know"
+- "I'm ready to go on this today if you want"
+- "Here's the proposal--happy to talk more on the phone, and please let me know if you have any questions or need to adjust any of these based on your needs and vision:"
+- "Based on our conversation, I've crafted..."
+- "The core opportunity (as I understand it):"
+
+❌ **AVOID** (Too Formal for Text Email):
+- "Dear [Client Name]," (use "Hey [First Name]," instead)
+- "Thank you for the opportunity to present..." (too formal)
+- "I look forward to discussing this proposal with you." (use "I look forward to discussing this with you." instead)
+- Avoid excessive formalities and corporate language
+
+## Structure & Formatting
+
+### 1. Opening Section
+```
+Hey [First Name], [personal context/apology/explanation]. [Readiness statement]. Here's the proposal--[invitation to discuss/adjust]:
+```
+
+**Example**:
+```
+Hey Simon, sorry for the delay. My schedule has been crazy lately and I wanted to be sure I could commit the time to you for this when I sent it. If you have any questions, please let me know. I'm ready to go on this today if you want. Here's the proposal--happy to talk more on the phone, and please let me know if you have any questions or need to adjust any of these based on your needs and vision:
+```
+
+### 2. Brief Context Paragraph
+- 2-3 sentences providing background
+- Reference prior conversations
+- State the core opportunity/value proposition
+- Include tier recommendation with pricing
+
+### 3. Section Headers (ALL CAPS)
+Use ALL CAPS for major section headers:
+- `THE OPPORTUNITY`
+- `COMPARISON: BUILD VS. BUY`
+- `THREE TIERS FOR ANY BUDGET`
+- `PROFESSIONAL TIER DETAILS (RECOMMENDED)`
+- `KEY DIFFERENTIATORS`
+- `HOW IT WORKS`
+- `SUCCESS METRICS & GUARANTEE`
+- `WHAT'S INCLUDED`
+- `TIMELINE & PAYMENT`
+- `NEXT STEPS`
+
+### 4. Content Formatting
+- **Bullet points**: Use simple `•` or `-` for lists
+- **Tables**: Use plain text table format with pipes `|` (if needed)
+- **No complex formatting**: Avoid HTML, special characters that may not render in all email clients
+- **Line breaks**: Use double line breaks between major sections
+- **No emojis**: Keep it professional text-only (except in signature if part of brand)
+
+### 5. Closing
+- Personal closing: "I look forward to discussing this with you."
+- Simple sign-off: "Best regards," or "Looking forward to it,"
+- Name only (first name is fine if relationship is established)
+
+### 6. Signature Block
+Include full signature with:
+- Full name only (or first name if relationship is established)
+- Title/Role
+- Phone (with instruction like "Please text first")
+- Website
+- Book titles/publications in quotes (if relevant)
+- Additional links (AdWeek articles, videos, etc.)
+
+**Example**:
+```
+Best regards,
+
+Jesse
+
+--
+Jesse Stay (he/him)
+Growth Hacker / AI & Automation
+
+801-853-8339 (Please text first) | http://jessestay.com | "Canva For Dummies", "TikTok For Dummies", "Minecraft For Dummies", "Facebook All-in-One For Dummies"
+
+My AdWeek articles: http://www.adweek.com/contributor/Jesse-Stay/
+My gadget and tech video reviews: http://facebook.com/stay/videos
+```
+
+**Note**: The signature uses a double dash `--` separator before the contact information block.
+
+## Content Structure
+
+### Required Sections (In Order)
+
+1. **Opening** (Personal greeting + context)
+2. **Brief Context** (2-3 sentences: background + opportunity + recommendation)
+3. **THE OPPORTUNITY** (Problem → Solution → Bottom line)
+4. **COMPARISON: BUILD VS. BUY** (Comparison table)
+5. **THREE TIERS FOR ANY BUDGET** (Brief overview with invitation to adjust)
+6. **RECOMMENDED TIER DETAILS** (Expanded details)
+7. **KEY DIFFERENTIATORS** (4-5 bullet points)
+8. **HOW IT WORKS** (Simple flow or explanation)
+9. **SUCCESS METRICS & GUARANTEE** (Guarantees with specifics)
+10. **WHAT'S INCLUDED** (Included vs. Not Included)
+11. **TIMELINE & PAYMENT** (Specifics with payment terms)
+12. **NEXT STEPS** (Numbered steps)
+13. **Personal Closing**
+14. **Signature Block**
+
+## Key Phrases & Language Patterns
+
+### Opening Patterns
+- "Hey [Name], sorry for the delay..."
+- "My schedule has been crazy lately..."
+- "I wanted to be sure I could commit..."
+- "I'm ready to go on this today if you want"
+- "Here's the proposal--happy to talk more on the phone"
+
+### Value Proposition Language
+- "Based on our conversation..."
+- "I've crafted a three-tier solution..."
+- "The core opportunity (as I understand it):"
+- "I'm recommending we start with..."
+- "At $X setup + $Y/month, it delivers..."
+
+### Invitation Language
+- "and please let me know if you have any questions or need to adjust any of these based on your needs and vision"
+- "happy to talk more on the phone"
+- "please let me know if you have any questions"
+
+### Closing Language
+- "I look forward to discussing this with you."
+- "Looking forward to it,"
+- "Best regards,"
+
+## Differences from Canva/PDF Proposals
+
+| Aspect | Text Email | Canva/PDF |
+|--------|-----------|-----------|
+| **Opening** | "Hey [Name]," | "Dear [Client Name]," |
+| **Tone** | Conversational, personal | Formal, professional |
+| **Context** | Includes personal delays/availability | No personal context |
+| **Section Headers** | ALL CAPS | Title Case with Branding |
+| **Formatting** | Plain text, simple | Visual design, branded |
+| **Signature** | Full with links/publications | Company name + contact |
+| **Invitation** | Explicit adjustment invitation | Standard "let's discuss" |
+| **Delivery** | Direct email body | PDF attachment |
+
+## File Location Standard
+
+Text email proposals should be saved as:
+```
+exports/proposals/{client-name}-proposal-email.txt
+```
+
+**Example**: `exports/proposals/bvital-proposal-email.txt`
+
+## Template Reference
+
+When creating a new text email proposal, reference:
+- **Example**: `exports/proposals/bvital-proposal-email.txt` (current master example)
+- **Content Source**: Use same content as Canva proposals but adapt tone/structure
+- **Client Data**: Pull from `templates/proposal_data_{client}.csv` for client-specific details
+
+## Role Responsibilities
+
+### Copy/Technical Writer (CTW)
+- Creates text email proposals following this format
+- Adapts content from Canva proposals to conversational tone
+- Ensures personal touches and transparency are included
+- Maintains consistency with Jesse Stay's communication style
+
+### Executive Secretary (ES)
+- Identifies when text email format is needed vs. Canva/PDF
+- Ensures proper file location and naming
+- Coordinates with CTW for creation
+
+### Marketing Director (MD)
+- Reviews tone and messaging for brand alignment
+- Ensures value proposition is clear despite casual tone
+- Verifies CTAs are appropriate for email format
+
+## Enforcement
+
+This format is **MANDATORY** for all text-based email proposals. Do NOT use formal Canva/PDF language in text email proposals. The conversational, personal tone is intentional and required.
+
+## Related Rules
+
+- **Canva/PDF Proposals**: `.cursor/rules/340-PROJECT-proposal-bulk-create-workflow.mdc`
+- **Voice & Tone**: `.cursor/rules/070-BRANDING-voice-and-tone.mdc`
+- **Jesse Stay Profile**: `.cursor/rules/OWNER-jesse-stay-profile.mdc`

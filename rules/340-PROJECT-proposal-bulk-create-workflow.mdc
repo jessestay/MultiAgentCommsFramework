@@ -1,0 +1,368 @@
+---
+description: This rule defines the complete, repeatable workflow for creating client proposals using Canva's Bulk Create feature with CSV data. This process enables rapid proposal generation with consistent branding and easy content customization.
+alwaysApply: false
+---
+# Proposal Bulk Create Workflow [MANDATORY]
+
+## Overview
+This rule defines the complete, repeatable workflow for creating client proposals using Canva's Bulk Create feature with CSV data. This process enables rapid proposal generation with consistent branding and easy content customization.
+
+**IMPORTANT**: This rule covers **Canva/PDF proposals only**. For **text-based email proposals**, see `.cursor/rules/350-PROJECT-text-email-proposal-format.mdc` which defines a separate, conversational format for direct email delivery.
+
+## Prerequisites
+
+### Required Files
+1. **CSV Template**: `templates/proposal_data_template.csv` - Master template with all field definitions
+2. **Brand Template Standard**: See `330-PROJECT-proposal-template-standard.mdc` for required structure
+3. **MCP Workflow**: See `320-PROJECT-canva-mcp-workflow.mdc` for Canva MCP tool usage
+
+### Required Canva Setup
+- Stay N Alive Brand Kit (ID: `C3GqnA4VRhY`)
+- Stay N Alive Logo (Asset ID: `AAGZyNu6QTA`)
+- Active Canva MCP authentication (see token handling in `320-PROJECT-canva-mcp-workflow.mdc`)
+
+## Workflow Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    PROPOSAL CREATION WORKFLOW                    │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  1. PREPARE DATA                                                 │
+│     └── Copy template CSV                                        │
+│     └── Fill client-specific values                              │
+│     └── Save as proposal_data_{client}.csv                       │
+│                                                                  │
+│  2. CREATE CANVA TEMPLATE (One-time per template style)          │
+│     └── Generate base design with MCP                            │
+│     └── Add data placeholders ({{field_id}})                     │
+│     └── Save as Brand Template                                   │
+│                                                                  │
+│  3. BULK CREATE (Per proposal)                                   │
+│     └── Open Canva editor with template                          │
+│     └── Apps → Bulk Create                                       │
+│     └── Upload/connect CSV                                       │
+│     └── Map fields to placeholders                               │
+│     └── Generate designs                                         │
+│                                                                  │
+│  4. FINALIZE                                                     │
+│     └── Review generated proposal                                │
+│     └── Manual adjustments if needed                             │
+│     └── Export as PDF                                            │
+│     └── Update canva_designs.json tracker                        │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Step 1: Prepare Client Data [REQUIRED]
+
+### 1.1 Create Client CSV
+Copy the template and create a client-specific file:
+
+```bash
+cp templates/proposal_data_template.csv templates/proposal_data_{clientname}.csv
+```
+
+### 1.2 Required Fields
+The CSV MUST include these fields (see `templates/proposal_data_template.csv` for full list):
+
+| Category | Fields |
+|----------|--------|
+| **Client Info** | client_name, client_company, client_industry, client_platform |
+| **Dates** | proposal_date, valid_until |
+| **Competitive** | native_solution_name, native_solution_cost, saas_cost_low/high, agency_cost_low/high |
+| **Pricing** | essentials_setup/monthly/yearly, professional_setup/monthly/yearly, enterprise_setup/monthly/yearly |
+| **Features** | essentials_features, professional_features, enterprise_features (pipe-separated) |
+| **Guarantees** | guarantee_metric, guarantee_period |
+| **Cover Letter** | cover_letter_opening, cover_letter_context, cover_letter_hook, cover_letter_opportunity |
+| **Differentiators** | differentiator_1_title/desc through differentiator_4_title/desc |
+| **Contact** | contact_name, contact_email, contact_phone, contact_website (static) |
+
+### 1.3 CSV Format Rules
+- Use field_id,value format (2 columns)
+- No special characters in values (avoid quotes, commas within values)
+- Use pipe `|` to separate list items (e.g., features)
+- Dates in "Month D YYYY" format (e.g., "December 4 2024")
+- Currency with $ prefix, no commas (e.g., "$4500" not "$4,500")
+
+## Step 2: Create Canva Template [ONE-TIME SETUP]
+
+### 2.1 Generate Base Design
+Use MCP `generate-design` to create the initial structure:
+
+```
+@DES: Generate a proposal presentation with the following structure:
+
+**Presentation Brief**
+Title: Client Proposal Template
+Topic: Reusable B2B sales proposal template with data placeholders
+
+**Slide Plan:**
+1. Cover Letter - with placeholders for salutation, context, value prop
+2. Title Page - logo, client name, date placeholders
+3. Competitive Comparison - table with cost/limitation placeholders
+4. Pricing Tiers - three cards with price placeholders
+5. Why Choose Us - four differentiator blocks
+6. Contact - contact info placeholders
+
+**Constraints:**
+- Brand colors: #1a1a1a, #722F37, #E8927C
+- ALL text as Canva text layers
+- Include Stay N Alive logo
+```
+
+### 2.2 Add Data Placeholders
+After generating, manually edit in Canva to add placeholders using `{{field_id}}` syntax:
+
+**Cover Letter Page:**
+```
+Dear {{client_name}},
+
+{{cover_letter_opening}}.
+
+{{cover_letter_context}}. {{cover_letter_hook}}.
+
+{{cover_letter_opportunity}}.
+
+I recommend the {{recommended_tier}} Tier...
+```
+
+**Competitive Comparison Table:**
+```
+| Approach | Year 1 Cost | Limitation |
+|----------|-------------|------------|
+| {{native_solution_name}} | {{native_solution_cost}} | {{native_solution_limit}} |
+| SaaS Stack | {{saas_cost_low}}-{{saas_cost_high}} | {{saas_limit}} |
+| Agency | {{agency_cost_low}}-{{agency_cost_high}} | {{agency_limit}} |
+| THIS PROPOSAL | {{essentials_yearly}}-{{enterprise_yearly}} | You own everything |
+```
+
+**Pricing Cards:**
+```
+ESSENTIALS: {{essentials_setup}} setup + {{essentials_monthly}}/mo = {{essentials_yearly}}/year
+PROFESSIONAL: {{professional_setup}} setup + {{professional_monthly}}/mo = {{professional_yearly}}/year
+ENTERPRISE: {{enterprise_setup}} setup + {{enterprise_monthly}}/mo = {{enterprise_yearly}}/year
+```
+
+### 2.3 Save as Brand Template
+1. In Canva: Share → More → Brand Template
+2. Add to Stay N Alive brand folder
+3. Note the template ID for future use
+
+## Step 3: Bulk Create Process [PER PROPOSAL]
+
+### 3.1 Open Template
+1. Navigate to Canva Brand Templates
+2. Open the proposal template
+3. Click "Use this template"
+
+### 3.2 Access Bulk Create
+1. In editor left sidebar: Click "Apps"
+2. Search for "Bulk Create"
+3. Click to open the Bulk Create panel
+
+### 3.2a State Capture Before Any Automation
+- **Always** capture the current UI state before clicking/typing: take a full-page screenshot and save the HTML (e.g., `tempXX.png` and `tempXX.html` in the repo root). This prevents blind updates, helps spot duplicate elements/overlays, and preserves evidence for debugging.
+- Re-capture before each significant automation step (upload, mapping, generation) and after errors.
+- If the page differs from expectations, stop and reconcile the state before proceeding.
+
+### 3.3 Connect Data
+**Option A - Upload CSV:**
+1. Click "Upload CSV"
+2. Select `templates/proposal_data_{client}.csv`
+3. Canva will auto-detect field mappings
+
+**Option B - Google Sheets (recommended for team access):**
+1. Click "Connect data"
+2. Select Google Sheets
+3. Choose the proposal data sheet
+4. Authorize if needed
+
+### 3.4 Map Fields
+**REFERENCE**: See `.cursor/docs/Canva® For Dummies®.pdf` for detailed Bulk Create field mapping instructions.
+
+1. Bulk Create will show detected placeholders
+2. **To connect fields**: Right-click on each field/placeholder in the mapping panel → Select "Connect data" → Choose the corresponding CSV column
+3. Verify each `{{field_id}}` maps to correct CSV column
+4. Fix any unmapped fields manually
+
+**Automation Note**: Field mapping requires right-click interactions that are difficult to automate. Consult the PDF for the proper manual workflow when automation attempts fail.
+
+### 3.5 Generate
+1. Click "Generate designs"
+2. Wait for processing (typically 30-60 seconds)
+3. Review the generated proposal
+
+## Step 4: Finalize and Export [REQUIRED]
+
+### 4.1 Quality Check
+Verify these elements are correct:
+- [ ] Client name appears correctly throughout
+- [ ] All pricing figures are accurate
+- [ ] Competitive comparison table has exact numbers
+- [ ] Logo appears on cover and contact pages
+- [ ] No placeholder text remains (no `{{...}}`)
+- [ ] Brand colors are applied correctly
+
+### 4.2 Manual Adjustments
+If needed, manually fix:
+- Table formatting (Bulk Create may not preserve complex tables)
+- Logo positioning
+- Any paraphrased or truncated content
+
+### 4.3 Export
+1. Share → Download
+2. Select PDF format
+3. Choose "Standard" or "Print" quality
+4. Download and save to `exports/proposals/`
+
+### 4.4 Update Tracker
+Add entry to `canva_designs.json`:
+
+```json
+"proposal_{client}_{date}": {
+  "design_id": "DAG...",
+  "edit_url": "https://www.canva.com/design/DAG.../edit",
+  "created": "2024-12-06",
+  "status": "current",
+  "client": "{client_company}",
+  "csv_source": "templates/proposal_data_{client}.csv",
+  "exported_pdf": "exports/proposals/{client}_proposal_{date}.pdf"
+}
+```
+
+## Automation with MCP [ADVANCED]
+
+### Current Limitations
+
+**CRITICAL FINDING**: After extensive research and testing, **full automation of Bulk Create field mapping is not currently feasible** due to Canva's canvas-based rendering architecture. See `docs/BULK_CREATE_AUTOMATION_STRATEGY.md` for complete analysis.
+
+**Why Automation Fails:**
+- Canvas-based rendering makes text elements inaccessible via DOM
+- "Connect data" option only appears after manual right-click on selected canvas elements
+- No programmatic API access to Bulk Create mapping interface
+- Canva Autofill API requires Enterprise subscription ($150/month per user)
+
+**What CAN Be Automated:**
+- ✅ CSV template generation
+- ✅ CSV file upload
+- ✅ Navigation to mapping stage
+- ✅ Design content extraction (via MCP)
+- ✅ Visual mapping guide generation
+- ✅ Export and tracking
+
+**What REQUIRES Manual Intervention:**
+- ⚠️ Field mapping (right-click → "Connect data" → select CSV field)
+- ⚠️ Mapping verification
+- ⚠️ Complex table formatting adjustments
+
+### Recommended Hybrid Approach
+
+**Implementation**: See `docs/BULK_CREATE_AUTOMATION_STRATEGY.md` for detailed strategies.
+
+1. **Automate Setup Steps** (70% of workflow):
+   - CSV template generation
+   - CSV file upload via browser automation
+   - Navigation to mapping stage
+   - Design content extraction via MCP
+
+2. **Manual Mapping** (30% of workflow):
+   - Use visual mapping guide generated from design content
+   - Follow step-by-step instructions in `docs/BULK_CREATE_MAPPING_STATUS.md`
+   - Reference `docs/Canva® For Dummies®.pdf` for detailed mapping procedures
+
+3. **Automate Verification & Export**:
+   - Generate mapping verification checklist
+   - Automate PDF export via MCP or browser automation
+   - Update `canva_designs.json` tracker
+
+**Time Savings**: Hybrid approach reduces manual time by ~70% while maintaining quality.
+
+### Alternative Solutions
+
+**Option 1: Canva Enterprise API**
+- Requires Enterprise subscription
+- Provides Autofill API for programmatic field mapping
+- Best for high-volume use cases (>50 proposals/month)
+- See `docs/BULK_CREATE_AUTOMATION_STRATEGY.md` for details
+
+**Option 2: Third-Party Tools**
+- Templated.io, Zapier, Make (Integromat)
+- May not support Bulk Create mapping
+- Subscription costs apply
+
+**Option 3: Hybrid Automation (Current Recommendation)**
+- Automate setup and verification
+- Manual mapping with visual guides
+- Best balance of efficiency and cost
+
+### Future Enhancement Path
+When Canva Enterprise is available or API improves:
+1. Use Autofill API to programmatically populate templates
+2. Create n8n workflow for full automation
+3. Integrate with CRM for auto-generated proposals
+
+## Template Variants
+
+### Standard Proposal (13 pages)
+Full comprehensive proposal with all sections.
+- Template ID: [To be created]
+- Use for: Large deals, new relationships
+
+### Condensed Proposal (5 pages)
+Quick overview with essential information.
+- Template ID: [To be created]
+- Use for: Follow-ups, smaller projects
+
+### Executive Summary (2 pages)
+Decision-maker focused brief.
+- Template ID: [To be created]
+- Use for: Busy executives, quick decisions
+
+## Troubleshooting
+
+**PRIMARY REFERENCE**: When encountering Bulk Create issues, automation failures, or unclear UI workflows, **ALWAYS consult `.cursor/docs/Canva® For Dummies®.pdf` FIRST** before attempting complex solutions.
+
+### Common Issues
+
+**Placeholders not recognized:**
+- Ensure using `{{field_id}}` format exactly
+- Check for extra spaces inside braces
+- Verify field_id matches CSV column header
+
+**CSV upload fails:**
+- Check for special characters in values
+- Ensure UTF-8 encoding
+- Remove any empty rows
+
+**Tables not formatting correctly:**
+- Bulk Create struggles with complex tables
+- Consider using visual cards instead
+- May require manual adjustment after generation
+
+**Logo missing:**
+- Logo must be added as Canva element, not placeholder
+- Use Brand Kit logo, not uploaded image
+
+## Reference Documentation
+
+### Canva For Dummies PDF [CRITICAL REFERENCE]
+**Location**: `.cursor/docs/Canva® For Dummies®.pdf`
+
+**MANDATORY USE**: 
+- Before attempting Bulk Create automation
+- When troubleshooting field mapping issues
+- Understanding CSV data connection workflows
+- Learning proper right-click context menu usage for field connections
+
+## Related Rules
+- `320-PROJECT-canva-mcp-workflow.mdc` - MCP tool basics and PDF reference
+- `330-PROJECT-proposal-template-standard.mdc` - Content structure
+- `OWNER-jesse-stay-profile.mdc` - Contact information
+
+## Files Reference
+- `templates/proposal_data_template.csv` - Master CSV template
+- `templates/proposal_data_{client}.csv` - Client-specific data files
+- `canva_designs.json` - Design tracker
+- `exports/proposals/` - Exported PDF storage
+- `.cursor/docs/Canva® For Dummies®.pdf` - Primary Canva reference documentation

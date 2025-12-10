@@ -100,3 +100,4 @@ If no project-specific active profile is set, and a `default_active_profile_name
 ## 8. Integration with Other Rules
 - This rule complements role definitions (01X-ROLES-*.mdc). The voice profile provides an additional layer of customization on top of the base role.
 - When ES delegates tasks to other roles (e.g., CTW for drafting documents), ES should provide the active (and potentially project-overridden) voice profile context.
+- **Text Email Proposals**: For text-based email proposals, use `.cursor/rules/350-PROJECT-text-email-proposal-format.mdc` which defines a specific conversational, personal tone distinct from formal Canva/PDF proposals.

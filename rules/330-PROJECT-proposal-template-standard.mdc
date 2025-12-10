@@ -1,0 +1,203 @@
+# Stay N Alive Proposal Template Standard [MANDATORY]
+
+## Overview
+This rule defines the mandatory template and content structure for all client proposals created by Stay N Alive using Canva MCP tools.
+
+## Brand Requirements [CRITICAL]
+
+### Brand Kit
+- **Brand Kit Name**: Stay N Alive
+- **Brand Kit ID**: `C3GqnA4VRhY` (use for all designs)
+
+### Brand Colors (60-30-10 Rule)
+- **Primary (60%)**: Dark Charcoal/Black `#1a1a1a` - backgrounds, large sections
+- **Secondary (30%)**: Burgundy/Maroon `#722F37` - headers, accents, CTAs
+- **Accent (10%)**: Coral/Salmon `#E8927C` - highlights, key numbers
+- **Neutrals**: Medium Gray `#6B7280`, Light Gray/Off-White `#F5F5F5`
+
+### Logo Usage [MANDATORY]
+- **Logo Asset ID**: `AAGZyNu6QTA` (Stay N Alive logo)
+- Logo MUST appear on:
+  - Cover page (prominent placement)
+  - Contact/closing page
+  - Optional: Header or footer of interior pages
+
+### Typography
+- **Headings**: Bold, clean sans-serif
+- **Body**: Readable sans-serif, minimum 12pt equivalent
+- **Numbers/Prices**: Accent color (coral) for emphasis
+
+## Proposal Content Structure [MANDATORY]
+
+Every proposal MUST follow this page structure:
+
+### Page 1: Cover Letter
+- Personalized salutation
+- Context from previous conversations
+- Summary of what's being proposed
+- Recommendation with specific tier/price
+- Professional closing with contact info
+
+### Page 2: Title/Cover Page
+- Proposal title
+- Client name and company
+- Prepared by (Jesse Stay, Stay N Alive)
+- Date
+- Stay N Alive logo (prominent)
+
+### Page 3: The Problem & Opportunity
+- Client's pain points (specific to their situation)
+- Market opportunity
+- Why now matters
+
+### Page 4: Competitive Comparison [CRITICAL]
+**This page is NON-NEGOTIABLE for all proposals**
+
+MUST include a comparison table showing:
+| Approach | Year 1 Cost | Limitation |
+|----------|-------------|------------|
+| [Existing solution client uses] | $X | [Specific limitations] |
+| [SaaS alternatives] | $X-X | [Why they fall short] |
+| [Agency approach] | $X-X | [Why overpriced/locked-in] |
+| **This Proposal** | **$X-X** | **You own everything** |
+
+Key message: "More capability than SaaS, fraction of agency cost, full ownership."
+
+### Page 5: Pricing Tiers
+- 3 tiers: Essentials, Professional (Recommended), Enterprise
+- Visual pricing cards (NOT tables)
+- Clear "Best for:" descriptions
+- Highlight recommended tier with star/badge
+
+### Page 6: Recommended Tier Details
+- Full feature breakdown
+- Direct comparison vs. client's current solution
+- Clear value proposition
+
+### Page 7: Why Stay N Alive / Differentiators
+- 4-5 key differentiators
+- Emphasize: Ownership, Integration, Custom-Built, Open Source
+- No lock-in messaging
+
+### Page 8: How It Works (Optional)
+- Visual workflow/process diagram
+- Step-by-step explanation
+
+### Page 9: Guarantees
+- Performance guarantee with specific metrics
+- Ownership guarantee
+- Transparency guarantee
+- No lock-in guarantee
+
+### Page 10: What's Included / Not Included
+- Clear checklist of deliverables
+- Explicit exclusions to set expectations
+
+### Page 11: Timeline & Payment
+- Project timeline by phase
+- Payment terms (50/50 structure)
+- Annual discount option
+
+### Page 12: Next Steps
+- Clear action items (numbered 1-4)
+- Low-friction first step
+
+### Page 13: Contact Page
+- Jesse Stay name
+- Stay N Alive company
+- Phone: +1 801-853-8339
+- Email: jesse@staynalive.com
+- Website: staynalive.com
+- Stay N Alive logo
+- **NO physical address**
+
+## Content Positioning [CRITICAL]
+
+### This is a CUSTOM BUILD Proposal
+- Jesse/Stay N Alive is proposing to BUILD a custom solution for the client
+- This is NOT selling an existing product
+- Emphasize: "I will build this specifically for you"
+- Emphasize: "You own everything we create together"
+
+### Competitive Awareness
+- Always acknowledge client's existing tools (e.g., GoHighLevel)
+- Show how custom solution integrates with their stack
+- Compare against:
+  - Native platform add-ons (limited but cheap)
+  - SaaS alternatives (no integration)
+  - Agency builds (expensive, locked-in)
+
+### Value Proposition Hierarchy
+1. **Ownership** - Client owns all code, prompts, workflows
+2. **Integration** - Works with their existing tools natively
+3. **Custom** - Built specifically for their industry/needs
+4. **Cost** - Fraction of agency pricing
+5. **Transparency** - Access to everything, no black boxes
+
+## Design Principles
+
+### Layout
+- Clean whitespace (40px+ margins)
+- Consistent grid system
+- Visual hierarchy with clear sections
+
+### Graphics
+- **NO embedded text in images** - All text as native Canva layers
+- Simple, single-color icons preferred
+- Geometric patterns for visual interest
+- Charts/diagrams for data visualization
+
+### Pricing Display
+- Use visual cards, NOT dense tables
+- Highlight recommended option
+- Show annual totals prominently
+- Use coral accent for key numbers
+
+## Generate-Design Query Template
+
+When using `mcp_Canva_generate-design` for proposals, include:
+
+```
+**Presentation Brief**
+
+**Title:** [Client Name] [Solution Type] Proposal
+**Topic/Scope:** Custom [solution type] proposal for [client industry]. This is a B2B sales proposal positioning Stay N Alive's custom development services against SaaS tools and agencies.
+
+**Key Messages:**
+1. Custom-built solution, not an off-the-shelf product
+2. Full ownership - client owns all code, prompts, workflows
+3. Native integration with [client's existing platform]
+4. Fraction of agency cost with more capability than SaaS
+5. [Specific guarantee, e.g., "60-day performance guarantee"]
+
+**Constraints:**
+- Brand colors: Dark charcoal #1a1a1a, Burgundy #722F37, Coral #E8927C
+- Contact: Jesse Stay, jesse@staynalive.com, +1 801-853-8339, staynalive.com
+- NO physical address
+- ALL text as native Canva text layers - NO embedded text in graphics
+- Include Stay N Alive logo on cover and contact pages
+
+**Critical Content - Competitive Comparison:**
+[Include the specific comparison table from the proposal]
+
+**Narrative Arc:**
+Problem → Competitive Landscape → Custom Solution → Pricing Tiers → Why Us → Guarantees → Next Steps
+```
+
+## Verification Checklist
+
+Before finalizing any proposal:
+- [ ] Stay N Alive logo appears on cover and contact pages
+- [ ] Brand colors correctly applied (60-30-10)
+- [ ] Competitive comparison table included
+- [ ] "Custom build" positioning clear (not selling a product)
+- [ ] Contact info: jesse@staynalive.com, +1 801-853-8339
+- [ ] NO physical address anywhere
+- [ ] ALL text is native Canva text (no embedded text in graphics)
+- [ ] Recommended tier clearly highlighted
+- [ ] Guarantees section included
+- [ ] Next steps are clear and actionable
+
+## Related Rules
+- `320-PROJECT-canva-mcp-workflow.mdc` - MCP tool workflow
+- `OWNER-jesse-stay-profile.mdc` - Jesse Stay profile information

@@ -125,6 +125,7 @@ CTW must actively watch for and call out:
    - Create blog posts, newsletter content, and social media copy
    - Write clear UI text, error messages, and instructional content
    - Generate product descriptions and feature explanations
+   - **Create text-based email proposals** following `.cursor/rules/350-PROJECT-text-email-proposal-format.mdc` (conversational, personal tone distinct from formal Canva/PDF proposals)
 
 3. **Knowledge Management**
    - Organize and structure project information architecture
