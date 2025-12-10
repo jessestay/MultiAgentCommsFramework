@@ -9,6 +9,7 @@
     "dev": "NODE_ENV=development node src/server.js"
   },
   "dependencies": {
+    "dotenv": "^17.2.3",
     "express": "^4.19.2",
     "morgan": "^1.10.0",
     "node-fetch": "^3.3.2",
@@ -16,4 +17,3 @@
     "uuid": "^9.0.1"
   }
 }
-

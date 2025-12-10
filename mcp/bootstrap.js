@@ -15,11 +15,15 @@ const ensureEnv = (file, contentBuilder) => {
   fs.writeFileSync(file, contentBuilder(), 'utf8');
 };
 
-const ensureDeps = async (cwd) => new Promise((resolve, reject) => {
-  if (fs.existsSync(path.join(cwd, 'node_modules'))) return resolve();
-  const proc = spawn('npm', ['install'], { cwd, stdio: 'inherit' });
-  proc.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`npm install failed ${code}`))));
-});
+const ensureDeps = async (cwd) =>
+  new Promise((resolve, reject) => {
+    if (fs.existsSync(path.join(cwd, 'node_modules'))) {
+      resolve();
+      return;
+    }
+    const proc = spawn('npm', ['install'], { cwd, stdio: 'inherit' });
+    proc.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`npm install failed ${code}`))));
+  });
 
 const spawnService = (cwd, entry) => {
   const proc = spawn('node', [entry], { cwd, stdio: 'ignore', detached: true });

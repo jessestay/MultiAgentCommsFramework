@@ -30,7 +30,13 @@
       "type": "http",
       "method": "GET",
       "url": "http://localhost:8788/connect-link?domain={domain}",
-      "pathParams": ["domain"]
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "domain": { "type": "string" }
+        },
+        "required": ["domain"]
+      }
     }
   ]
 }
