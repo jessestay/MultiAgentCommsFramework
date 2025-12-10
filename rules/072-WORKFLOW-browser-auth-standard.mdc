@@ -39,6 +39,7 @@ Guarantee “transcript → real 1080p demo video” with minimal user friction 
 
 ## Implementation Notes
 - Follow `docs/BROWSER_AUTH_PROTOCOL.md` for architecture and checklist.  
+- Non-Docker path: Auth Broker lives in `.cursor/auth-broker/`; run via Node/systemd in WSL2. Runner should do the same. MCP first-launch may auto-generate `.env` and systemd unit templates and enable services.  
 - MCP install simplicity: MCP should auto-detect missing Broker/Runner URLs and offer to auto-deploy minimal docker-compose (Broker + Runner) with generated secrets, then emit a config snippet for `mcp.json`. Default to separate services; n8n only orchestrates via HTTP calls.  
 - Health checks: domain-specific selectors (e.g., Connected Apps toggle for ChatGPT; Canva dashboard/home or design page for Canva).  
 - Rotation: schedule refresh before expiry; keep previous version for rollback.  
