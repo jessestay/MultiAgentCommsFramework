@@ -1,0 +1,51 @@
+---
+description: Guarantee “transcript → real 1080p demo video” with minimal user friction when browser authentication is required. Default to service accounts with automated refresh; only prompt the user with a one-click connect link if no valid session exists.
+alwaysApply: false
+---
+# 072: Browser Auth Broker & One-Click Connect Standard (Demo/How-To Automation)
+
+## Purpose
+Guarantee “transcript → real 1080p demo video” with minimal user friction when browser authentication is required. Default to service accounts with automated refresh; only prompt the user with a one-click connect link if no valid session exists.
+
+## Scope
+- Applies to all Browserless/Playwright-driven screencast workflows that must render real, logged-in pages (e.g., ChatGPT Connected Apps, Canva design pages).  
+- Applies to chat-facing “Generate Demo” commands exposed in Cursor/AI chat integrations.  
+- Must be used whenever a transcript requires authenticated browser interactions.
+
+## Required Components
+1) **Auth Broker API (internal)**  
+   - KMS-sealed storage of Playwright `storageState` per tenant/domain.  
+   - Endpoints: fetch state, store state, mark-stale. Domain allowlist enforced. Logs redact secrets.  
+2) **Refresh Worker (service accounts)**  
+   - Scheduled login per domain using service creds (where policy permits). Saves fresh storageState before expiry; verifies with domain-specific health checks.  
+3) **One-Click Connect Flow (user-provided session)**  
+   - A single “Connect” button opens a capture page; user signs in once; storageState is POSTed (signed) to Auth Broker. No manual cookie copy/paste.  
+4) **Runner (Browserless/Playwright screencast)**  
+   - Fetches state → preflight login check → auto-refresh if stale → only then prompts for connect. Updates state if it performs silent re-login.  
+5) **Status & Safety**  
+   - Structured, redacted logs; audit trail of state updates; allowlist of domains; short-lived in-memory use; encrypted at rest.
+
+## Standard Flow (Happy Path)
+1) User: “Generate demo from transcript …” (no auth input).  
+2) Runner pulls service-account storageState from Auth Broker.  
+3) Preflight passes → record demo at 1080p with visible cursor/typing → return link.  
+4) If preflight fails: runner attempts silent refresh (service creds). If still stale and no service creds: issue one-click connect prompt; resume upon success.
+
+## UX Requirements (with DES)
+- Default: no prompts; use service accounts.  
+- If needed: show a single “Connect” button per domain; queue the job until state arrives.  
+- Status card in chat: Auth → Recording → Rendering → Link; show account type (service vs. user-connected); label outputs as “simulated” only if mocks are used.  
+- Avoid asking for raw cookies; never expose stored sessions in chat.
+
+## Implementation Notes
+- Follow `docs/BROWSER_AUTH_PROTOCOL.md` for architecture and checklist.  
+- MCP install simplicity: MCP should auto-detect missing Broker/Runner URLs and offer to auto-deploy minimal docker-compose (Broker + Runner) with generated secrets, then emit a config snippet for `mcp.json`. Default to separate services; n8n only orchestrates via HTTP calls.  
+- Health checks: domain-specific selectors (e.g., Connected Apps toggle for ChatGPT; Canva dashboard/home or design page for Canva).  
+- Rotation: schedule refresh before expiry; keep previous version for rollback.  
+- Security: domain allowlist, redaction, KMS, audit logging.
+
+## Compliance
+- All new or modified screencast/demo workflows **must** implement this standard.  
+- Reviews must verify: Auth Broker integration, preflight+auto-refresh, one-click connect fallback, status card UX, and redacted logging.  
+- If service accounts are prohibited, one-click connect becomes mandatory before run; this must be automated and reusable, not manual cookie requests.
+
