@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "name": "jesse-slack-agents",
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 30
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/morning-briefing",
+      "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-content",
+      "schedule": "0 15 * * 1"
+    },
+    {
+      "path": "/api/cron/weekly-jobs",
+      "schedule": "0 23 * * 5"
+    },
+    {
+      "path": "/api/cron/weekly-transkrybe",
+      "schedule": "0 14 * * 1"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/slack/events",
+      "dest": "/api/slack/events.js"
+    },
+    {
+      "src": "/api/slack/actions",
+      "dest": "/api/slack/actions.js"
+    },
+    {
+      "src": "/api/cron/(.*)",
+      "dest": "/api/cron/$1.js"
+    },
+    {
+      "src": "/api/health",
+      "dest": "/api/health.js"
+    },
+    {
+      "src": "/",
+      "dest": "/api/health.js"
+    }
+  ]
+}
+
