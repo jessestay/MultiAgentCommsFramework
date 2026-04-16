@@ -3,18 +3,22 @@ const crypto = require('crypto');
 
 const SLACK_SIGNING_SECRET = process.env.SLACK_SIGNING_SECRET;
 
-// Per-agent bot tokens — each MACF app has its own Slack bot token
-const AGENT_TOKENS = {
-  'exec-pm':    process.env.SLACK_TOKEN_EXEC_PM    || process.env.SLACK_BOT_TOKEN,
-  marketing:    process.env.SLACK_TOKEN_MARKETING  || process.env.SLACK_BOT_TOKEN,
-  transkrybe:   process.env.SLACK_TOKEN_TRANSKRYBE || process.env.SLACK_BOT_TOKEN,
-  content:      process.env.SLACK_TOKEN_CONTENT    || process.env.SLACK_BOT_TOKEN,
-  jobs:         process.env.SLACK_TOKEN_JOBS       || process.env.SLACK_BOT_TOKEN,
-  research:     process.env.SLACK_TOKEN_RESEARCH   || process.env.SLACK_BOT_TOKEN,
-};
+// Primary posting token — Jesse Ops Agents bot, already in all 6 channels.
+// Uses chat.write.customize scope to post with per-agent usernames/emojis.
+const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
 
-// Default token (exec-pm or legacy single token) for reading channel history / info
-const SLACK_BOT_TOKEN = process.env.SLACK_TOKEN_EXEC_PM || process.env.SLACK_BOT_TOKEN;
+// Per-agent bot tokens — configured in Vercel (SLACK_TOKEN_EXEC_PM, etc.) but currently
+// using SLACK_BOT_TOKEN as primary since individual bots still need channels:join scope.
+// UPGRADE PATH: Add channels:join scope to each app, invite to channel, then switch to:
+//   'exec-pm': process.env.SLACK_TOKEN_EXEC_PM || SLACK_BOT_TOKEN, etc.
+const AGENT_TOKENS = {
+  'exec-pm':    SLACK_BOT_TOKEN,
+  marketing:    SLACK_BOT_TOKEN,
+  transkrybe:   SLACK_BOT_TOKEN,
+  content:      SLACK_BOT_TOKEN,
+  jobs:         SLACK_BOT_TOKEN,
+  research:     SLACK_BOT_TOKEN,
+};
 
 // Agent personas
 const AGENTS = {
