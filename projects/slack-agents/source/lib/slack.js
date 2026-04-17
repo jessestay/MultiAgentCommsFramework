@@ -245,7 +245,7 @@ async function getChannelId(channelName) {
   const data = await response.json();
   if (!data.ok) return null;
 
-  const channel = data.channels.find(h
+  const channel = data.channels.find(
     (c) => c.name === channelName || c.name === channelName.replace('#', '')
   );
   return channel?.id || null;
