@@ -142,17 +142,27 @@ async function postAsAgent(agentKey, channel, text, blocks = null, thread_ts = n
 
 /**
  * Post an approval request with ✅/❌ buttons
+ * Splits long content into multiple section blocks to stay under Slack's 3000-char limit.
  */
 async function postApprovalRequest(agentKey, channel, actionId, title, content, metadata = {}) {
-  const agent = AGENTS[agentKey];
+  const MAX_TEXT = 2900; // Slack mrkdwn section block limit is 3000 chars
+
+  // Combine title + content, then split into safe-sized chunks
+  const fullContent = `*${title}*\n\n${content}`;
+  const chunks = [];
+  let remaining = fullContent;
+  while (remaining.length > 0) {
+    chunks.push(remaining.slice(0, MAX_TEXT));
+    remaining = remaining.slice(MAX_TEXT);
+  }
+
+  const textBlocks = chunks.map((chunk) => ({
+    type: 'section',
+    text: { type: 'mrkdwn', text: chunk },
+  }));
+
   const blocks = [
-    {
-      type: 'section',
-      text: {
-        type: 'mrkdwn',
-        text: `*${title}*\n\n${content}`,
-      },
-    },
+    ...textBlocks,
     {
       type: 'actions',
       elements: [
@@ -160,15 +170,15 @@ async function postApprovalRequest(agentKey, channel, actionId, title, content, 
           type: 'button',
           text: { type: 'plain_text', text: '✅ Approve' },
           style: 'primary',
-          action_id: `approve_${actionId}`,
-          value: JSON.stringify({ agentKey, actionId, ...metadata }),
+          action_id: `approve_${actionId}`.slice(0, 255),
+          value: JSON.stringify({ agentKey, actionId, ...metadata }).slice(0, 2000),
         },
         {
           type: 'button',
           text: { type: 'plain_text', text: '❌ Revise' },
           style: 'danger',
-          action_id: `revise_${actionId}`,
-          value: JSON.stringify({ agentKey, actionId, ...metadata }),
+          action_id: `revise_${actionId}`.slice(0, 255),
+          value: JSON.stringify({ agentKey, actionId, ...metadata }).slice(0, 2000),
         },
       ],
     },
@@ -176,7 +186,6 @@ async function postApprovalRequest(agentKey, channel, actionId, title, content, 
 
   return postAsAgent(agentKey, channel, title, blocks);
 }
-
 /**
  * Determine which agent should handle a message
  */
@@ -236,7 +245,7 @@ async function getChannelId(channelName) {
   const data = await response.json();
   if (!data.ok) return null;
 
-  const channel = data.channels.find(
+  const channel = data.channels.find(h
     (c) => c.name === channelName || c.name === channelName.replace('#', '')
   );
   return channel?.id || null;
