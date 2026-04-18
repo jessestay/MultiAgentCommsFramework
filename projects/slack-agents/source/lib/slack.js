@@ -25,7 +25,7 @@ const AGENTS = {
   'exec-pm': {
     username: '📋 Exec PM',
     icon_emoji: ':clipboard:',
-    channel: 'exec-pm',
+    channel: 'management',
   },
   marketing: {
     username: '📣 Marketing Agent',
@@ -35,7 +35,7 @@ const AGENTS = {
   transkrybe: {
     username: '🎵 Transkrybe Agent',
     icon_emoji: ':musical_note:',
-    channel: 'transkrybe',
+    channel: 'cto',
   },
   content: {
     username: '✍️ Content Agent',
@@ -57,8 +57,10 @@ const AGENTS = {
 // Channel name → agent key mapping
 const CHANNEL_TO_AGENT = {
   'exec-pm': 'exec-pm',
+  management: 'exec-pm',
   marketing: 'marketing',
   transkrybe: 'transkrybe',
+  cto: 'transkrybe',
   content: 'content',
   jobs: 'jobs',
   research: 'research',
