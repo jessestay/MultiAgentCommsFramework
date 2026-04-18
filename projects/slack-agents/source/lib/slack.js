@@ -7,17 +7,17 @@ const SLACK_SIGNING_SECRET = process.env.SLACK_SIGNING_SECRET;
 // Uses chat.write.customize scope to post with per-agent usernames/emojis.
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
 
-// Per-agent bot tokens — configured in Vercel (SLACK_TOKEN_EXEC_PM, etc.) but currently
-// using SLACK_BOT_TOKEN as primary since individual bots still need channels:join scope.
-// UPGRADE PATH: Add channels:join scope to each app, invite to channel, then switch to:
-//   'exec-pm': process.env.SLACK_TOKEN_EXEC_PM || SLACK_BOT_TOKEN, etc.
+// Per-agent bot tokens — each agent uses its own Slack app token so messages appear
+// from that bot's actual identity (name + avatar set in api.slack.com app settings).
+// Each bot app needs: chat:write scope + channels:join scope, and must be /invited to its channel.
+// Falls back to SLACK_BOT_TOKEN if a per-agent token isn't configured in Vercel.
 const AGENT_TOKENS = {
-  'exec-pm':    SLACK_BOT_TOKEN,
-  marketing:    SLACK_BOT_TOKEN,
-  transkrybe:   SLACK_BOT_TOKEN,
-  content:      SLACK_BOT_TOKEN,
-  jobs:         SLACK_BOT_TOKEN,
-  research:     SLACK_BOT_TOKEN,
+  'exec-pm':  process.env.SLACK_TOKEN_EXEC_PM   || SLACK_BOT_TOKEN,
+  marketing:  process.env.SLACK_TOKEN_MARKETING  || SLACK_BOT_TOKEN,
+  transkrybe: process.env.SLACK_TOKEN_TRANSKRYBE || SLACK_BOT_TOKEN,
+  content:    process.env.SLACK_TOKEN_CONTENT    || SLACK_BOT_TOKEN,
+  jobs:       process.env.SLACK_TOKEN_JOBS       || SLACK_BOT_TOKEN,
+  research:   process.env.SLACK_TOKEN_RESEARCH   || SLACK_BOT_TOKEN,
 };
 
 // Agent personas
@@ -207,14 +207,52 @@ function routeMessage(channelName, messageText) {
 }
 
 /**
- * Post an agent-to-agent message (tagged for routing)
+ * Agent-to-agent communication.
+ *
+ * Flow for true team collaboration:
+ *   1. Posts the question to the TARGET agent's channel so Jesse can see it receiving work.
+ *   2. Directly invokes the target agent via /api/internal/invoke (bypasses events.js
+ *      bot_message filtering that would otherwise swallow the message).
+ *   3. The target agent posts its RESPONSE back to the REQUESTING agent's channel —
+ *      so the collaboration appears as a natural conversation in the requestor's view.
+ *
+ * Each agent only knows what's in its own channel's history (true independence),
+ * but can explicitly ask any other agent for help and get a reply inline.
  */
 async function agentToAgent(fromAgent, toAgent, message) {
   const targetChannel = AGENTS[toAgent]?.channel;
+  const replyChannel  = AGENTS[fromAgent]?.channel;
   if (!targetChannel) throw new Error(`Unknown target agent: ${toAgent}`);
 
-  const taggedMessage = `[agent→agent from ${AGENTS[fromAgent]?.username || fromAgent}]\n${message}`;
-  return postAsAgent(toAgent, targetChannel, taggedMessage);
+  const fromLabel = AGENTS[fromAgent]?.username || fromAgent;
+  const taggedMessage = `[agent→agent from ${fromLabel}]\n${message}`;
+
+  // Post the question in the TARGET agent's channel so Jesse can see what it's being asked
+  await postAsAgent(toAgent, targetChannel, taggedMessage);
+
+  // Directly invoke the target agent.
+  // replyChannel tells it to post its response back into the FROM agent's channel,
+  // making the collaboration visible as a real conversation in the requestor's view.
+  const baseUrl = process.env.APP_BASE_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+
+  try {
+    await fetch(`${baseUrl}/api/internal/invoke`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-internal-secret': process.env.INTERNAL_SECRET || '',
+      },
+      body: JSON.stringify({
+        agentKey: toAgent,
+        text: taggedMessage,
+        channel: replyChannel || targetChannel, // respond back to requestor's channel
+        fromAgent,
+      }),
+    });
+  } catch (err) {
+    console.error(`agentToAgent invoke error [${fromAgent}→${toAgent}]:`, err.message);
+  }
 }
 
 /**
@@ -264,4 +302,3 @@ module.exports = {
   addReaction,
   getChannelId,
 };
-
