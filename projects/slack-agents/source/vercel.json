@@ -3,7 +3,7 @@
   "name": "jesse-slack-agents",
   "functions": {
     "api/**/*.js": {
-      "maxDuration": 30
+      "maxDuration": 60
     }
   },
   "crons": [
@@ -22,6 +22,10 @@
     {
       "path": "/api/cron/weekly-transkrybe",
       "schedule": "0 14 * * 1"
+    },
+    {
+      "path": "/api/cron/process-queues",
+      "schedule": "0 * * * *"
     }
   ],
   "routes": [
