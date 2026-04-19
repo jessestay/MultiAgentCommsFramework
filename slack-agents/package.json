@@ -1,0 +1,22 @@
+{
+  "name": "jesse-slack-agents-v2",
+  "version": "2.0.0",
+  "description": "Always-on Slack agents for Jesse Stay — Socket Mode, Railway, proactive posting",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@octokit/rest": "^21.0.0",
+    "@slack/bolt": "^4.4.0",
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.4.5",
+    "node-cron": "^3.0.3",
+    "node-fetch": "^3.3.2"
+  }
+}
