@@ -38,7 +38,7 @@ const research  = require('./agents/research');
 const channelAgentMap = {
   [CHANNELS.execPM]:    execPM,
   [CHANNELS.marketing]: marketing,
-  [CHANNELS.it]: transkrybe,
+  [CHANNELS.it]: cto,
   [CHANNELS.content]:   content,
   [CHANNELS.jobs]:      jobs,
   [CHANNELS.research]:  research,
