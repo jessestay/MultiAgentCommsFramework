@@ -1,5 +1,5 @@
 // api/cron/morning-briefing.js — Daily morning briefing (8am MT = 14:00 UTC)
-// Exec PM posts a morning briefing to #exec-pm with project status, priorities,
+// Exec PM posts a morning briefing to #management with project status, priorities,
 // and anything needing Jesse's attention.
 
 const { postAsAgent } = require('../../lib/slack');
@@ -21,7 +21,7 @@ module.exports = async (req, res) => {
 
     const result = await postAsAgent(
       'exec-pm',
-      'exec-pm',
+      'management',
       briefing
     );
 
@@ -38,4 +38,3 @@ module.exports = async (req, res) => {
     return res.status(500).json({ ok: false, error: err.message });
   }
 };
-
