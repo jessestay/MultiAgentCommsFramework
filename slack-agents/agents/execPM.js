@@ -1,50 +1,55 @@
-// agents/execPM.js — Exec PM Agent 📋
-// Proactively monitors all channels, runs health checks, posts morning briefings
+// agents/execPM.js — Exec PM (@exec-pm) | MACF Role: Executive Secretary (ES)
+// Ryan Holiday growth-hacker persona. Coordinates ALL agents. Present in EVERY channel.
+// Memory: isolated to execPM namespace. Cannot read other agents' memory directly.
 
 const cron = require('node-cron');
-const { AGENTS, CHANNELS } = require('../config');
+const { AGENTS, CHANNELS, ALL_CHANNELS, DELEGATION_TARGETS } = require('../config');
 const state = require('../utils/state');
 const { generateReport, generateProactivePost } = require('../utils/anthropic');
 const { fetchDonationTotal } = require('../utils/gofundme');
 const { getLatestCommit, getRecentlyMergedPRs } = require('../utils/github');
 
 const AGENT = AGENTS.execPM;
-
-// Channels to monitor for idle detection
-const MONITORED_CHANNELS = Object.values(CHANNELS);
-const IDLE_THRESHOLD_MINUTES = 120; // 2 hours
+const AGENT_ID = AGENT.id; // 'execPM'
 
 let slackClient = null;
-let channelIdMap = {}; // name -> id
+const channelIdCache = {};
 
+// ─── Channel resolution ───────────────────────────────────────────────────────
 async function resolveChannel(name) {
-  if (channelIdMap[name]) return channelIdMap[name];
+  if (channelIdCache[name]) return channelIdCache[name];
   try {
-    const result = await slackClient.conversations.list({ types: 'public_channel,private_channel', limit: 200 });
+    const result = await slackClient.conversations.list({
+      types: 'public_channel,private_channel',
+      limit: 200,
+    });
     for (const ch of result.channels) {
-      channelIdMap[ch.name] = ch.id;
+      channelIdCache[ch.name] = ch.id;
     }
-    return channelIdMap[name];
+    return channelIdCache[name];
   } catch (err) {
-    console.error('[execPM] Could not resolve channel:', name, err.message);
+    console.error(`[execPM] Could not resolve channel ${name}:`, err.message);
     return null;
   }
 }
 
+// ─── Post as this agent persona ───────────────────────────────────────────────
 async function postToChannel(channelName, text) {
   const channelId = await resolveChannel(channelName);
   if (!channelId) {
-    console.warn(`[execPM] Could not find channel: ${channelName}`);
+    console.warn(`[execPM] Channel not found: #${channelName}`);
     return;
   }
   try {
     await slackClient.chat.postMessage({
       channel: channelId,
-      text: `${AGENT.emoji} *Exec PM* | ${text}`,
+      text,
+      username: AGENT.slackName,
+      icon_emoji: AGENT.icon,
       unfurl_links: false,
     });
     state.updateChannelActivity(channelName);
-    console.log(`[execPM] Posted to #${channelName}`);
+    console.log(`[execPM] ✅ Posted to #${channelName}`);
   } catch (err) {
     console.error(`[execPM] Error posting to #${channelName}:`, err.message);
   }
@@ -52,167 +57,172 @@ async function postToChannel(channelName, text) {
 
 // ─── Morning Briefing (8am MT = 14:00 UTC) ───────────────────────────────────
 async function runMorningBriefing() {
-  console.log('[execPM] Running morning briefing...');
-  const lastBriefing = state.get('execPM.lastMorningBriefing');
   const today = new Date().toDateString();
+  const lastBriefing = state.get(AGENT_ID, 'lastMorningBriefing');
   if (lastBriefing === today) {
     console.log('[execPM] Morning briefing already sent today, skipping.');
     return;
   }
 
-  // Gather data
-  const [donationData, latestCommit, mergedPRs] = await Promise.allSettled([
+  console.log('[execPM] Running morning briefing...');
+
+  const [donationResult, commitResult, prsResult] = await Promise.allSettled([
     fetchDonationTotal(),
     getLatestCommit(),
     getRecentlyMergedPRs(),
   ]);
 
-  const donation = donationData.status === 'fulfilled' ? donationData.value : null;
-  const commit = latestCommit.status === 'fulfilled' ? latestCommit.value : null;
-  const prs = mergedPRs.status === 'fulfilled' ? mergedPRs.value : [];
+  const donation  = donationResult.status  === 'fulfilled' ? donationResult.value  : null;
+  const commit    = commitResult.status    === 'fulfilled' ? commitResult.value    : null;
+  const prs       = prsResult.status       === 'fulfilled' ? prsResult.value       : [];
 
   const context = `
-Good morning briefing for Jesse Stay — ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'America/Denver' })} MT
+Morning briefing for Jesse Stay — ${new Date().toLocaleDateString('en-US', {
+  weekday: 'long', month: 'long', day: 'numeric', timeZone: 'America/Denver'
+})} MT
 
-GoFundMe status: ${donation ? `$${donation.amount} raised of $2,800 (${donation.percentFunded}%)` : 'Could not fetch'}
-Latest transkrybe commit: ${commit ? `${commit.sha} — "${commit.message}" by ${commit.author} at ${new Date(commit.date).toLocaleString('en-US', { timeZone: 'America/Denver' })} MT` : 'Could not fetch'}
-Merged PRs (24h): ${prs.length > 0 ? prs.map(p => `#${p.number} "${p.title}"`).join(', ') : 'None'}
+GoFundMe: ${donation ? `$${donation.amount} raised of $2,800 (${donation.percentFunded}%)` : 'unavailable'}
+Latest transkrybe commit: ${commit ? `${commit.sha} — "${commit.message}" by ${commit.author}` : 'unavailable'}
+Merged PRs in last 24h: ${prs.length > 0 ? prs.map(p => `#${p.number} "${p.title}"`).join(', ') : 'None'}
 
-Content pending Jesse approval: ${(state.get('content.pendingApprovals') || []).length} items
-Active job leads being tracked: Yes
-
-Write a morning briefing message for Jesse. Be direct, concise, and human. Flag anything that needs his attention today.
+Write a concise morning briefing. Be the Executive Secretary who's already been up for 2 hours.
+Flag anything that needs Jesse's immediate attention. Prioritize. No fluff.
   `.trim();
 
   const text = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await postToChannel(AGENT.channel, `*🌅 Morning Briefing*\n${text}`);
+  await postToChannel(AGENT.primaryChannel, `*🌅 Morning Briefing*\n${text}`);
 
-  state.set('execPM.lastMorningBriefing', today);
-  state.set('execPM.lastHealthCheck', new Date().toISOString());
+  state.set(AGENT_ID, 'lastMorningBriefing', today);
+  state.set(AGENT_ID, 'lastHealthCheck', new Date().toISOString());
+
+  // Update our cached donation amount
+  if (donation) state.set(AGENT_ID, 'knownDonationAmount', donation.amount);
+  if (commit) state.set(AGENT_ID, 'knownCommitSha', commit.fullSha);
 }
 
-// ─── Project Health Check (every 2 hours) ───────────────────────────────────
+// ─── Project Health Check (every 2 hours) ────────────────────────────────────
 async function runHealthCheck() {
-  console.log('[execPM] Running project health check...');
+  console.log('[execPM] Running health check...');
 
+  // Detect idle channels
   const idleChannels = [];
-  for (const channel of MONITORED_CHANNELS) {
-    const idleMinutes = state.getChannelIdleMinutes(channel);
-    if (idleMinutes > IDLE_THRESHOLD_MINUTES && idleMinutes < Infinity) {
-      idleChannels.push({ channel, idleMinutes: Math.round(idleMinutes) });
+  for (const channel of ALL_CHANNELS) {
+    const idleMin = state.getChannelIdleMinutes(channel);
+    if (idleMin > 120 && idleMin < Infinity) {
+      idleChannels.push({ channel, idleMin: Math.round(idleMin) });
     }
   }
 
-  // Check GoFundMe
-  const gofundme = await fetchDonationTotal();
-  const lastAmount = state.get('gofundme.lastAmount') || 0;
+  // Check for new GoFundMe donations
+  const donation = await fetchDonationTotal().catch(() => null);
+  const knownAmount = state.get(AGENT_ID, 'knownDonationAmount') || 0;
   let donationAlert = null;
-  if (gofundme && gofundme.amount !== lastAmount && lastAmount > 0) {
-    donationAlert = gofundme;
-    state.set('gofundme.lastAmount', gofundme.amount);
-  } else if (gofundme && lastAmount === 0) {
-    state.set('gofundme.lastAmount', gofundme.amount);
+  if (donation) {
+    if (knownAmount > 0 && donation.amount !== knownAmount) {
+      donationAlert = donation;
+    }
+    state.set(AGENT_ID, 'knownDonationAmount', donation.amount);
   }
 
-  // Check GitHub
-  const commit = await getLatestCommit();
-  const lastSha = state.get('github.lastCommitSha');
+  // Check for new GitHub commits
+  const commit = await getLatestCommit().catch(() => null);
+  const knownSha = state.get(AGENT_ID, 'knownCommitSha');
   let newCommit = null;
-  if (commit && commit.fullSha !== lastSha) {
+  if (commit && commit.fullSha !== knownSha) {
     newCommit = commit;
-    state.set('github.lastCommitSha', commit.fullSha);
+    state.set(AGENT_ID, 'knownCommitSha', commit.fullSha);
   }
 
-  // Build alert messages
   const alerts = [];
   if (idleChannels.length > 0) {
-    alerts.push(`*Idle channels (>2hrs):* ${idleChannels.map(c => `#${c.channel} (${c.idleMinutes}min)`).join(', ')}`);
+    alerts.push(`*⏱️ Idle channels (>2hrs):* ${idleChannels.map(c => `#${c.channel} (${c.idleMin}min)`).join(', ')}`);
   }
   if (donationAlert) {
-    alerts.push(`*GoFundMe update:* $${donationAlert.amount} raised (${donationAlert.percentFunded}% of goal)`);
-    // Also notify marketing channel
-    const mktChannel = await resolveChannel(CHANNELS.marketing);
-    if (mktChannel) {
-      await slackClient.chat.postMessage({
-        channel: mktChannel,
-        text: `${AGENTS.marketing.emoji} *Marketing* | 💚 GoFundMe total changed → $${donationAlert.amount} raised of $2,800 (${donationAlert.percentFunded}%)\nhttps://www.gofundme.com/f/help-louis-stay-get-a-wheelchair`,
-        unfurl_links: false,
-      });
-      state.updateChannelActivity(CHANNELS.marketing);
-    }
+    const delta = donationAlert.amount - knownAmount;
+    alerts.push(`*💚 GoFundMe:* $${knownAmount} → $${donationAlert.amount} (+$${delta.toFixed(2)}) | ${donationAlert.percentFunded}% of goal`);
+    // Notify CMO
+    await postToChannel(CHANNELS.marketing,
+      `${AGENT.emoji} *[from: Exec PM → CMO]* GoFundMe donation detected: +$${delta.toFixed(2)} → now $${donationAlert.amount} raised. Please generate an engagement update.`
+    );
   }
   if (newCommit) {
-    alerts.push(`*New transkrybe commit:* \`${newCommit.sha}\` — "${newCommit.message}" by ${newCommit.author}`);
-    // Notify transkrybe channel too
-    const txChannel = await resolveChannel(CHANNELS.it);
-    if (txChannel) {
-      await slackClient.chat.postMessage({
-        channel: txChannel,
-        text: `${AGENTS.transkrybe.emoji} *Transkrybe* | 🔀 New commit: \`${newCommit.sha}\` — ${newCommit.message}\n👤 ${newCommit.author} · ${new Date(newCommit.date).toLocaleString('en-US', { timeZone: 'America/Denver' })} MT\n${newCommit.url}`,
-        unfurl_links: false,
-      });
-      state.updateChannelActivity(CHANNELS.it);
-    }
+    alerts.push(`*🔀 New transkrybe commit:* \`${newCommit.sha}\` — "${newCommit.message}" by ${newCommit.author}`);
+    // Notify #it channel
+    await postToChannel(CHANNELS.it,
+      `${AGENT.emoji} *[from: Exec PM → IT]* New commit: \`${newCommit.sha}\` — ${newCommit.message}\n👤 ${newCommit.author} · ${new Date(newCommit.date).toLocaleString('en-US', { timeZone: 'America/Denver' })} MT\n${newCommit.url}`
+    );
   }
 
   if (alerts.length > 0) {
-    await postToChannel(AGENT.channel, `*🔍 Health Check*\n${alerts.join('\n')}`);
+    await postToChannel(AGENT.primaryChannel, `*🔍 Health Check*\n${alerts.join('\n')}`);
   } else {
     console.log('[execPM] Health check clean — nothing to report.');
   }
 
-  state.set('execPM.lastHealthCheck', new Date().toISOString());
+  state.set(AGENT_ID, 'lastHealthCheck', new Date().toISOString());
 }
 
-// ─── Respond to @mentions ────────────────────────────────────────────────────
-async function handleMention({ event, say }) {
-  const text = event.text.replace(/<@[A-Z0-9]+>/g, '').trim();
-  if (!text) return;
+// ─── Handle @mention ──────────────────────────────────────────────────────────
+async function handleMention({ event, say, client }) {
+  const text = (event.text || '').replace(/<@[A-Z0-9]+>/g, '').trim();
+  if (!text) {
+    await say(`${AGENT.emoji} *${AGENT.slackName}* | I'm here. What do you need, Jesse?`);
+    return;
+  }
 
-  console.log('[execPM] Handling mention:', text);
-  const response = await generateReport({
-    systemPrompt: AGENT.systemPrompt,
-    context: `Jesse asked: "${text}"\n\nCurrent state:\n- GoFundMe: $${state.get('gofundme.lastAmount')} raised\n- Last GitHub commit SHA: ${state.get('github.lastCommitSha') || 'unknown'}\n- Pending content approvals: ${(state.get('content.pendingApprovals') || []).length}`,
-  });
+  console.log(`[execPM] Handling mention: "${text.slice(0, 80)}"`);
 
-  await say(`${AGENT.emoji} *Exec PM* | ${response}`);
-  state.updateChannelActivity(AGENT.channel);
+  const context = `
+Jesse asked: "${text}"
+
+My current state:
+- Last health check: ${state.get(AGENT_ID, 'lastHealthCheck') || 'never'}
+- GoFundMe (last known): $${state.get(AGENT_ID, 'knownDonationAmount') || 0} raised
+- Last transkrybe commit I saw: ${state.get(AGENT_ID, 'knownCommitSha') || 'unknown'}
+
+Respond as the Executive Secretary. Be direct. If Jesse needs something from another agent, tell him to address that agent directly or say you'll delegate.
+  `.trim();
+
+  const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
+  await say(`${AGENT.emoji} *${AGENT.slackName}* | ${response}`);
+  state.updateChannelActivity(event.channel || AGENT.primaryChannel);
 }
 
 // ─── Handle delegation from other agents ─────────────────────────────────────
-async function handleDelegation(message, channelName) {
-  const delegationMatch = message.match(/\[from: (\w[\w\s]+) → Exec PM\] (.+)/s);
-  if (!delegationMatch) return false;
+async function handleDelegation(messageText) {
+  // Match: [from: {anyone} → Exec PM] {request}
+  const match = messageText.match(/\[from:\s*(.+?)\s*→\s*Exec\s*PM\]\s*(.+)/si);
+  if (!match) return false;
 
-  const fromAgent = delegationMatch[1];
-  const request = delegationMatch[2].trim();
-  console.log(`[execPM] Delegation from ${fromAgent}:`, request);
+  const fromAgent = match[1].trim();
+  const request = match[2].trim();
+  console.log(`[execPM] Delegation from ${fromAgent}: ${request.slice(0, 80)}`);
 
-  const response = await generateReport({
-    systemPrompt: AGENT.systemPrompt,
-    context: `Delegation request from ${fromAgent} agent:\n${request}`,
-  });
-
-  await postToChannel(AGENT.channel, `[from: Exec PM → ${fromAgent}] ${response}`);
+  const context = `Delegation request from ${fromAgent}:\n${request}`;
+  const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
+  await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *[from: Exec PM → ${fromAgent}]* ${response}`);
   return true;
 }
 
-// ─── Init ────────────────────────────────────────────────────────────────────
+// ─── Init ─────────────────────────────────────────────────────────────────────
 function init(app) {
   slackClient = app.client;
-  console.log('[execPM] Agent initialized');
+  console.log('[execPM] 🔵 Executive Secretary initialized');
 
-  // Morning briefing: 8am MT = 14:00 UTC (15:00 UTC in MDT)
-  // Use '0 14 * * *' for MST, '0 15 * * *' for MDT — Railway runs in UTC
-  cron.schedule('0 14 * * *', () => runMorningBriefing().catch(err => console.error('[execPM] Morning briefing error:', err)));
+  // Morning briefing: 8am MT = 14:00 UTC (winter) / 15:00 UTC (summer/MDT)
+  cron.schedule('0 14 * * *', () =>
+    runMorningBriefing().catch(err => console.error('[execPM] Morning briefing error:', err))
+  );
 
-  // Project health check every 2 hours
-  cron.schedule('0 */2 * * *', () => runHealthCheck().catch(err => console.error('[execPM] Health check error:', err)));
+  // Health check every 2 hours
+  cron.schedule('0 */2 * * *', () =>
+    runHealthCheck().catch(err => console.error('[execPM] Health check error:', err))
+  );
 
-  // Run an immediate health check on startup (with 30s delay to let Slack connect)
+  // Startup health check (30s delay for Slack to connect)
   setTimeout(() => {
     runHealthCheck().catch(err => console.error('[execPM] Startup health check error:', err));
-  }, 30000);
+  }, 30_000);
 }
 
 module.exports = { init, handleMention, handleDelegation, runMorningBriefing, runHealthCheck };
