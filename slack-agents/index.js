@@ -202,7 +202,7 @@ async function start() {
   console.log('Agents active:');
   console.log('  📋 Exec PM     → #exec-pm     (2hr health checks, 8am briefing)');
   console.log('  📣 Marketing   → #marketing   (GoFundMe every 30min, Mon calendar)');
-  console.log('  🎵 CTO        → #it       (GitHub every 15min)
+  console.log('  🎵 CTO        → #it       (GitHub every 15min)');
   console.log('  ✍️  Content     → #content     (daily drafts, Mon-Sat)');
   console.log('  💼 Jobs        → #jobs        (search every 6hr, Fri pipeline)');
   console.log('  🔍 Research    → #research    (Tue/Fri proactive posts)');
