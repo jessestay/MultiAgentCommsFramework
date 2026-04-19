@@ -186,7 +186,7 @@ Focus on practical, actionable information relevant to Jesse's projects.
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
 
   await say(`${AGENT.emoji} *Research* | ${response}`);
-  state.updateChannelActivity(AGENT.channel;
+  state.updateChannelActivity(AGENT.channel);
 }
 
 // ─── Init ────────────────────────────────────────────────────────────────────
