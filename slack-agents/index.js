@@ -134,8 +134,8 @@ app.event('app_mention', async ({ event, say, client }) => {
   }
 });
 
-// ─── Message handler (inter-agent delegation + activity tracking) ─────────────
-app.event('message', async ({ event, client }) => {
+// ─── Message handler (inter-agent delegation + @handle routing) ───────────────
+app.event('message', async ({ event, say, client }) => {
   // Ignore bot messages to prevent infinite loops
   if (event.bot_id || event.subtype === 'bot_message') return;
 
@@ -144,7 +144,7 @@ app.event('message', async ({ event, client }) => {
 
   const text = event.text || '';
 
-  // Check for delegation pattern and route to target agent
+  // 1. Check for delegation pattern first — route to target agent
   const delegMatch = text.match(/\[from:\s*(.+?)\s*→\s*(.+?)\]/i);
   if (delegMatch) {
     const toName = delegMatch[2].trim().toLowerCase().replace(/[\s-]+/g, '');
@@ -153,6 +153,33 @@ app.event('message', async ({ event, client }) => {
       console.log(`[index] Delegation → ${toAgentId}: "${text.slice(0, 80)}"`);
       await AGENT_MODULES[toAgentId].handleDelegation(text).catch(err =>
         console.error(`[index] Delegation error for ${toAgentId}:`, err)
+      );
+    }
+    return; // delegation handled — don't double-process
+  }
+
+  // 2. Check for explicit @handle text mention (e.g. "@cmo", "exec-pm:")
+  const addressedId = detectAddressedAgent(text);
+  if (addressedId) {
+    const agentModule = AGENT_MODULES[addressedId];
+    if (agentModule?.handleMention) {
+      console.log(`[index] Text mention → ${addressedId} in #${channelName}: "${text.slice(0, 80)}"`);
+      await agentModule.handleMention({ event, say, client }).catch(err =>
+        console.error(`[index] Text mention error for ${addressedId}:`, err)
+      );
+    }
+    return;
+  }
+
+  // 3. If message is in a channel with a primary agent, let that agent respond
+  // (only if the message seems directed at the team — contains "?" or starts with a name)
+  const primaryId = CHANNEL_PRIMARY_AGENT[channelName];
+  if (primaryId && (text.includes('?') || text.match(/^(hey|hi|hello|yo)\b/i))) {
+    const agentModule = AGENT_MODULES[primaryId];
+    if (agentModule?.handleMention) {
+      console.log(`[index] Channel message → ${primaryId} in #${channelName}: "${text.slice(0, 80)}"`);
+      await agentModule.handleMention({ event, say, client }).catch(err =>
+        console.error(`[index] Channel message error for ${primaryId}:`, err)
       );
     }
   }
@@ -249,6 +276,25 @@ async function start() {
 
   // Open WebSocket connection to Slack
   await app.start();
+
+  // Auto-join all configured channels so the bot receives message.channels events
+  // Requires channels:join scope on the bot token
+  console.log('[index] Joining all configured channels...');
+  await Promise.allSettled(
+    Object.entries(CHANNEL_IDS).map(async ([name, channelId]) => {
+      try {
+        await app.client.conversations.join({ channel: channelId });
+        console.log(`[index] ✅ Joined #${name} (${channelId})`);
+      } catch (err) {
+        // already_in_channel is fine; missing_scope means channels:join not granted yet
+        if (err.data?.error === 'already_in_channel') {
+          console.log(`[index] Already in #${name}`);
+        } else {
+          console.warn(`[index] Could not join #${name}: ${err.message}`);
+        }
+      }
+    })
+  );
 
   console.log('');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
