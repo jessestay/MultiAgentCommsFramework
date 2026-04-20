@@ -47,8 +47,13 @@ async function relay(responseText, fromAgentId, visitedAgents = new Set()) {
       continue;
     }
 
-    // Loop guard: if this agent was already invoked in this chain, skip
-    if (newVisited.has(toAgentId)) {
+    // Loop guard: if this agent was already invoked in this chain, skip.
+    // Exception: execPM is the hub and can always receive a completed-work
+    // notification from any agent, even if it was earlier in the chain.
+    // This allows: execPM → Job Coach → CCO → [from: CCO → Exec PM] (return)
+    // without deadlocking. Exec PM is the final sink — its response posts to
+    // #management (Jesse's channel) and naturally terminates.
+    if (newVisited.has(toAgentId) && toAgentId !== 'execPM') {
       console.log(`[delegation] Loop prevented: ${toAgentId} already in chain [${[...newVisited].join(' → ')}]`);
       continue;
     }

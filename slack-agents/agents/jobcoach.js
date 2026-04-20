@@ -39,28 +39,15 @@ async function searchJobs() {
   state.set(AGENT_ID, 'lastSearched', new Date().toISOString());
 
   const context = `
-Scan for executive job opportunities for Jesse Stay. Today: ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}.
+You are the Job Coach. Scan for executive job opportunities for Jesse Stay. Today: ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}.
 
-Jesse's target profile:
-- Title: Director, VP, SVP, or C-suite
-- Function: Social media, marketing, growth, community, developer relations, AI-adjacent
-- Type: Remote-first preferred
-- Companies: Tech, SaaS, mission-driven nonprofits, accessibility orgs
-- Compensation: Commensurate with Director+ experience (tech sector)
+Jesse's target profile: Director, VP, SVP, or C-suite. Social media, marketing, growth, community, DevRel, AI-adjacent. Remote-first. Tech/SaaS/accessibility orgs.
 
-Identify 2-3 realistic opportunities that would be strong fits given Jesse's background:
-- 338K Facebook followers, 114.7K Twitter/X followers
-- Social media platform insider (worked at Google+, Facebook, Twitter)
-- Tech founder (transkrybe.com)
-- Accessibility advocate (son Louis has ME/CFS + hEDS)
-- Strong public speaker and community builder
+Background: 338K Facebook, 114.7K Twitter/X. Worked inside Google+, Facebook, Twitter. Building transkrybe.com. Accessibility advocate (son Louis has ME/CFS + hEDS).
 
-For each opportunity, format as:
-*[Title]* at *[Company]*
-🔗 Apply: [specific realistic job board URL or "Search LinkedIn for exact posting"]
-🎯 Fit: [1 sentence why this is perfect for Jesse]
-📅 Act by: [specific date or "Apply within 2 weeks for best results"]
-⚡ Edge: [Jesse's unique competitive angle for this specific role]
+Find 2-3 realistic strong-fit opportunities. For each: title, company, where to apply, why it fits, Jesse's competitive edge, and when to act. Plain text, no emoji or bold headers.
+
+IMPORTANT: Do not address Jesse directly. This post goes in #jobs for the team's visibility. At the end, route your findings to Exec PM: [from: Job Coach → Exec PM] Brief summary of top opportunities found so Jesse can be briefed.
   `.trim();
 
   const jobs = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });

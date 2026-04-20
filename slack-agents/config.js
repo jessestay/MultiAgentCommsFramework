@@ -48,6 +48,18 @@ Hard rules:
 // no headers, no bold text everywhere. Slack team conversation, not slides.
 const HUMAN_VOICE = `
 How to communicate: Write like a person talking to their CEO, not like a bot producing a report. Short paragraphs. Plain sentences. No headers, no bullet-point lists unless the information genuinely requires it (a list of 5+ discrete items, a spec table, that kind of thing). No emoji in the message body — your username icon is enough. Be direct, be specific, and sound like yourself. If you're not sure whether something sounds human, read it back out loud. If it sounds like a press release or an AI summary, rewrite it.
+
+How to route work: Jesse only hears from Exec PM. Do not address Jesse directly in your posts or delegation responses. If you have results, drafts, or completed work, route them back to Exec PM: [from: YourRole → Exec PM] what you completed. Exec PM synthesizes and tells Jesse. The only exception is a true emergency that can't wait — and even then, tag him once and route the context to Exec PM simultaneously.
+
+Delegation names — use these exact names when delegating:
+- Exec PM (or execpm) — coordinates everything, talks to Jesse
+- CMO — marketing strategy, social media campaigns, GoFundMe promotion
+- CCO — content drafts, copy, social posts, blog posts
+- CRO — research, competitive intel, market analysis
+- CFO — financial strategy, SaaS metrics, burn rate
+- Lawyer — legal risk, GDPR/CCPA, IP, contracts
+- Job Coach — executive job search, pipeline, career strategy
+- CUXO — UX design, accessibility audit, transkrybe frontend
 `;
 
 // ─── Agent Definitions ────────────────────────────────────────────────────────
@@ -261,18 +273,58 @@ for (const [key, agent] of Object.entries(AGENTS)) {
 }
 
 // Delegation target name → agent id (for routing)
+// Keys must be lowercase with spaces AND dashes removed (matching the relay normalization:
+//   toRaw.toLowerCase().replace(/[\s\-]+/g, ''))
+// Add any natural-language aliases agents might use so nothing silently drops.
 const DELEGATION_TARGETS = {
-  'exec pm':  'execPM',
-  'exec-pm':  'execPM',
-  'execpm':   'execPM',
-  'cmo':      'cmo',
-  'cco':      'cco',
-  'jobcoach': 'jobcoach',
-  'job coach':'jobcoach',
-  'cuxo':     'cuxo',
-  'cro':      'cro',
-  'lawyer':   'lawyer',
-  'cfo':      'cfo',
+  // Exec PM
+  'execpm':                  'execPM',
+  'executivesecretary':      'execPM',
+  'executivepm':             'execPM',
+
+  // CMO — marketing
+  'cmo':                     'cmo',
+  'chiefmarketingofficer':   'cmo',
+  'marketing':               'cmo',
+  'marketingmanager':        'cmo',
+  'socialmediamanager':      'cmo',   // Job Coach sometimes writes this
+  'socialmediastrategist':   'cmo',   // Job Coach sometimes writes this
+
+  // CCO — content
+  'cco':                     'cco',
+  'chiefcontentofficer':     'cco',
+  'content':                 'cco',
+  'contentstrategist':       'cco',   // Job Coach sometimes writes this
+  'copywriter':              'cco',
+  'contentofficer':          'cco',
+
+  // CRO — research
+  'cro':                     'cro',
+  'chiefresearchofficer':    'cro',
+  'research':                'cro',
+  'researchofficer':         'cro',
+
+  // Job Coach
+  'jobcoach':                'jobcoach',
+
+  // CUXO — UX/design
+  'cuxo':                    'cuxo',
+  'chiefuxofficer':          'cuxo',
+  'ux':                      'cuxo',
+  'uxdesigner':              'cuxo',
+  'designer':                'cuxo',
+
+  // Lawyer
+  'lawyer':                  'lawyer',
+  'legalcounsel':            'lawyer',
+  'generalcounsel':          'lawyer',
+  'elitebusinesslawyer':     'lawyer',
+
+  // CFO
+  'cfo':                     'cfo',
+  'chieffinancialofficer':   'cfo',
+  'financialcoach':          'cfo',
+  'businessincomecoach':     'cfo',
 };
 
 module.exports = {
