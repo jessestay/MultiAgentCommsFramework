@@ -8,29 +8,16 @@ const state = require('../utils/state');
 const { generateReport, generateProactivePost } = require('../utils/anthropic');
 const { fetchDonationTotal } = require('../utils/gofundme');
 const { getLatestCommit, getRecentlyMergedPRs } = require('../utils/github');
+const { resolveChannel: _resolveChannel } = require('../utils/channels');
 
 const AGENT = AGENTS.execPM;
 const AGENT_ID = AGENT.id; // 'execPM'
 
 let slackClient = null;
-const channelIdCache = {};
 
 // ─── Channel resolution ───────────────────────────────────────────────────────
 async function resolveChannel(name) {
-  if (channelIdCache[name]) return channelIdCache[name];
-  try {
-    const result = await slackClient.conversations.list({
-      types: 'public_channel,private_channel',
-      limit: 200,
-    });
-    for (const ch of result.channels) {
-      channelIdCache[ch.name] = ch.id;
-    }
-    return channelIdCache[name];
-  } catch (err) {
-    console.error(`[execPM] Could not resolve channel ${name}:`, err.message);
-    return null;
-  }
+  return _resolveChannel(slackClient, name);
 }
 
 // ─── Post as this agent persona ───────────────────────────────────────────────

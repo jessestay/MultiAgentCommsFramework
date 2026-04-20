@@ -6,7 +6,7 @@
 require('dotenv').config();
 
 const { App } = require('@slack/bolt');
-const { AGENTS, CHANNELS, DELEGATION_TARGETS } = require('./config');
+const { AGENTS, CHANNELS, CHANNEL_IDS, DELEGATION_TARGETS } = require('./config');
 const state = require('./utils/state');
 
 // ─── Validate environment ─────────────────────────────────────────────────────
@@ -61,13 +61,15 @@ const CHANNEL_PRIMARY_AGENT = {
 };
 
 // ─── Channel name cache ───────────────────────────────────────────────────────
-const channelNameCache = {};
+// Reverse lookup: ID → name, using static map to avoid channels:read scope
+const CHANNEL_ID_TO_NAME = Object.fromEntries(
+  Object.entries(CHANNEL_IDS).map(([name, id]) => [id, name])
+);
 async function resolveChannelName(channelId, client) {
-  if (channelNameCache[channelId]) return channelNameCache[channelId];
+  if (CHANNEL_ID_TO_NAME[channelId]) return CHANNEL_ID_TO_NAME[channelId];
   try {
     const info = await client.conversations.info({ channel: channelId });
     const name = info.channel?.name || channelId;
-    channelNameCache[channelId] = name;
     return name;
   } catch {
     return channelId;

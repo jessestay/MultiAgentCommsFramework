@@ -16,6 +16,17 @@ const CHANNELS = {
 // All channels in the workspace
 const ALL_CHANNELS = Object.values(CHANNELS);
 
+// ─── Hardcoded Channel IDs ────────────────────────────────────────────────────
+// Avoids needing channels:read scope — these are stable IDs for staynalive.slack.com
+const CHANNEL_IDS = {
+  'marketing':  'C0ASDH1HC1Y',
+  'research':   'C0ASH4ZHGQL',
+  'content':    'C0ASA532BGD',
+  'jobs':       'C0ASDH56FA6',
+  'cto':        'C0ASBF3TMTQ',
+  'management': 'C0ASH4TF604',
+};
+
 // ─── Jesse Context ────────────────────────────────────────────────────────────
 // Injected into every agent's system prompt so all agents share essential facts
 const JESSE_CONTEXT = `
@@ -462,4 +473,4 @@ const DELEGATION_TARGETS = {
   'cfo':      'cfo',
 };
 
-module.exports = { CHANNELS, ALL_CHANNELS, AGENTS, JESSE_CONTEXT, AGENT_BY_HANDLE, AGENT_BY_ID, DELEGATION_TARGETS };
+module.exports = { CHANNELS, ALL_CHANNELS, CHANNEL_IDS, AGENTS, JESSE_CONTEXT, AGENT_BY_HANDLE, AGENT_BY_ID, DELEGATION_TARGETS };
