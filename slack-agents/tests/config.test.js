@@ -29,6 +29,7 @@ describe('MACF Config — 8 agents defined', () => {
 
   test('exec-pm is in ALL channels', () => {
     const execChannels = AGENTS.execPM.channels;
+    // exec-pm should be in every channel defined in CHANNELS
     Object.values(CHANNELS).forEach(ch => {
       expect(execChannels).toContain(ch);
     });
@@ -62,14 +63,14 @@ describe('MACF Config — 8 agents defined', () => {
 
 describe('CHANNELS config', () => {
   test('All expected channels are defined', () => {
-    const expected = ['execPM', 'marketing', 'research', 'content', 'jobs', 'it', 'management'];
+    const expected = ['marketing', 'research', 'content', 'jobs', 'it', 'management'];
     expected.forEach(key => {
       expect(CHANNELS[key]).toBeTruthy();
     });
   });
 
-  test('#transkrybe renamed to #it', () => {
-    expect(CHANNELS.it).toBe('it');
+  test('#transkrybe renamed to #cto', () => {
+    expect(CHANNELS.it).toBe('cto');
     // Confirm no 'transkrybe' channel remains
     expect(Object.values(CHANNELS)).not.toContain('transkrybe');
   });

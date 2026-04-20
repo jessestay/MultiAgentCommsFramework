@@ -40,6 +40,9 @@ jest.mock('node-cron', () => ({
   schedule: jest.fn(), // no-op — don't actually schedule timers in tests
 }));
 
+// Mock setTimeout/setInterval to prevent open handle warnings from startup delays
+jest.useFakeTimers();
+
 // Mock @octokit/rest
 jest.mock('@octokit/rest', () => ({
   Octokit: jest.fn().mockImplementation(() => ({

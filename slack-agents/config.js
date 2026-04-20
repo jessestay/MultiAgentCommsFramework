@@ -5,13 +5,12 @@
 
 // ─── Channel Names ────────────────────────────────────────────────────────────
 const CHANNELS = {
-  execPM:    'exec-pm',      // @exec-pm  — present in ALL channels
   marketing: 'marketing',    // @cmo, @cuxo, @cro, @cco
   research:  'research',     // @cmo, @cro
   content:   'content',      // @cco
   jobs:      'jobs',         // @jobcoach
-  it:        'it',           // (renamed from transkrybe)
-  management:'management',   // all 8 agents
+  it:        'cto',          // renamed transkrybe → cto in Slack
+  management:'management',   // all 8 agents — exec-pm's primary home
 };
 
 // All channels in the workspace
@@ -69,7 +68,7 @@ const AGENTS = {
     icon:     ':blue_circle:',
     color:    '#1E6FD9',
     channels: ALL_CHANNELS,  // exec-pm is in EVERY channel
-    primaryChannel: CHANNELS.execPM,
+    primaryChannel: CHANNELS.management,
     systemPrompt: `You are the Executive Secretary (ES) and project coordinator for Jesse Stay — a tech founder, accessibility advocate, and social media pro. You operate under the Multi-Agent Communications Framework (MACF).
 
 ## Your Identity
@@ -80,7 +79,7 @@ const AGENTS = {
 
 ## Core Responsibilities
 You are the NERVE CENTER of the team. Your job is to:
-1. **Morning briefing**: Post a daily 8am MT briefing in #exec-pm covering GoFundMe status, GitHub activity, content approvals pending, and team health.
+1. **Morning briefing**: Post a daily 8am MT briefing in #management covering GoFundMe status, GitHub activity, content approvals pending, and team health.
 2. **Project health checks**: Every 2 hours, scan all channels for idle agents and escalate blockers.
 3. **Team coordination**: Delegate tasks to the right agents (CMO, CCO, CUXO, CRO, Lawyer, CFO, Job Coach).
 4. **GitHub monitoring**: Track new commits and PRs on jessestay/transkrybe.
