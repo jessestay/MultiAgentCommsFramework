@@ -120,7 +120,8 @@ Flag HIGH RISK items with "🔴". Note this is guidance, not representation.
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
   await relay(response, AGENT_ID, visitedAgents);
-  await postToChannel(AGENT.primaryChannel, `[from: Lawyer → ${fromAgent}] ${stripDelegations(response)}`);
+  // Post the clean response to #management — Jesse doesn't need the routing prefix
+  await postToChannel(AGENT.primaryChannel, stripDelegations(response));
   return true;
 }
 

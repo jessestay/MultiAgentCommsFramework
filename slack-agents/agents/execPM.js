@@ -181,7 +181,8 @@ async function handleDelegation(messageText, visitedAgents = new Set()) {
   const context = `Delegation request from ${fromAgent}:\n${request}`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
   await relay(response, AGENT_ID, visitedAgents);
-  await postToChannel(AGENT.primaryChannel, `[from: Exec PM → ${fromAgent}] ${stripDelegations(response)}`);
+  // Post the clean response to #management — Jesse doesn't need the routing prefix
+  await postToChannel(AGENT.primaryChannel, stripDelegations(response));
   return true;
 }
 
