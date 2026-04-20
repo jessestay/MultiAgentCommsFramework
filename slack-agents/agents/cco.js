@@ -113,7 +113,7 @@ async function handleReaction({ event, client }) {
       content: (msg.text || '').slice(0, 300),
     });
 
-    await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} ✅ Content approved by Jesse! Logged. Ready to schedule when you give the go-ahead.`);
+    await postToChannel(AGENT.primaryChannel, "Content approved by Jesse. Logged and ready to schedule when you give the go-ahead.");
   } catch (err) {
     console.error('[cco] Error handling reaction:', err.message);
   }
@@ -124,14 +124,14 @@ async function handleMention({ event, say }) {
   const text = (event.text || '').replace(/<@[A-Z0-9]+>/g, '').trim();
   if (!text) {
     const pending = (state.get(AGENT_ID, 'pendingApprovals') || []).length;
-    await say(`${AGENT.emoji} *${AGENT.slackName}* | CCO here. ${pending} draft(s) pending your ✅. What content do you need?`);
+    await say(`CCO here. ${pending > 0 ? `${pending} draft(s) still waiting on your approval.` : "What content do you need?"}`);
     return;
   }
 
   console.log(`[cco] Handling mention: "${text.slice(0, 80)}"`);
   const context = `Jesse asked: "${text}"\nPending approvals: ${(state.get(AGENT_ID, 'pendingApprovals') || []).length}`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await say(`${AGENT.emoji} *${AGENT.slackName}* | ${response}`);
+  await say(response);
   state.updateChannelActivity(AGENT.primaryChannel);
   await relay(response, AGENT_ID);
 }
@@ -151,7 +151,7 @@ async function handleDelegation(messageText, visitedAgents = new Set()) {
 
   const context = `Delegation request from ${fromAgent}:\n"${request}"\n\nRespond as Chief Content Officer. Draft requested content or answer the content question. Mark all drafts with "✅ Awaiting Jesse's approval".`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *[from: CCO → ${fromAgent}]* ${response}`);
+  await postToChannel(AGENT.primaryChannel, `[from: CCO → ${fromAgent}] ${response}`);
   await relay(response, AGENT_ID, visitedAgents);
   return true;
 }

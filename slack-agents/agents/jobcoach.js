@@ -64,7 +64,7 @@ For each opportunity, format as:
   `.trim();
 
   const jobs = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *🔍 Job Scan Results*\n${jobs}`);
+  await postToChannel(AGENT.primaryChannel, jobs);
 }
 
 // ─── Friday pipeline report ───────────────────────────────────────────────────
@@ -96,7 +96,7 @@ Be direct and action-oriented. No fluff.
   `.trim();
 
   const report = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1200 });
-  await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *📊 Weekly Job Pipeline*\n${report}`);
+  await postToChannel(AGENT.primaryChannel, report);
   state.set(AGENT_ID, 'lastWeeklyReport', thisWeek);
 }
 
@@ -104,14 +104,14 @@ Be direct and action-oriented. No fluff.
 async function handleMention({ event, say }) {
   const text = (event.text || '').replace(/<@[A-Z0-9]+>/g, '').trim();
   if (!text) {
-    await say(`${AGENT.emoji} *${AGENT.slackName}* | Job Coach here. What opportunity are we hunting today?`);
+    await say("Job Coach here. What opportunity are we hunting today?");
     return;
   }
 
   console.log(`[jobcoach] Handling mention: "${text.slice(0, 80)}"`);
   const context = `Jesse asked: "${text}"\nLast search: ${state.get(AGENT_ID, 'lastSearched') || 'never'}\nTracked opportunities: ${(state.get(AGENT_ID, 'activeOpportunities') || []).length}`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await say(`${AGENT.emoji} *${AGENT.slackName}* | ${response}`);
+  await say(response);
   state.updateChannelActivity(AGENT.primaryChannel);
   await relay(response, AGENT_ID);
 }
@@ -127,7 +127,7 @@ async function handleDelegation(messageText, visitedAgents = new Set()) {
 
   const context = `Delegation from ${fromAgent}:\n"${request}"\nRespond as Job Coach with career strategy advice.`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *[from: Job Coach → ${fromAgent}]* ${response}`);
+  await postToChannel(AGENT.primaryChannel, `[from: Job Coach → ${fromAgent}] ${response}`);
   await relay(response, AGENT_ID, visitedAgents);
   return true;
 }

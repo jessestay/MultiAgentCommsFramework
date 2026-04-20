@@ -55,7 +55,7 @@ Be specific. No platitudes. Real design thinking.
   `.trim();
 
   const insight = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 800 });
-  await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *Weekly UX Insight*\n${insight}`);
+  await postToChannel(AGENT.primaryChannel, insight);
   state.set(AGENT_ID, 'lastUXReview', new Date().toISOString());
 }
 
@@ -63,7 +63,7 @@ Be specific. No platitudes. Real design thinking.
 async function handleMention({ event, say }) {
   const text = (event.text || '').replace(/<@[A-Z0-9]+>/g, '').trim();
   if (!text) {
-    await say(`${AGENT.emoji} *${AGENT.slackName}* | CUXO here. What UX or design challenge can I solve?`);
+    await say("CUXO here. What UX or design challenge can I solve?");
     return;
   }
 
@@ -72,14 +72,11 @@ async function handleMention({ event, say }) {
   const context = `
 Jesse asked: "${text}"
 
-Respond as Chief UX Officer (MACF DES role).
-Apply MACF design principles: Clarity, Consistency, Hierarchy, Feedback, Accessibility, Efficiency.
-Always cite WCAG 2.1 AA when accessibility is relevant (4.5:1 body text contrast, 3:1 large text).
-Provide specific, actionable guidance — not vague design advice.
+Respond as Chief UX Officer. When accessibility is relevant, cite WCAG 2.1 AA (4.5:1 body text contrast, 3:1 large text). Be specific and actionable, not vague.
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await say(`${AGENT.emoji} *${AGENT.slackName}* | ${response}`);
+  await say(response);
   state.updateChannelActivity(AGENT.primaryChannel);
   await relay(response, AGENT_ID);
 }
@@ -104,7 +101,7 @@ When giving visual specs, use format: Element | Color (#hex) | Size | Spacing | 
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *[from: CUXO → ${fromAgent}]* ${response}`);
+  await postToChannel(AGENT.primaryChannel, `[from: CUXO → ${fromAgent}] ${response}`);
   await relay(response, AGENT_ID, visitedAgents);
   return true;
 }

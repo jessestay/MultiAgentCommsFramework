@@ -63,7 +63,7 @@ Reminder: This is guidance, not legal representation. High-stakes matters should
   `.trim();
 
   const memo = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *⚖️ Monthly Legal Checkup*\n${memo}`);
+  await postToChannel(AGENT.primaryChannel, memo);
   state.set(AGENT_ID, 'lastMonthlyCheckup', thisMonth);
 }
 
@@ -71,7 +71,7 @@ Reminder: This is guidance, not legal representation. High-stakes matters should
 async function handleMention({ event, say }) {
   const text = (event.text || '').replace(/<@[A-Z0-9]+>/g, '').trim();
   if (!text) {
-    await say(`${AGENT.emoji} *${AGENT.slackName}* | Counsel here. What legal matter needs attention?`);
+    await say("Counsel here. What legal matter needs attention?");
     return;
   }
 
@@ -80,13 +80,11 @@ async function handleMention({ event, say }) {
   const context = `
 Jesse asked: "${text}"
 
-Respond as Elite Business Lawyer. Frame all advice as: Risk | Exposure | Recommendation.
-For HIGH RISK items, explicitly note: "🔴 For this matter, I strongly recommend consulting a licensed attorney."
-This is legal guidance/education, not attorney-client representation.
+Respond as a business lawyer. Be direct about risk and what to do about it. For anything genuinely high-stakes, say so clearly and recommend Jesse engage a licensed attorney — this is guidance, not representation.
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await say(`${AGENT.emoji} *${AGENT.slackName}* | ${response}`);
+  await say(response);
   await relay(response, AGENT_ID);
 
   // Log anything flagged as a risk
@@ -121,7 +119,7 @@ Flag HIGH RISK items with "🔴". Note this is guidance, not representation.
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *[from: Lawyer → ${fromAgent}]* ${response}`);
+  await postToChannel(AGENT.primaryChannel, `[from: Lawyer → ${fromAgent}] ${response}`);
   await relay(response, AGENT_ID, visitedAgents);
   return true;
 }

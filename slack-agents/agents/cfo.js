@@ -64,7 +64,7 @@ Disclaimer: This is financial guidance for planning purposes — consult a CPA f
   `.trim();
 
   const brief = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *💰 Monthly Financial Brief*\n${brief}`);
+  await postToChannel(AGENT.primaryChannel, brief);
   state.set(AGENT_ID, 'lastMonthlyBrief', thisMonth);
 }
 
@@ -72,7 +72,7 @@ Disclaimer: This is financial guidance for planning purposes — consult a CPA f
 async function handleMention({ event, say }) {
   const text = (event.text || '').replace(/<@[A-Z0-9]+>/g, '').trim();
   if (!text) {
-    await say(`${AGENT.emoji} *${AGENT.slackName}* | CFO here. What financial strategy can I help optimize?`);
+    await say("CFO here. What's on your mind financially?");
     return;
   }
 
@@ -82,13 +82,11 @@ async function handleMention({ event, say }) {
 Jesse asked: "${text}"
 Known metrics: ${JSON.stringify(state.get(AGENT_ID, 'trackedMetrics') || {}, null, 2)}
 
-Respond as CFO. Format: Current state | Gap | Recommended action | Expected impact.
-Use specific numbers. Flag any tax deadlines.
-Disclaimer reminder: For actual tax filing or investment decisions, Jesse should consult a CPA or financial advisor.
+Respond as CFO. Use specific numbers. Flag any tax deadlines. For actual tax filing or investment decisions, remind Jesse to consult a CPA.
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await say(`${AGENT.emoji} *${AGENT.slackName}* | ${response}`);
+  await say(response);
   state.updateChannelActivity(AGENT.primaryChannel);
   await relay(response, AGENT_ID);
 }
@@ -108,7 +106,7 @@ async function handleDelegation(messageText, visitedAgents = new Set()) {
 
   const context = `Financial request from ${fromAgent}: "${request}"\nProvide specific financial analysis: Current | Target | Action | Impact.`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1200 });
-  await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *[from: CFO → ${fromAgent}]* ${response}`);
+  await postToChannel(AGENT.primaryChannel, `[from: CFO → ${fromAgent}] ${response}`);
   await relay(response, AGENT_ID, visitedAgents);
   return true;
 }

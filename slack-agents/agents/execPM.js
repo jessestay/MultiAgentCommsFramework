@@ -73,12 +73,11 @@ GoFundMe: ${donation ? `$${donation.amount} raised of $2,800 (${donation.percent
 Latest transkrybe commit: ${commit ? `${commit.sha} — "${commit.message}" by ${commit.author}` : 'unavailable'}
 Merged PRs in last 24h: ${prs.length > 0 ? prs.map(p => `#${p.number} "${p.title}"`).join(', ') : 'None'}
 
-Write a concise morning briefing. Be the Executive Secretary who's already been up for 2 hours.
-Flag anything that needs Jesse's immediate attention. Prioritize. No fluff.
+Write a morning briefing. Talk like you're catching Jesse up at the start of the day — conversational, direct, no headers or bullets. Just tell him what he needs to know and what needs his attention. Flag anything urgent.
   `.trim();
 
   const text = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await postToChannel(AGENT.primaryChannel, `*🌅 Morning Briefing*\n${text}`);
+  await postToChannel(AGENT.primaryChannel, text);
 
   state.set(AGENT_ID, 'lastMorningBriefing', today);
   state.set(AGENT_ID, 'lastHealthCheck', new Date().toISOString());
@@ -142,7 +141,7 @@ async function runHealthCheck() {
   }
 
   if (alerts.length > 0) {
-    await postToChannel(AGENT.primaryChannel, `*🔍 Health Check*\n${alerts.join('\n')}`);
+    await postToChannel(AGENT.primaryChannel, alerts.join('\n'));
   } else {
     console.log('[execPM] Health check clean — nothing to report.');
   }
@@ -154,7 +153,7 @@ async function runHealthCheck() {
 async function handleMention({ event, say, client }) {
   const text = (event.text || '').replace(/<@[A-Z0-9]+>/g, '').trim();
   if (!text) {
-    await say(`${AGENT.emoji} *${AGENT.slackName}* | I'm here. What do you need, Jesse?`);
+    await say("I'm here. What do you need, Jesse?");
     return;
   }
 
@@ -168,11 +167,11 @@ My current state:
 - GoFundMe (last known): $${state.get(AGENT_ID, 'knownDonationAmount') || 0} raised
 - Last transkrybe commit I saw: ${state.get(AGENT_ID, 'knownCommitSha') || 'unknown'}
 
-Respond as the Executive Secretary. Be direct. If Jesse needs something from another agent, tell him to address that agent directly or say you'll delegate.
+I am Jesse's single point of contact on this team. Handle his request directly and completely. If I need something from another agent (CMO, CRO, CCO, CFO, Lawyer, Job Coach, CUXO), delegate using [from: Exec PM → AgentName] format and handle the routing myself. Never tell Jesse to go talk to another agent — I aggregate and bring results back to him.
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await say(`${AGENT.emoji} *${AGENT.slackName}* | ${response}`);
+  await say(response);
   state.updateChannelActivity(event.channel || AGENT.primaryChannel);
   await relay(response, AGENT_ID);
 }
@@ -189,7 +188,7 @@ async function handleDelegation(messageText, visitedAgents = new Set()) {
 
   const context = `Delegation request from ${fromAgent}:\n${request}`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *[from: Exec PM → ${fromAgent}]* ${response}`);
+  await postToChannel(AGENT.primaryChannel, `[from: Exec PM → ${fromAgent}] ${response}`);
   await relay(response, AGENT_ID, visitedAgents);
   return true;
 }

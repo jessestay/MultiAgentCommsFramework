@@ -37,15 +37,13 @@ async function chat({ systemPrompt, userMessage, model = DEFAULT_MODEL, maxToken
 }
 
 /**
- * Generate a short proactive post (under 280 chars by default) from an agent.
+ * Generate a short proactive post from an agent.
  * Used for concise Slack updates.
  */
 async function generateProactivePost({ systemPrompt, context, maxTokens = 512 }) {
   return chat({
     systemPrompt,
-    userMessage: `Generate a concise, proactive Slack post based on this context.
-Keep it under 300 characters unless detail is genuinely needed.
-Write in first person as the agent. Sound human, not robotic.
+    userMessage: `Write a short, natural Slack message based on this context. Sound like a real person talking to their CEO — plain text, conversational, no bold headers, no bullet walls. Brief and direct.
 
 Context: ${context}`,
     maxTokens,
@@ -53,14 +51,12 @@ Context: ${context}`,
 }
 
 /**
- * Generate a longer structured report or analysis.
+ * Generate a response or update. Human voice — no formatted reports.
  */
 async function generateReport({ systemPrompt, context, maxTokens = 2048 }) {
   return chat({
     systemPrompt,
-    userMessage: `Generate a clear, well-structured Slack report based on this context.
-Use Slack mrkdwn formatting (bold with *asterisks*, bullet points with •).
-Be direct and actionable.
+    userMessage: `Respond based on this context. Write like a person talking to their CEO — short paragraphs, plain sentences, no bold headers everywhere, no bullet-point lists unless you're genuinely listing 5+ discrete items that need separation. No emoji in the message body. Sound like yourself, not a report generator. Be direct and specific.
 
 Context: ${context}`,
     maxTokens,

@@ -93,14 +93,14 @@ Be specific. Cite real examples, real numbers, real trends where possible.
 async function handleMention({ event, say }) {
   const text = (event.text || '').replace(/<@[A-Z0-9]+>/g, '').trim();
   if (!text) {
-    await say(`${AGENT.emoji} *${AGENT.slackName}* | CRO here. What do you need me to research?`);
+    await say("CRO here. What do you need me to research?");
     return;
   }
 
   console.log(`[cro] Handling mention: "${text.slice(0, 80)}"`);
-  const context = `Jesse asked for research on: "${text}"\nProvide a thorough research brief with specific findings, implications, and recommended actions.`;
+  const context = `Jesse asked for research on: "${text}"\nProvide findings, what they mean, and what Jesse should do with them.`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await say(`${AGENT.emoji} *${AGENT.slackName}* | ${response}`);
+  await say(response);
   state.updateChannelActivity(AGENT.primaryChannel);
   await relay(response, AGENT_ID);
 }
@@ -123,7 +123,7 @@ async function handleDelegation(messageText, visitedAgents = new Set()) {
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
 
   // Respond in the research channel and tag the requesting agent
-  await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *[from: CRO → ${fromAgent}]* ${response}`);
+  await postToChannel(AGENT.primaryChannel, `[from: CRO → ${fromAgent}] ${response}`);
   await relay(response, AGENT_ID, visitedAgents);
   return true;
 }

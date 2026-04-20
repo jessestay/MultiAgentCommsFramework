@@ -77,7 +77,7 @@ All suggestions must note: "🔴 Needs Jesse's ✅ before posting"
     `.trim();
 
     const text = await generateProactivePost({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 600 });
-    await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *GoFundMe Update* ${deltaText}\n${text}`);
+    await postToChannel(AGENT.primaryChannel, text);
 
     state.set(AGENT_ID, 'knownDonationAmount', current.amount);
     console.log(`[cmo] GoFundMe change: $${lastAmount} → $${current.amount}`);
@@ -120,11 +120,11 @@ Format: *Day* — Platform — Content type — Topic — Rationale (1 line)
   `.trim();
 
   const calendar = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *📅 Weekly Content Calendar*\n${calendar}`);
+  await postToChannel(AGENT.primaryChannel, calendar);
 
   // Delegate execution to CCO
   await postToChannel(AGENT.primaryChannel,
-    `${AGENT.emoji} *[from: CMO → CCO]* Weekly calendar is up. Please draft the first 2 posts (Mon + Tue) for Jesse's review.`
+    `[from: CMO → CCO] Weekly calendar is up. Please draft the first 2 posts (Mon + Tue) for Jesse's review.`
   );
 
   state.set(AGENT_ID, 'lastWeeklyCalendar', thisWeek);
@@ -134,7 +134,7 @@ Format: *Day* — Platform — Content type — Topic — Rationale (1 line)
 async function handleMention({ event, say }) {
   const text = (event.text || '').replace(/<@[A-Z0-9]+>/g, '').trim();
   if (!text) {
-    await say(`${AGENT.emoji} *${AGENT.slackName}* | CMO here. What marketing strategy can I help with?`);
+    await say("CMO here. What marketing strategy can I help with?");
     return;
   }
 
@@ -147,7 +147,7 @@ Last weekly calendar: ${state.get(AGENT_ID, 'lastWeeklyCalendar') || 'not posted
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await say(`${AGENT.emoji} *${AGENT.slackName}* | ${response}`);
+  await say(response);
   state.updateChannelActivity(AGENT.primaryChannel);
   await relay(response, AGENT_ID);
 }
@@ -175,7 +175,7 @@ If it needs content drafted, delegate to CCO. If it needs design, delegate to CU
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *[from: CMO → ${fromAgent}]* ${response}`);
+  await postToChannel(AGENT.primaryChannel, `[from: CMO → ${fromAgent}] ${response}`);
   await relay(response, AGENT_ID, visitedAgents);
   return true;
 }
