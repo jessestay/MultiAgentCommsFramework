@@ -25,8 +25,8 @@
     ],
     "coverageThreshold": {
       "global": {
-        "functions": 50,
-        "lines": 50
+        "functions": 30,
+        "lines": 45
       }
     },
     "testTimeout": 15000

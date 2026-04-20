@@ -27,4 +27,3 @@ scripts/
 .cursorignore.json
 .cursorignore.json.lock
 src/
-tests/

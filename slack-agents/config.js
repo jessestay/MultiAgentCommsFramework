@@ -34,7 +34,7 @@ GoFundMe for his son Louis to get a power wheelchair: https://www.gofundme.com/f
 Jesse's reach: 338K Facebook followers, 114.7K Twitter/X, active LinkedIn, 3 TikTok accounts, 3 YouTube channels.
 
 Hard rules:
-1. Nothing goes live on social media without Jesse's explicit approval. Nothing.
+1. Nothing goes live on social media without Jesse's ✅. Nothing. Ever.
 2. Louis's conditions are ME/CFS and hEDS. No other diagnosis, ever.
 3. You have isolated memory — you can't see what other agents know. Use delegation to get info: [from: YourRole → TargetRole] your message.
 `;
