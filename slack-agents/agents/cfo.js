@@ -7,6 +7,7 @@ const { AGENTS, CHANNELS } = require('../config');
 const state = require('../utils/state');
 const { generateReport } = require('../utils/anthropic');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
+const { relay } = require('../utils/delegation');
 
 const AGENT = AGENTS.cfo;
 const AGENT_ID = AGENT.id; // 'cfo'
@@ -89,10 +90,11 @@ Disclaimer reminder: For actual tax filing or investment decisions, Jesse should
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
   await say(`${AGENT.emoji} *${AGENT.slackName}* | ${response}`);
   state.updateChannelActivity(AGENT.primaryChannel);
+  await relay(response, AGENT_ID);
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText) {
+async function handleDelegation(messageText, visitedAgents = new Set()) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*CFO\]\s*(.+)/si);
   if (!match) return false;
 
@@ -107,6 +109,7 @@ async function handleDelegation(messageText) {
   const context = `Financial request from ${fromAgent}: "${request}"\nProvide specific financial analysis: Current | Target | Action | Impact.`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1200 });
   await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *[from: CFO → ${fromAgent}]* ${response}`);
+  await relay(response, AGENT_ID, visitedAgents);
   return true;
 }
 

@@ -8,6 +8,7 @@ require('dotenv').config();
 const { App } = require('@slack/bolt');
 const { AGENTS, CHANNELS, CHANNEL_IDS, DELEGATION_TARGETS } = require('./config');
 const state = require('./utils/state');
+const delegation = require('./utils/delegation');
 
 // ─── Validate environment ─────────────────────────────────────────────────────
 const REQUIRED_ENV = ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET', 'SLACK_APP_TOKEN', 'ANTHROPIC_API_KEY'];
@@ -171,10 +172,10 @@ app.event('message', async ({ event, say, client }) => {
     return;
   }
 
-  // 3. If message is in a channel with a primary agent, let that agent respond
-  // (only if the message seems directed at the team — contains "?" or starts with a name)
+  // 3. If message is in a channel with a primary agent, respond to any substantive message
+  // (15+ chars filters out reactions-as-text, stray punctuation, very short noise)
   const primaryId = CHANNEL_PRIMARY_AGENT[channelName];
-  if (primaryId && (text.includes('?') || text.match(/^(hey|hi|hello|yo)\b/i))) {
+  if (primaryId && text.length >= 15) {
     const agentModule = AGENT_MODULES[primaryId];
     if (agentModule?.handleMention) {
       console.log(`[index] Channel message → ${primaryId} in #${channelName}: "${text.slice(0, 80)}"`);
@@ -261,6 +262,9 @@ process.on('SIGTERM', () => {
 async function start() {
   // Load all agent memory from disk
   state.loadAll();
+
+  // Wire delegation module so agents can relay in-process
+  delegation.init(AGENT_MODULES, DELEGATION_TARGETS);
 
   // Initialize all 8 agents (registers cron jobs, captures app.client)
   execPM.init(app);

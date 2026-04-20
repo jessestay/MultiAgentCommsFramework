@@ -8,6 +8,7 @@ const state = require('../utils/state');
 const { generateReport, generateProactivePost } = require('../utils/anthropic');
 const { fetchDonationTotal, GOFUNDME_URL } = require('../utils/gofundme');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
+const { relay } = require('../utils/delegation');
 
 const AGENT = AGENTS.cmo;
 const AGENT_ID = AGENT.id; // 'cmo'
@@ -148,10 +149,11 @@ Last weekly calendar: ${state.get(AGENT_ID, 'lastWeeklyCalendar') || 'not posted
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
   await say(`${AGENT.emoji} *${AGENT.slackName}* | ${response}`);
   state.updateChannelActivity(AGENT.primaryChannel);
+  await relay(response, AGENT_ID);
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText) {
+async function handleDelegation(messageText, visitedAgents = new Set()) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*CMO\]\s*(.+)/si);
   if (!match) return false;
 
@@ -174,6 +176,7 @@ If it needs content drafted, delegate to CCO. If it needs design, delegate to CU
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
   await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *[from: CMO → ${fromAgent}]* ${response}`);
+  await relay(response, AGENT_ID, visitedAgents);
   return true;
 }
 

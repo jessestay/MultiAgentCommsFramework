@@ -7,6 +7,7 @@ const { AGENTS, CHANNELS } = require('../config');
 const state = require('../utils/state');
 const { generateReport } = require('../utils/anthropic');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
+const { relay } = require('../utils/delegation');
 
 const AGENT = AGENTS.lawyer;
 const AGENT_ID = AGENT.id; // 'lawyer'
@@ -86,6 +87,7 @@ This is legal guidance/education, not attorney-client representation.
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
   await say(`${AGENT.emoji} *${AGENT.slackName}* | ${response}`);
+  await relay(response, AGENT_ID);
 
   // Log anything flagged as a risk
   if (response.toLowerCase().includes('risk') || response.toLowerCase().includes('concern')) {
@@ -100,7 +102,7 @@ This is legal guidance/education, not attorney-client representation.
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText) {
+async function handleDelegation(messageText, visitedAgents = new Set()) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*Lawyer\]\s*(.+)/si);
   if (!match) return false;
 
@@ -120,6 +122,7 @@ Flag HIGH RISK items with "🔴". Note this is guidance, not representation.
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
   await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *[from: Lawyer → ${fromAgent}]* ${response}`);
+  await relay(response, AGENT_ID, visitedAgents);
   return true;
 }
 

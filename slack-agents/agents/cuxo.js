@@ -7,6 +7,7 @@ const { AGENTS, CHANNELS } = require('../config');
 const state = require('../utils/state');
 const { generateReport } = require('../utils/anthropic');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
+const { relay } = require('../utils/delegation');
 
 const AGENT = AGENTS.cuxo;
 const AGENT_ID = AGENT.id; // 'cuxo'
@@ -80,10 +81,11 @@ Provide specific, actionable guidance — not vague design advice.
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
   await say(`${AGENT.emoji} *${AGENT.slackName}* | ${response}`);
   state.updateChannelActivity(AGENT.primaryChannel);
+  await relay(response, AGENT_ID);
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText) {
+async function handleDelegation(messageText, visitedAgents = new Set()) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*CUXO\]\s*(.+)/si);
   if (!match) return false;
 
@@ -103,6 +105,7 @@ When giving visual specs, use format: Element | Color (#hex) | Size | Spacing | 
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
   await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *[from: CUXO → ${fromAgent}]* ${response}`);
+  await relay(response, AGENT_ID, visitedAgents);
   return true;
 }
 

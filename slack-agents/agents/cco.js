@@ -7,6 +7,7 @@ const { AGENTS, CHANNELS } = require('../config');
 const state = require('../utils/state');
 const { generateReport, generateProactivePost } = require('../utils/anthropic');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
+const { relay } = require('../utils/delegation');
 
 const AGENT = AGENTS.cco;
 const AGENT_ID = AGENT.id; // 'cco'
@@ -132,10 +133,11 @@ async function handleMention({ event, say }) {
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
   await say(`${AGENT.emoji} *${AGENT.slackName}* | ${response}`);
   state.updateChannelActivity(AGENT.primaryChannel);
+  await relay(response, AGENT_ID);
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText) {
+async function handleDelegation(messageText, visitedAgents = new Set()) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*CCO\]\s*(.+)/si);
   if (!match) return false;
 
@@ -150,6 +152,7 @@ async function handleDelegation(messageText) {
   const context = `Delegation request from ${fromAgent}:\n"${request}"\n\nRespond as Chief Content Officer. Draft requested content or answer the content question. Mark all drafts with "✅ Awaiting Jesse's approval".`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
   await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *[from: CCO → ${fromAgent}]* ${response}`);
+  await relay(response, AGENT_ID, visitedAgents);
   return true;
 }
 

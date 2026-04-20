@@ -7,6 +7,7 @@ const { AGENTS, CHANNELS } = require('../config');
 const state = require('../utils/state');
 const { generateReport } = require('../utils/anthropic');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
+const { relay } = require('../utils/delegation');
 
 const AGENT = AGENTS.cro;
 const AGENT_ID = AGENT.id; // 'cro'
@@ -101,10 +102,11 @@ async function handleMention({ event, say }) {
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
   await say(`${AGENT.emoji} *${AGENT.slackName}* | ${response}`);
   state.updateChannelActivity(AGENT.primaryChannel);
+  await relay(response, AGENT_ID);
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText) {
+async function handleDelegation(messageText, visitedAgents = new Set()) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*CRO\]\s*(.+)/si);
   if (!match) return false;
 
@@ -122,6 +124,7 @@ async function handleDelegation(messageText) {
 
   // Respond in the research channel and tag the requesting agent
   await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *[from: CRO → ${fromAgent}]* ${response}`);
+  await relay(response, AGENT_ID, visitedAgents);
   return true;
 }
 

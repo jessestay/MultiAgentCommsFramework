@@ -9,6 +9,7 @@ const { generateReport, generateProactivePost } = require('../utils/anthropic');
 const { fetchDonationTotal } = require('../utils/gofundme');
 const { getLatestCommit, getRecentlyMergedPRs } = require('../utils/github');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
+const { relay } = require('../utils/delegation');
 
 const AGENT = AGENTS.execPM;
 const AGENT_ID = AGENT.id; // 'execPM'
@@ -173,10 +174,11 @@ Respond as the Executive Secretary. Be direct. If Jesse needs something from ano
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
   await say(`${AGENT.emoji} *${AGENT.slackName}* | ${response}`);
   state.updateChannelActivity(event.channel || AGENT.primaryChannel);
+  await relay(response, AGENT_ID);
 }
 
 // ─── Handle delegation from other agents ─────────────────────────────────────
-async function handleDelegation(messageText) {
+async function handleDelegation(messageText, visitedAgents = new Set()) {
   // Match: [from: {anyone} → Exec PM] {request}
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*Exec\s*PM\]\s*(.+)/si);
   if (!match) return false;
@@ -188,6 +190,7 @@ async function handleDelegation(messageText) {
   const context = `Delegation request from ${fromAgent}:\n${request}`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
   await postToChannel(AGENT.primaryChannel, `${AGENT.emoji} *[from: Exec PM → ${fromAgent}]* ${response}`);
+  await relay(response, AGENT_ID, visitedAgents);
   return true;
 }
 
