@@ -91,62 +91,54 @@ Write a morning briefing. Talk like you're catching Jesse up at the start of the
 async function runHealthCheck() {
   console.log('[execPM] Running health check...');
 
-  // Detect idle channels
-  const idleChannels = [];
-  for (const channel of ALL_CHANNELS) {
-    const idleMin = state.getChannelIdleMinutes(channel);
-    if (idleMin > 120 && idleMin < Infinity) {
-      idleChannels.push({ channel, idleMin: Math.round(idleMin) });
-    }
-  }
-
-  // Check for new GoFundMe donations
+  // Check for new GoFundMe donations (only alert on change)
   const donation = await fetchDonationTotal().catch(() => null);
   const knownAmount = state.get(AGENT_ID, 'knownDonationAmount') || 0;
-  let donationAlert = null;
   if (donation) {
     if (knownAmount > 0 && donation.amount !== knownAmount) {
-      donationAlert = donation;
+      const delta = donation.amount - knownAmount;
+      // Post a human-voice update to management
+      await postToChannel(AGENT.primaryChannel,
+        `GoFundMe update: we just went from $${knownAmount} to $${donation.amount} — that's +$${delta.toFixed(2)}. Now at ${donation.percentFunded}% of goal.`
+      );
+      // Let CMO know so they can follow up
+      await postToChannel(CHANNELS.marketing,
+        `[from: Exec PM → CMO] New donation came in — GoFundMe is now at $${donation.amount} raised. Can you draft a quick thank-you or momentum post for Jesse to review?`
+      );
     }
     state.set(AGENT_ID, 'knownDonationAmount', donation.amount);
   }
 
-  // Check for new GitHub commits
+  // Check for new GitHub commits (only alert on new commit)
   const commit = await getLatestCommit().catch(() => null);
   const knownSha = state.get(AGENT_ID, 'knownCommitSha');
-  let newCommit = null;
   if (commit && commit.fullSha !== knownSha) {
-    newCommit = commit;
     state.set(AGENT_ID, 'knownCommitSha', commit.fullSha);
-  }
-
-  const alerts = [];
-  if (idleChannels.length > 0) {
-    alerts.push(`*⏱️ Idle channels (>2hrs):* ${idleChannels.map(c => `#${c.channel} (${c.idleMin}min)`).join(', ')}`);
-  }
-  if (donationAlert) {
-    const delta = donationAlert.amount - knownAmount;
-    alerts.push(`*💚 GoFundMe:* $${knownAmount} → $${donationAlert.amount} (+$${delta.toFixed(2)}) | ${donationAlert.percentFunded}% of goal`);
-    // Notify CMO
-    await postToChannel(CHANNELS.marketing,
-      `${AGENT.emoji} *[from: Exec PM → CMO]* GoFundMe donation detected: +$${delta.toFixed(2)} → now $${donationAlert.amount} raised. Please generate an engagement update.`
-    );
-  }
-  if (newCommit) {
-    alerts.push(`*🔀 New transkrybe commit:* \`${newCommit.sha}\` — "${newCommit.message}" by ${newCommit.author}`);
-    // Notify #it channel
+    // Notify #cto channel in plain language
     await postToChannel(CHANNELS.it,
-      `${AGENT.emoji} *[from: Exec PM → IT]* New commit: \`${newCommit.sha}\` — ${newCommit.message}\n👤 ${newCommit.author} · ${new Date(newCommit.date).toLocaleString('en-US', { timeZone: 'America/Denver' })} MT\n${newCommit.url}`
+      `[from: Exec PM → CTO] New transkrybe commit landed: "${commit.message}" by ${commit.author}. ${commit.url}`
     );
   }
 
-  if (alerts.length > 0) {
-    await postToChannel(AGENT.primaryChannel, alerts.join('\n'));
-  } else {
-    console.log('[execPM] Health check clean — nothing to report.');
+  // Idle channel detection: only alert once per idle period (not every 2hrs)
+  // Track which channels we've already flagged so we don't spam
+  const alreadyFlagged = state.get(AGENT_ID, 'idleFlaggedChannels') || {};
+  const nowFlagged = {};
+  for (const channel of ALL_CHANNELS) {
+    const idleMin = state.getChannelIdleMinutes(channel);
+    // Flag channels idle for 6+ hours (not 2hrs — that's too noisy)
+    if (idleMin > 360 && idleMin < Infinity) {
+      nowFlagged[channel] = true;
+      // Only log — don't post to Slack. Idle channels are not Jesse's problem.
+      if (!alreadyFlagged[channel]) {
+        console.log(`[execPM] Health: #${channel} has been idle ${Math.round(idleMin)}min`);
+      }
+    }
   }
+  state.set(AGENT_ID, 'idleFlaggedChannels', nowFlagged);
 
   state.set(AGENT_ID, 'lastHealthCheck', new Date().toISOString());
+  console.log('[execPM] Health check complete.');
 }
 
 // ─── Handle @mention ──────────────────────────────────────────────────────────

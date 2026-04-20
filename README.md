@@ -1,149 +1,166 @@
 # Multi-Agent Communications Framework (MACF)
 
-**Proprietary & Confidential** - Copyright (c) 2026 Jesse Stay. All Rights Reserved.
+**An open-source toolkit for running a persistent AI team across Slack, Cursor, Claude Desktop, and any MCP-compatible coding assistant.**
 
-The **Multi-Agent Communications Framework (MACF)** is a specialized environment for the Cursor IDE that transforms standard AI interactions into a coordinated, multi-role agile team. It provides a robust structure for roles (like Executive Secretary, Software Engineering Team, Marketing Director), rule enforcement, and standardized workflows.
+Your agents share the same personalities, memory, and skills regardless of where you talk to them — Slack on your phone, Cursor in your IDE, or Claude Desktop on your laptop. Same team, same context, different surfaces.
 
-## 🚀 Installation
+---
 
-You can add this framework to **any** Cursor project to instantly upgrade its AI capabilities. This method replaces the default `.cursor` directory with this framework, ensuring your project's existing codebase and Git history remain clean and unaffected.
+## What It Does
 
-### Prerequisites
-- A project opened in **Cursor IDE**.
-- `git` installed in your terminal.
+MACF gives you a coordinated team of AI agents that actually work together:
 
-### Steps to Install (The "Drop-In" Method)
+- **Exec PM** — your single point of contact. Routes everything, aggregates responses, never redirects you to another agent
+- **CMO** — marketing strategy, GoFundMe/campaign management, social content
+- **CCO** — content drafting (always for your review, never auto-publishes)
+- **CRO** — research, competitive intelligence, trends
+- **CFO** — SaaS metrics, financial strategy, burn rate (not a CPA)
+- **Lawyer** — legal risk, GDPR/CCPA, IP (guidance only, not representation)
+- **Job Coach** — executive job search strategy, pipeline review
+- **CUXO** — UX/design review, accessibility audits
 
-Run the following commands in the **root directory** of your target project:
+You only ever talk to Exec PM. Everything else happens behind the scenes.
 
-1.  **Protect your project's git history**:
-    Ensure the `.cursor` directory is ignored by your project so the framework doesn't clutter your repository.
-    ```bash
-    echo ".cursor/" >> .gitignore
-    ```
+---
 
-2.  **Remove existing Cursor settings (if any)**:
-    *Note: Back up any personal `.cursor/rules` you want to keep before doing this.*
-    ```bash
-    rm -rf .cursor
-    ```
+## Architecture
 
-3.  **Install the Framework**:
-    Clone this repository directly into the `.cursor` directory.
-    ```bash
-    git clone https://github.com/jessestay/MultiAgentCommsFramework.git .cursor
-    ```
+Three layers, each independently swappable:
 
-    *Note: By cloning it as a standard git repo inside an ignored folder, you can independently pull updates to the framework (`cd .cursor && git pull`) without affecting your main project's version control.*
-
-## 📂 Default Directory Setup
-
-To fully leverage the MACF, your project should follow a standardized directory structure. This allows the agents to know exactly where to find and place documentation, tests, and code.
-
-### 1. Initialize Structure
-You can simply tell the **Executive Secretary (ES)** to "implement the standard MACF file structure," and it will automatically create the necessary folders and files for you. You do not need to instruct it on each individual directory.
-
-The standard structure it will create looks like this:
-
-```text
-my-project/
-├── .cursor/           # (The framework you just installed)
-├── docs/              # Central documentation hub
-│   ├── sprint-status.md         # Single Source of Truth for sprint progress
-│   ├── technical/               # Tech specs & release plans (RELEASE_PLAN.md)
-│   ├── user-stories/            # User stories organized by sprint/area
-│   └── logs/                    # Troubleshooting logs
-├── tests/             # standardized test directory
-│   ├── unit/
-│   ├── integration/
-│   └── acceptance/
-└── scripts/           # (Optional) Helper scripts
+```
+┌─────────────────────────────────────────────────────┐
+│              PLATFORM ADAPTERS                       │
+│  Slack app  │  MCP server  │  Discord  │  Teams  │…  │
+├─────────────────────────────────────────────────────┤
+│                   CORE LAYER                         │
+│  Agent definitions  │  AI backends  │  Memory        │
+└─────────────────────────────────────────────────────┘
 ```
 
-### 2. Instructing the Agents
-Once the `.cursor` folder is in place, the Cursor agents automatically have access to the rules. However, to align them with your specific project context, perform the following **Contextual Initialization** at the start of a session:
+- **`core/`** — platform-agnostic agent definitions, AI backend factory, memory backend factory
+- **`adapters/mcp/`** — MCP server for Cursor, Claude Code, Claude Desktop, GitHub Copilot Chat (VS Code)
+- **`slack-agents/`** — production Slack app (Railway/Bolt Socket Mode)
 
-1.  Open `Chat`.
-2.  Type the following prompt to initialize the team:
-    > "Initialize MACF. I am the User. Please read the .cursor/rules/roles to understand your team structure. I want to start by creating a RELEASE_PLAN.md in docs/technical/ if it doesn't exist. Executive Secretary, please take the lead."
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full design.
 
-The **Executive Secretary (ES)** will then activate, acknowledge the team roles (SET, MD, CTW, etc.), and guide you through the next steps using the installed protocols.
+---
 
-## 💡 Usage & Role Engagement Guide
+## Quick Start
 
-Once initialized, you engage the team by addressing specific roles using their **@Handle**.
+### Prerequisites
+- Node.js 18+
+- Anthropic API key
 
-### 1. The Core Team (Most Frequently Used)
+### Run the Slack Bot
 
-| Role | Handle | When to Use | Example Prompt |
-| :--- | :--- | :--- | :--- |
-| **Executive Secretary** | `@ES` | **Start here.** Project management, coordination, questions about process, or general help. | "@ES: Review our current sprint status and tell me what's next." |
-| **Software Engineering Team** | `@SET` | Writing code, debugging, running tests, terminal commands. | "@SET: Implement the login feature for US-AUTH-01 and run tests." |
-| **Marketing Director** | `@MD` | Strategy, growth hacking, branding decisions. Leads the Branding Team. | "@MD: Propose a growth strategy for our launch." |
-| **Copy/Technical Writer** | `@CTW` | Documentation, READMEs, user guides, editing content. | "@CTW: Update the README to reflect the new features." |
-| **Designer** | `@DES` | UI/UX design, visual assets, CSS styling advice. | "@DES: Critique the current homepage layout." |
-| **Elite Business Lawyer** | `@EBL` | Legal monitoring, contracts, compliance. | "@EBL: Review this term sheet for risks." |
+```bash
+git clone https://github.com/jessestay/MultiAgentCommsFramework.git
+cd MultiAgentCommsFramework
+cp .env.example .env   # fill in ANTHROPIC_API_KEY, SLACK_BOT_TOKEN, SLACK_APP_TOKEN
+npm run start:slack
+```
 
-### 2. Specialized Coaches & Experts
+### Add to Cursor / Claude Code / Claude Desktop
 
-| Role | Handle | When to Use | Example Prompt |
-| :--- | :--- | :--- | :--- |
-| **Social Media Manager** | `@SMM` | Content calendars, social posts, engagement strategy. | "@SMM: Draft 5 Tweets for the product launch." |
-| **Business Income Coach** | `@BIC` | Revenue optimization, business models, credit repair. | "@BIC: Analyze our pricing model for maximum revenue." |
-| **Dating & Relationship Coach** | `@DRC` | Interpersonal dynamics, relationship advice. | "@DRC: Advice on handling a difficult partner situation." |
-| **Debt Consumer Law Coach** | `@DCL` | Debt defense, consumer law, credit disputes. | "@DCL: Draft a debt validation letter." |
-| **Utah Family Lawyer** | `@UFL` | Specific Utah family law code, custody strategy. | "@UFL: What is the Utah code regarding parent-time?" |
+```bash
+cd adapters/mcp && npm install
+```
 
-### 3. Workflow Examples
+**Claude Code:**
+```bash
+claude mcp add macf-team -- node /path/to/MultiAgentCommsFramework/adapters/mcp/index.js
+```
 
-**Scenario A: Starting a New Feature**
-> **User**: "@ES: I want to build a 'Dark Mode' toggle. Please start a new user story."
-> **ES**: Creates the story file in `docs/user-stories/` and assigns tasks.
-> **ES**: "@MD: Please have @DES provide design requirements."
-> **MD**: Coordinates with DES.
-> **ES**: "@SET: Once requirements are ready, please implement."
+**Cursor or Claude Desktop** (`~/.cursor/mcp.json` / `~/.claude.json`):
+```json
+{
+  "mcpServers": {
+    "macf-team": {
+      "command": "node",
+      "args": ["/path/to/MultiAgentCommsFramework/adapters/mcp/index.js"],
+      "env": { "ANTHROPIC_API_KEY": "sk-ant-..." }
+    }
+  }
+}
+```
 
-**Scenario B: Troubleshooting a Bug**
-> **User**: "I'm seeing a 500 error on the login page."
-> **ES**: "@SET: Please investigate. Check logs and fix."
-> **SET**: Runs diagnostics, fixes code, runs tests.
-> **ES**: "@CTW: Please log this incident in `docs/logs/`."
+**GitHub Copilot Chat in VS Code** (`.vscode/mcp.json` in your workspace):
+```json
+{
+  "servers": {
+    "macf-team": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/path/to/MultiAgentCommsFramework/adapters/mcp/index.js"],
+      "env": { "ANTHROPIC_API_KEY": "sk-ant-..." }
+    }
+  }
+}
+```
 
-## ✨ Features
+See [SETUP.md](SETUP.md) for the full setup guide including shared memory, Railway deployment, and adding GitHub secrets for the live smoke test.
 
-By implementing the MACF in your project, you gain access to:
+---
 
-*   ** specialized AI Personas**:
-    *   🔵 **Executive Secretary (ES)**: Project management, agile coordination, and prompt engineering.
-    *   🟠 **Software Engineering Team (SET)**: Technical implementation, TDD/BDD, and debugging.
-    *   📊 **Marketing Director (MD)**: Branding, strategy, and growth hacking.
-    *   🟢 **Copy/Technical Writer (CTW)**: Documentation, content, and knowledge management.
-    *   🟣 **Designer (DES)**: UI/UX and visual design.
-    *   ⚖️ **Elite Business Lawyer (EBL)**: Legal monitoring and business protection.
-    *   And more (SMM, UFL, DCL, etc.).
+## Swappable Backends
 
-*   **Standardized Agile Workflows**:
-    *   Built-in templates for User Stories (`docs/user-stories`).
-    *   Sprint tracking protocols (`docs/sprint-status.md`).
-    *   Troubleshooting logging standards (`docs/logs`).
+**AI backend** — set `AI_BACKEND` in your `.env`:
+- `anthropic` (default) — Claude via Anthropic API
+- `perplexity` — Perplexity Sonar (drop-in, same interface)
+- Add your own: create `core/ai/<vendor>.js` implementing `generateReport()` + `chat()`
 
-*   **Robust Rule Enforcement**:
-    *   Automatic validation of tool usage.
-    *   Strict "No Broken Code" and TDD/BDD testing mandates.
-    *   Project file locators to prevent "lost" files.
+**Memory backend** — set `MEMORY_BACKEND`:
+- `filesystem` (default) — local JSON files, works on Railway volumes
+- `upstash` — HTTP Redis for shared memory across Railway (Slack) + local (Cursor) simultaneously
+- `sqlite` — multi-process single-machine
 
-*   **Growth Hacking Mindset**:
-    *   All roles operate with a "Ryan Holiday" growth-hacker persona override for maximum impact and efficiency.
+---
 
-## 📄 License & Contribution
+## Shared Memory Across Platforms
 
-**This software is PROPRIETARY. It is NOT Open Source.**
+With Upstash Redis, your Slack bot and Cursor MCP server read the same agent state:
 
-**Copyright (c) 2026 Jesse Stay. All Rights Reserved.**
+```
+Railway (Slack)          Your laptop (Cursor)
+      │                         │
+      └──────────┬──────────────┘
+                 ▼
+        Upstash Redis (HTTP)
+        macf:{agentId}:{key}
+```
 
-### Usage & Contribution Policy
-*   **Authorized Use**: You may use this framework in your own projects if you have been granted access to this repository by the Copyright Holder.
-*   **Contribution**: We welcome contributions! If you have access, please feel free to submit Pull Requests to improve the framework. By contributing, you agree that your contributions become part of the proprietary software owned by Jesse Stay.
-*   **Restrictions**: You may **NOT** copy, redistribute, or use this framework to build a competing product or service without explicit written permission.
+Set `MEMORY_BACKEND=upstash` and the same `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` on both. The Exec PM your Slack bot knows is the same one your Cursor IDE knows.
 
-See the `LICENSE` file for full legal details.
+---
+
+## CI / Quality
+
+- **Unit tests** — `npm test` in `slack-agents/`, runs on every PR
+- **Live smoke test** — after every push to `main`, a GitHub Action waits for Railway to deploy, sends a real Slack message, and verifies the bot responds
+
+See [SETUP.md](SETUP.md) for adding the required GitHub secrets.
+
+---
+
+## Environment Variables
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | required | Anthropic Claude API key |
+| `SLACK_BOT_TOKEN` | required for Slack | `xoxb-...` OAuth token |
+| `SLACK_APP_TOKEN` | required for Slack | `xapp-...` Socket Mode token |
+| `AI_BACKEND` | `anthropic` | `anthropic` or `perplexity` |
+| `ANTHROPIC_MODEL` | `claude-opus-4-5` | Model override |
+| `MEMORY_BACKEND` | `filesystem` | `filesystem`, `upstash`, or `sqlite` |
+| `UPSTASH_REDIS_REST_URL` | — | Required for `upstash` backend |
+| `UPSTASH_REDIS_REST_TOKEN` | — | Required for `upstash` backend |
+
+---
+
+## License
+
+MIT — free to use, modify, and run your own instance.
+
+## Author
+
+Built by [Jesse Stay](https://staynalive.com). Contributions welcome — see [ARCHITECTURE.md](ARCHITECTURE.md) for how the pieces fit together.

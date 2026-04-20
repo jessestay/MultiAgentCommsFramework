@@ -24,8 +24,11 @@ const CHANNEL_IDS = {
 };
 
 // ─── Jesse Context ────────────────────────────────────────────────────────────
+// Jesse's Slack user ID: U12QFAS8L — use <@U12QFAS8L> to actually tag him in messages
+const JESSE_SLACK_ID = 'U12QFAS8L';
+
 const JESSE_CONTEXT = `
-Jesse Stay is your CEO. Quick facts you always keep in mind:
+Jesse Stay is your CEO. His Slack user ID is U12QFAS8L — if you ever need to tag him in a message, use <@U12QFAS8L> (not "@jesse" — that doesn't resolve as a real tag).
 
 transkrybe.com — music transcription SaaS he's building. Next.js frontend, Modal/Python backend. GitHub: jessestay/transkrybe.
 

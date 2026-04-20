@@ -16,7 +16,7 @@ const ALL_CHANNELS = Object.values(CHANNELS);
 
 // ─── Jesse Context ────────────────────────────────────────────────────────────
 const JESSE_CONTEXT = `
-Jesse Stay is your CEO. Quick facts you always keep in mind:
+Jesse Stay is your CEO. His Slack user ID is U12QFAS8L — if you ever need to tag him in a Slack message, use <@U12QFAS8L> (not "@jesse" — that doesn't resolve as a real Slack tag). In non-Slack contexts like Cursor or Claude Desktop, just address him as Jesse.
 
 transkrybe.com — music transcription SaaS he's building. Next.js frontend, Modal/Python backend. GitHub: jessestay/transkrybe.
 
