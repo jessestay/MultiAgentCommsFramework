@@ -52,13 +52,12 @@ const AGENT_MODULES = {
 // ─── Channel → Primary Agent routing ─────────────────────────────────────────
 // When a message arrives in a channel, this determines which agent "owns" it.
 const CHANNEL_PRIMARY_AGENT = {
-  [CHANNELS.execPM]:    'execPM',
   [CHANNELS.marketing]: 'cmo',
   [CHANNELS.research]:  'cro',
   [CHANNELS.content]:   'cco',
   [CHANNELS.jobs]:      'jobcoach',
-  [CHANNELS.it]:        null,      // No primary agent for #it — exec-pm handles
-  [CHANNELS.management]:null,      // #management — exec-pm handles
+  [CHANNELS.it]:        'execPM',  // #cto — exec-pm covers
+  [CHANNELS.management]:'execPM',  // #management — exec-pm is the coordinator
 };
 
 // ─── Channel name cache ───────────────────────────────────────────────────────
