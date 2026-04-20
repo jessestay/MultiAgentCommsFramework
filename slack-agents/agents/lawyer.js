@@ -7,7 +7,7 @@ const { AGENTS, CHANNELS } = require('../config');
 const state = require('../utils/state');
 const { generateReport } = require('../utils/anthropic');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
-const { relay } = require('../utils/delegation');
+const { relay, stripDelegations } = require('../utils/delegation');
 
 const AGENT = AGENTS.lawyer;
 const AGENT_ID = AGENT.id; // 'lawyer'
@@ -84,8 +84,8 @@ Respond as a business lawyer. Be direct about risk and what to do about it. For 
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await say(response);
   await relay(response, AGENT_ID);
+  await say(stripDelegations(response));
 
   // Log anything flagged as a risk
   if (response.toLowerCase().includes('risk') || response.toLowerCase().includes('concern')) {
@@ -119,8 +119,8 @@ Flag HIGH RISK items with "🔴". Note this is guidance, not representation.
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await postToChannel(AGENT.primaryChannel, `[from: Lawyer → ${fromAgent}] ${response}`);
   await relay(response, AGENT_ID, visitedAgents);
+  await postToChannel(AGENT.primaryChannel, `[from: Lawyer → ${fromAgent}] ${stripDelegations(response)}`);
   return true;
 }
 

@@ -7,7 +7,7 @@ const { AGENTS, CHANNELS } = require('../config');
 const state = require('../utils/state');
 const { generateReport, generateProactivePost } = require('../utils/anthropic');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
-const { relay } = require('../utils/delegation');
+const { relay, stripDelegations } = require('../utils/delegation');
 
 const AGENT = AGENTS.jobcoach;
 const AGENT_ID = AGENT.id; // 'jobcoach'
@@ -111,9 +111,9 @@ async function handleMention({ event, say }) {
   console.log(`[jobcoach] Handling mention: "${text.slice(0, 80)}"`);
   const context = `Jesse asked: "${text}"\nLast search: ${state.get(AGENT_ID, 'lastSearched') || 'never'}\nTracked opportunities: ${(state.get(AGENT_ID, 'activeOpportunities') || []).length}`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await say(response);
-  state.updateChannelActivity(AGENT.primaryChannel);
   await relay(response, AGENT_ID);
+  await say(stripDelegations(response));
+  state.updateChannelActivity(AGENT.primaryChannel);
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
@@ -127,8 +127,8 @@ async function handleDelegation(messageText, visitedAgents = new Set()) {
 
   const context = `Delegation from ${fromAgent}:\n"${request}"\nRespond as Job Coach with career strategy advice.`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await postToChannel(AGENT.primaryChannel, `[from: Job Coach → ${fromAgent}] ${response}`);
   await relay(response, AGENT_ID, visitedAgents);
+  await postToChannel(AGENT.primaryChannel, `[from: Job Coach → ${fromAgent}] ${stripDelegations(response)}`);
   return true;
 }
 

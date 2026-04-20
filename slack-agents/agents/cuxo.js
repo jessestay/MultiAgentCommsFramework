@@ -7,7 +7,7 @@ const { AGENTS, CHANNELS } = require('../config');
 const state = require('../utils/state');
 const { generateReport } = require('../utils/anthropic');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
-const { relay } = require('../utils/delegation');
+const { relay, stripDelegations } = require('../utils/delegation');
 
 const AGENT = AGENTS.cuxo;
 const AGENT_ID = AGENT.id; // 'cuxo'
@@ -76,9 +76,9 @@ Respond as Chief UX Officer. When accessibility is relevant, cite WCAG 2.1 AA (4
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await say(response);
-  state.updateChannelActivity(AGENT.primaryChannel);
   await relay(response, AGENT_ID);
+  await say(stripDelegations(response));
+  state.updateChannelActivity(AGENT.primaryChannel);
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
@@ -101,8 +101,8 @@ When giving visual specs, use format: Element | Color (#hex) | Size | Spacing | 
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await postToChannel(AGENT.primaryChannel, `[from: CUXO → ${fromAgent}] ${response}`);
   await relay(response, AGENT_ID, visitedAgents);
+  await postToChannel(AGENT.primaryChannel, `[from: CUXO → ${fromAgent}] ${stripDelegations(response)}`);
   return true;
 }
 

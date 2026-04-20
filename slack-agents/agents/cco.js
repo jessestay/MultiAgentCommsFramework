@@ -7,7 +7,7 @@ const { AGENTS, CHANNELS } = require('../config');
 const state = require('../utils/state');
 const { generateReport, generateProactivePost } = require('../utils/anthropic');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
-const { relay } = require('../utils/delegation');
+const { relay, stripDelegations } = require('../utils/delegation');
 
 const AGENT = AGENTS.cco;
 const AGENT_ID = AGENT.id; // 'cco'
@@ -131,9 +131,9 @@ async function handleMention({ event, say }) {
   console.log(`[cco] Handling mention: "${text.slice(0, 80)}"`);
   const context = `Jesse asked: "${text}"\nPending approvals: ${(state.get(AGENT_ID, 'pendingApprovals') || []).length}`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await say(response);
-  state.updateChannelActivity(AGENT.primaryChannel);
   await relay(response, AGENT_ID);
+  await say(stripDelegations(response));
+  state.updateChannelActivity(AGENT.primaryChannel);
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
@@ -151,8 +151,8 @@ async function handleDelegation(messageText, visitedAgents = new Set()) {
 
   const context = `Delegation request from ${fromAgent}:\n"${request}"\n\nRespond as Chief Content Officer. Draft requested content or answer the content question. Mark all drafts with "✅ Awaiting Jesse's approval".`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await postToChannel(AGENT.primaryChannel, `[from: CCO → ${fromAgent}] ${response}`);
   await relay(response, AGENT_ID, visitedAgents);
+  await postToChannel(AGENT.primaryChannel, `[from: CCO → ${fromAgent}] ${stripDelegations(response)}`);
   return true;
 }
 

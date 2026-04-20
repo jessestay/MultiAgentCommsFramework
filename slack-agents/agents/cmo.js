@@ -8,7 +8,7 @@ const state = require('../utils/state');
 const { generateReport, generateProactivePost } = require('../utils/anthropic');
 const { fetchDonationTotal, GOFUNDME_URL } = require('../utils/gofundme');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
-const { relay } = require('../utils/delegation');
+const { relay, stripDelegations } = require('../utils/delegation');
 
 const AGENT = AGENTS.cmo;
 const AGENT_ID = AGENT.id; // 'cmo'
@@ -147,9 +147,9 @@ Last weekly calendar: ${state.get(AGENT_ID, 'lastWeeklyCalendar') || 'not posted
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await say(response);
-  state.updateChannelActivity(AGENT.primaryChannel);
   await relay(response, AGENT_ID);
+  await say(stripDelegations(response));
+  state.updateChannelActivity(AGENT.primaryChannel);
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
@@ -175,8 +175,8 @@ If it needs content drafted, delegate to CCO. If it needs design, delegate to CU
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await postToChannel(AGENT.primaryChannel, `[from: CMO → ${fromAgent}] ${response}`);
   await relay(response, AGENT_ID, visitedAgents);
+  await postToChannel(AGENT.primaryChannel, `[from: CMO → ${fromAgent}] ${stripDelegations(response)}`);
   return true;
 }
 

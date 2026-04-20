@@ -72,4 +72,20 @@ async function relay(responseText, fromAgentId, visitedAgents = new Set()) {
   }
 }
 
-module.exports = { init, relay };
+/**
+ * Strip [from: X → Y] delegation lines from text before showing to end users.
+ * Always call relay() BEFORE stripDelegations() — relay needs the full text.
+ * @param {string} text
+ * @returns {string}
+ */
+function stripDelegations(text) {
+  if (!text) return '';
+  return text
+    .split('\n')
+    .filter(line => !/^\s*\[from:\s*[^→\]]+→[^\]]+\]/i.test(line.trim()))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+module.exports = { init, relay, stripDelegations };

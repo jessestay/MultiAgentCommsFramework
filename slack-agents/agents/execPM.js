@@ -9,7 +9,7 @@ const { generateReport, generateProactivePost } = require('../utils/anthropic');
 const { fetchDonationTotal } = require('../utils/gofundme');
 const { getLatestCommit, getRecentlyMergedPRs } = require('../utils/github');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
-const { relay } = require('../utils/delegation');
+const { relay, stripDelegations } = require('../utils/delegation');
 
 const AGENT = AGENTS.execPM;
 const AGENT_ID = AGENT.id; // 'execPM'
@@ -171,9 +171,9 @@ I am Jesse's single point of contact on this team. Handle his request directly a
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await say(response);
-  state.updateChannelActivity(event.channel || AGENT.primaryChannel);
   await relay(response, AGENT_ID);
+  await say(stripDelegations(response));
+  state.updateChannelActivity(event.channel || AGENT.primaryChannel);
 }
 
 // ─── Handle delegation from other agents ─────────────────────────────────────
@@ -188,8 +188,8 @@ async function handleDelegation(messageText, visitedAgents = new Set()) {
 
   const context = `Delegation request from ${fromAgent}:\n${request}`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await postToChannel(AGENT.primaryChannel, `[from: Exec PM → ${fromAgent}] ${response}`);
   await relay(response, AGENT_ID, visitedAgents);
+  await postToChannel(AGENT.primaryChannel, `[from: Exec PM → ${fromAgent}] ${stripDelegations(response)}`);
   return true;
 }
 

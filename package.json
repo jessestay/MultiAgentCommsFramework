@@ -1,19 +1,23 @@
 {
-  "name": "multiagentcommsframework",
-  "version": "1.0.0",
-  "description": "Test and development scripts for the Multi-Agent Comms Framework.",
+  "name": "multi-agent-comms-framework",
+  "version": "2.0.0",
+  "description": "MACF — AI team framework: shared core, swappable AI backends, multiple platform adapters (Slack, Cursor MCP, Discord, Teams). Open source.",
+  "private": true,
   "scripts": {
-    "test:behat": "vendor/bin/behat --config behat.yml",
-    "test:phpunit:unit": "vendor/bin/phpunit --testsuite=unit --bootstrap tests/wp-mock-bootstrap.php",
-    "test:phpunit:integration": "vendor/bin/phpunit --testsuite=integration --bootstrap tests/features/bootstrap/bootstrap.php",
-    "test:phpunit": "npm run test:phpunit:unit && npm run test:phpunit:integration",
-    "test": "npm run test:phpunit && npm run test:behat",
-    "lint:php": "vendor/bin/phpcs --standard=WordPress --ignore=*/vendor/*,*/node_modules/*,*/dist/*,*/build/*,*.js,*.css,*.html .",
-    "fix:php": "vendor/bin/phpcbf --standard=WordPress --ignore=*/vendor/*,*/node_modules/*,*/dist/*,*/build/*,*.js,*.css,*.html ."
+    "start:slack": "node slack-agents/index.js",
+    "start:mcp":   "node adapters/mcp/index.js",
+    "test":        "cd slack-agents && npm test",
+    "lint":        "node --check slack-agents/agents/*.js slack-agents/utils/*.js slack-agents/index.js slack-agents/config.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "ai-agents", "multi-agent", "slack-bot", "mcp", "claude",
+    "anthropic", "cursor", "open-source", "framework"
+  ],
+  "author": "Jesse Stay",
+  "license": "MIT",
   "dependencies": {
     "node-fetch": "^3.3.2"
   }

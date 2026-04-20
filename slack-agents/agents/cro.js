@@ -7,7 +7,7 @@ const { AGENTS, CHANNELS } = require('../config');
 const state = require('../utils/state');
 const { generateReport } = require('../utils/anthropic');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
-const { relay } = require('../utils/delegation');
+const { relay, stripDelegations } = require('../utils/delegation');
 
 const AGENT = AGENTS.cro;
 const AGENT_ID = AGENT.id; // 'cro'
@@ -100,9 +100,9 @@ async function handleMention({ event, say }) {
   console.log(`[cro] Handling mention: "${text.slice(0, 80)}"`);
   const context = `Jesse asked for research on: "${text}"\nProvide findings, what they mean, and what Jesse should do with them.`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await say(response);
-  state.updateChannelActivity(AGENT.primaryChannel);
   await relay(response, AGENT_ID);
+  await say(stripDelegations(response));
+  state.updateChannelActivity(AGENT.primaryChannel);
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
@@ -123,8 +123,8 @@ async function handleDelegation(messageText, visitedAgents = new Set()) {
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
 
   // Respond in the research channel and tag the requesting agent
-  await postToChannel(AGENT.primaryChannel, `[from: CRO → ${fromAgent}] ${response}`);
   await relay(response, AGENT_ID, visitedAgents);
+  await postToChannel(AGENT.primaryChannel, `[from: CRO → ${fromAgent}] ${stripDelegations(response)}`);
   return true;
 }
 
