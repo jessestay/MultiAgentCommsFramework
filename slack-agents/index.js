@@ -138,6 +138,19 @@ function detectAddressedAgent(text) {
   return null;
 }
 
+// ─── Thread-aware say wrapper ─────────────────────────────────────────────────
+// When a mention comes from inside a thread, replies should stay in that thread.
+// This wraps Bolt's say() so agents don't each need to handle thread_ts themselves.
+function makeThreadSay(say, event) {
+  if (!event.thread_ts) return say;
+  return (msg) => {
+    if (typeof msg === 'string') {
+      return say({ text: msg, thread_ts: event.thread_ts });
+    }
+    return say({ ...msg, thread_ts: event.thread_ts });
+  };
+}
+
 // ─── App mention handler ──────────────────────────────────────────────────────
 app.event('app_mention', async ({ event, say, client }) => {
   const channelName = await resolveChannelName(event.channel, client);
@@ -150,6 +163,9 @@ app.event('app_mention', async ({ event, say, client }) => {
   event.threadHistory = await fetchThreadHistory(event, client);
   event.threadContext = formatThreadContext(event.threadHistory);
 
+  // Wrap say() to reply in-thread when the mention came from a thread
+  const threadSay = makeThreadSay(say, event);
+
   // 1. Try to detect if a specific agent was addressed
   const addressedId = detectAddressedAgent(text);
 
@@ -161,9 +177,9 @@ app.event('app_mention', async ({ event, say, client }) => {
   const agentModule = AGENT_MODULES[agentId];
 
   if (agentModule?.handleMention) {
-    await agentModule.handleMention({ event, say, client });
+    await agentModule.handleMention({ event, say: threadSay, client });
   } else {
-    await execPM.handleMention({ event, say, client });
+    await execPM.handleMention({ event, say: threadSay, client });
   }
 });
 
@@ -195,13 +211,16 @@ app.event('message', async ({ event, say, client }) => {
     return; // delegation handled — don't double-process
   }
 
+  // Wrap say() to reply in-thread when the message came from a thread
+  const threadSay = makeThreadSay(say, event);
+
   // 2. Check for explicit @handle text mention (e.g. "@cmo", "exec-pm:")
   const addressedId = detectAddressedAgent(text);
   if (addressedId) {
     const agentModule = AGENT_MODULES[addressedId];
     if (agentModule?.handleMention) {
       console.log(`[index] Text mention → ${addressedId} in #${channelName}: "${text.slice(0, 80)}"`);
-      await agentModule.handleMention({ event, say, client }).catch(err =>
+      await agentModule.handleMention({ event, say: threadSay, client }).catch(err =>
         console.error(`[index] Text mention error for ${addressedId}:`, err)
       );
     }
@@ -215,7 +234,7 @@ app.event('message', async ({ event, say, client }) => {
     const agentModule = AGENT_MODULES[primaryId];
     if (agentModule?.handleMention) {
       console.log(`[index] Channel message → ${primaryId} in #${channelName}: "${text.slice(0, 80)}"`);
-      await agentModule.handleMention({ event, say, client }).catch(err =>
+      await agentModule.handleMention({ event, say: threadSay, client }).catch(err =>
         console.error(`[index] Channel message error for ${primaryId}:`, err)
       );
     }
