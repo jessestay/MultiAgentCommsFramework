@@ -74,10 +74,11 @@ async function handleMention({ event, say }) {
   }
 
   console.log(`[cto] Handling mention: "${text.slice(0, 80)}"`);
+  const threadCtx = event.threadContext || '';
 
   const githubActivity = state.get(AGENT_ID, 'githubActivity') || {};
   const context = `
-Jesse asked: "${text}"
+Jesse asked: "${text}"${threadCtx}
 Known GitHub activity: ${JSON.stringify(githubActivity, null, 2)}
 
 Respond as CTO. Be direct about trade-offs. If there's a cleaner architectural path, say so — but also flag the cost in time and complexity. Don't over-engineer. Transkrybe is early-stage; shipping matters more than perfection right now.
@@ -90,7 +91,7 @@ Respond as CTO. Be direct about trade-offs. If there's a cleaner architectural p
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText, visitedAgents = new Set()) {
+async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*CTO\]\s*(.+)/si);
   if (!match) return false;
 
@@ -104,7 +105,7 @@ async function handleDelegation(messageText, visitedAgents = new Set()) {
 
   const context = `Technical request from ${fromAgent}: "${request}"\nProvide a clear technical assessment: current state, recommended approach, estimated complexity (days/weeks), and any risks.`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1200 });
-  await relay(response, AGENT_ID, visitedAgents);
+  await relay(response, AGENT_ID, visitedAgents, channelId);
   await postToChannel(AGENT.primaryChannel, stripDelegations(response));
   return true;
 }

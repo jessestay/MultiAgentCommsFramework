@@ -138,10 +138,11 @@ async function handleMention({ event, say }) {
     return;
   }
 
+  const threadCtx = event.threadContext || '';
   console.log(`[cmo] Handling mention: "${text.slice(0, 80)}"`);
 
   const context = `
-Jesse asked (in #marketing or via @mention): "${text}"
+Jesse asked (in #marketing or via @mention): "${text}"${threadCtx}
 My current state: GoFundMe last known: $${state.get(AGENT_ID, 'knownDonationAmount')} raised.
 Last weekly calendar: ${state.get(AGENT_ID, 'lastWeeklyCalendar') || 'not posted yet'}
   `.trim();
@@ -153,7 +154,7 @@ Last weekly calendar: ${state.get(AGENT_ID, 'lastWeeklyCalendar') || 'not posted
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText, visitedAgents = new Set()) {
+async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*CMO\]\s*(.+)/si);
   if (!match) return false;
 
@@ -175,7 +176,7 @@ If it needs content drafted, delegate to CCO. If it needs design, delegate to CU
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await relay(response, AGENT_ID, visitedAgents);
+  await relay(response, AGENT_ID, visitedAgents, channelId);
   await postToChannel(AGENT.primaryChannel, `[from: CMO → ${fromAgent}] ${stripDelegations(response)}`);
   return true;
 }

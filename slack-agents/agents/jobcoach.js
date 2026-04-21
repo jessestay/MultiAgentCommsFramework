@@ -95,8 +95,9 @@ async function handleMention({ event, say }) {
     return;
   }
 
+  const threadCtx = event.threadContext || '';
   console.log(`[jobcoach] Handling mention: "${text.slice(0, 80)}"`);
-  const context = `Jesse asked: "${text}"\nLast search: ${state.get(AGENT_ID, 'lastSearched') || 'never'}\nTracked opportunities: ${(state.get(AGENT_ID, 'activeOpportunities') || []).length}`;
+  const context = `Jesse asked: "${text}"${threadCtx}\nLast search: ${state.get(AGENT_ID, 'lastSearched') || 'never'}\nTracked opportunities: ${(state.get(AGENT_ID, 'activeOpportunities') || []).length}`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
   await relay(response, AGENT_ID);
   await say(stripDelegations(response));
@@ -104,7 +105,7 @@ async function handleMention({ event, say }) {
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText, visitedAgents = new Set()) {
+async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*Job\s*Coach\]\s*(.+)/si);
   if (!match) return false;
 
@@ -114,7 +115,7 @@ async function handleDelegation(messageText, visitedAgents = new Set()) {
 
   const context = `Delegation from ${fromAgent}:\n"${request}"\nRespond as Job Coach with career strategy advice.`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await relay(response, AGENT_ID, visitedAgents);
+  await relay(response, AGENT_ID, visitedAgents, channelId);
   await postToChannel(AGENT.primaryChannel, `[from: Job Coach → ${fromAgent}] ${stripDelegations(response)}`);
   return true;
 }

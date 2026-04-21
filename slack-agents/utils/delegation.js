@@ -20,8 +20,9 @@ function init(agentModules, delegationTargets) {
  * @param {string} responseText  - The full text of the agent's response
  * @param {string} fromAgentId   - The agent ID that produced this response
  * @param {Set}    visitedAgents - Agents already in this delegation chain (loop guard)
+ * @param {string} channelId     - Originating Slack channel ID (propagated for routing)
  */
-async function relay(responseText, fromAgentId, visitedAgents = new Set()) {
+async function relay(responseText, fromAgentId, visitedAgents = new Set(), channelId = null) {
   if (!responseText) return;
 
   // Build the new visited set for this level
@@ -72,7 +73,7 @@ async function relay(responseText, fromAgentId, visitedAgents = new Set()) {
     console.log(`[delegation] Chain [${[...newVisited].join(' → ')}] → ${toAgentId}`);
 
     await _agentModules[toAgentId]
-      .handleDelegation(fullMsg, new Set(newVisited))
+      .handleDelegation(fullMsg, new Set(newVisited), channelId)
       .catch(err => console.error(`[delegation] Error invoking ${toAgentId}:`, err));
   }
 }

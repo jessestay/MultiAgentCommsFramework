@@ -151,8 +151,10 @@ async function handleMention({ event, say, client }) {
 
   console.log(`[execPM] Handling mention: "${text.slice(0, 80)}"`);
 
+  const threadCtx = event.threadContext || '';
+
   const context = `
-Jesse asked: "${text}"
+Jesse asked: "${text}"${threadCtx}
 
 My current state:
 - Last health check: ${state.get(AGENT_ID, 'lastHealthCheck') || 'never'}
@@ -169,20 +171,39 @@ I am Jesse's single point of contact on this team. Handle his request directly a
 }
 
 // ─── Handle delegation from other agents ─────────────────────────────────────
-async function handleDelegation(messageText, visitedAgents = new Set()) {
+async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null) {
   // Match: [from: {anyone} → Exec PM] {request}
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*Exec\s*PM\]\s*(.+)/si);
   if (!match) return false;
 
   const fromAgent = match[1].trim();
   const request = match[2].trim();
-  console.log(`[execPM] Delegation from ${fromAgent}: ${request.slice(0, 80)}`);
+  console.log(`[execPM] Delegation from ${fromAgent} (channel: ${channelId || 'unknown'}): ${request.slice(0, 80)}`);
 
   const context = `Delegation request from ${fromAgent}:\n${request}`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await relay(response, AGENT_ID, visitedAgents);
-  // Post the clean response to #management — Jesse doesn't need the routing prefix
-  await postToChannel(AGENT.primaryChannel, stripDelegations(response));
+  await relay(response, AGENT_ID, visitedAgents, channelId);
+
+  const cleanResponse = stripDelegations(response);
+  if (channelId) {
+    // Respond in the channel where the original delegation came from
+    // so Jesse can trace the conversation thread
+    try {
+      await slackClient.chat.postMessage({
+        channel: channelId,
+        text: cleanResponse,
+        username: AGENT.slackName,
+        icon_emoji: AGENT.icon,
+        unfurl_links: false,
+      });
+      console.log(`[execPM] ✅ Responded in originating channel ${channelId}`);
+    } catch (err) {
+      console.error(`[execPM] Error posting to ${channelId}:`, err.message);
+      await postToChannel(AGENT.primaryChannel, cleanResponse); // fallback
+    }
+  } else {
+    await postToChannel(AGENT.primaryChannel, cleanResponse);
+  }
   return true;
 }
 

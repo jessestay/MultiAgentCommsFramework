@@ -97,8 +97,9 @@ async function handleMention({ event, say }) {
     return;
   }
 
+  const threadCtx = event.threadContext || '';
   console.log(`[cro] Handling mention: "${text.slice(0, 80)}"`);
-  const context = `Jesse asked for research on: "${text}"\nProvide findings, what they mean, and what Jesse should do with them.`;
+  const context = `Jesse asked for research on: "${text}"${threadCtx}\nProvide findings, what they mean, and what Jesse should do with them.`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
   await relay(response, AGENT_ID);
   await say(stripDelegations(response));
@@ -106,7 +107,7 @@ async function handleMention({ event, say }) {
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText, visitedAgents = new Set()) {
+async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*CRO\]\s*(.+)/si);
   if (!match) return false;
 
@@ -123,7 +124,7 @@ async function handleDelegation(messageText, visitedAgents = new Set()) {
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
 
   // Respond in the research channel and tag the requesting agent
-  await relay(response, AGENT_ID, visitedAgents);
+  await relay(response, AGENT_ID, visitedAgents, channelId);
   await postToChannel(AGENT.primaryChannel, `[from: CRO → ${fromAgent}] ${stripDelegations(response)}`);
   return true;
 }

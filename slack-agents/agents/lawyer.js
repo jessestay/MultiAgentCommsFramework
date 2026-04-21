@@ -76,9 +76,10 @@ async function handleMention({ event, say }) {
   }
 
   console.log(`[lawyer] Handling mention: "${text.slice(0, 80)}"`);
+  const threadCtx = event.threadContext || '';
 
   const context = `
-Jesse asked: "${text}"
+Jesse asked: "${text}"${threadCtx}
 
 Respond as a business lawyer. Be direct about risk and what to do about it. For anything genuinely high-stakes, say so clearly and recommend Jesse engage a licensed attorney — this is guidance, not representation.
   `.trim();
@@ -100,7 +101,7 @@ Respond as a business lawyer. Be direct about risk and what to do about it. For 
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText, visitedAgents = new Set()) {
+async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*Lawyer\]\s*(.+)/si);
   if (!match) return false;
 
@@ -119,7 +120,7 @@ Flag HIGH RISK items with "🔴". Note this is guidance, not representation.
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await relay(response, AGENT_ID, visitedAgents);
+  await relay(response, AGENT_ID, visitedAgents, channelId);
   // Post the clean response to #management — Jesse doesn't need the routing prefix
   await postToChannel(AGENT.primaryChannel, stripDelegations(response));
   return true;

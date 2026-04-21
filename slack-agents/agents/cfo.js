@@ -76,10 +76,11 @@ async function handleMention({ event, say }) {
     return;
   }
 
+  const threadCtx = event.threadContext || '';
   console.log(`[cfo] Handling mention: "${text.slice(0, 80)}"`);
 
   const context = `
-Jesse asked: "${text}"
+Jesse asked: "${text}"${threadCtx}
 Known metrics: ${JSON.stringify(state.get(AGENT_ID, 'trackedMetrics') || {}, null, 2)}
 
 Respond as CFO. Use specific numbers. Flag any tax deadlines. For actual tax filing or investment decisions, remind Jesse to consult a CPA.
@@ -92,7 +93,7 @@ Respond as CFO. Use specific numbers. Flag any tax deadlines. For actual tax fil
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText, visitedAgents = new Set()) {
+async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*CFO\]\s*(.+)/si);
   if (!match) return false;
 
@@ -106,7 +107,7 @@ async function handleDelegation(messageText, visitedAgents = new Set()) {
 
   const context = `Financial request from ${fromAgent}: "${request}"\nProvide specific financial analysis: Current | Target | Action | Impact.`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1200 });
-  await relay(response, AGENT_ID, visitedAgents);
+  await relay(response, AGENT_ID, visitedAgents, channelId);
   // Post the clean response to #management — Jesse doesn't need the routing prefix
   await postToChannel(AGENT.primaryChannel, stripDelegations(response));
   return true;

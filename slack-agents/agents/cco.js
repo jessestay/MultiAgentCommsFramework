@@ -128,8 +128,9 @@ async function handleMention({ event, say }) {
     return;
   }
 
+  const threadCtx = event.threadContext || '';
   console.log(`[cco] Handling mention: "${text.slice(0, 80)}"`);
-  const context = `Jesse asked: "${text}"\nPending approvals: ${(state.get(AGENT_ID, 'pendingApprovals') || []).length}`;
+  const context = `Jesse asked: "${text}"${threadCtx}\nPending approvals: ${(state.get(AGENT_ID, 'pendingApprovals') || []).length}`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
   await relay(response, AGENT_ID);
   await say(stripDelegations(response));
@@ -137,7 +138,7 @@ async function handleMention({ event, say }) {
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText, visitedAgents = new Set()) {
+async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*CCO\]\s*(.+)/si);
   if (!match) return false;
 
@@ -151,7 +152,7 @@ async function handleDelegation(messageText, visitedAgents = new Set()) {
 
   const context = `Delegation request from ${fromAgent}:\n"${request}"\n\nRespond as Chief Content Officer. Draft requested content or answer the content question. Mark all drafts with "✅ Awaiting Jesse's approval".`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await relay(response, AGENT_ID, visitedAgents);
+  await relay(response, AGENT_ID, visitedAgents, channelId);
   await postToChannel(AGENT.primaryChannel, `[from: CCO → ${fromAgent}] ${stripDelegations(response)}`);
   return true;
 }

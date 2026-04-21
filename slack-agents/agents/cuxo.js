@@ -68,9 +68,10 @@ async function handleMention({ event, say }) {
   }
 
   console.log(`[cuxo] Handling mention: "${text.slice(0, 80)}"`);
+  const threadCtx = event.threadContext || '';
 
   const context = `
-Jesse asked: "${text}"
+Jesse asked: "${text}"${threadCtx}
 
 Respond as Chief UX Officer. When accessibility is relevant, cite WCAG 2.1 AA (4.5:1 body text contrast, 3:1 large text). Be specific and actionable, not vague.
   `.trim();
@@ -82,7 +83,7 @@ Respond as Chief UX Officer. When accessibility is relevant, cite WCAG 2.1 AA (4
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText, visitedAgents = new Set()) {
+async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*CUXO\]\s*(.+)/si);
   if (!match) return false;
 
@@ -101,7 +102,7 @@ When giving visual specs, use format: Element | Color (#hex) | Size | Spacing | 
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await relay(response, AGENT_ID, visitedAgents);
+  await relay(response, AGENT_ID, visitedAgents, channelId);
   await postToChannel(AGENT.primaryChannel, `[from: CUXO → ${fromAgent}] ${stripDelegations(response)}`);
   return true;
 }

@@ -62,6 +62,33 @@ const CHANNEL_PRIMARY_AGENT = {
   [CHANNELS.management]:'execPM',  // #management — exec-pm is the coordinator
 };
 
+// ─── Thread history helpers ───────────────────────────────────────────────────
+// Fetches full thread when anyone replies in a thread so agents have full
+// conversational context, not just the latest isolated message.
+async function fetchThreadHistory(event, client) {
+  if (!event.thread_ts) return null;
+  try {
+    const result = await client.conversations.replies({
+      channel: event.channel,
+      ts: event.thread_ts,
+      limit: 30,
+    });
+    return result.messages || null;
+  } catch (err) {
+    console.warn('[index] Could not fetch thread history:', err.message);
+    return null;
+  }
+}
+
+function formatThreadContext(messages) {
+  if (!messages || messages.length <= 1) return '';
+  return '\n\nThread history (oldest first):\n' +
+    messages.map(m => {
+      const name = m.username || m.bot_profile?.name || (m.user ? `<@${m.user}>` : 'User');
+      return `${name}: ${(m.text || '').replace(/<@[A-Z0-9]+>/g, '[Jesse]').slice(0, 600)}`;
+    }).join('\n');
+}
+
 // ─── Channel name cache ───────────────────────────────────────────────────────
 // Reverse lookup: ID → name, using static map to avoid channels:read scope
 const CHANNEL_ID_TO_NAME = Object.fromEntries(
@@ -119,6 +146,10 @@ app.event('app_mention', async ({ event, say, client }) => {
 
   state.updateChannelActivity(channelName);
 
+  // Enrich with thread history so agents see the full conversation
+  event.threadHistory = await fetchThreadHistory(event, client);
+  event.threadContext = formatThreadContext(event.threadHistory);
+
   // 1. Try to detect if a specific agent was addressed
   const addressedId = detectAddressedAgent(text);
 
@@ -146,6 +177,10 @@ app.event('message', async ({ event, say, client }) => {
 
   const text = event.text || '';
 
+  // Enrich with thread history so agents see the full conversation
+  event.threadHistory = await fetchThreadHistory(event, client);
+  event.threadContext = formatThreadContext(event.threadHistory);
+
   // 1. Check for delegation pattern first — route to target agent
   const delegMatch = text.match(/\[from:\s*(.+?)\s*→\s*(.+?)\]/i);
   if (delegMatch) {
@@ -153,7 +188,7 @@ app.event('message', async ({ event, say, client }) => {
     const toAgentId = DELEGATION_TARGETS[toName];
     if (toAgentId && AGENT_MODULES[toAgentId]?.handleDelegation) {
       console.log(`[index] Delegation → ${toAgentId}: "${text.slice(0, 80)}"`);
-      await AGENT_MODULES[toAgentId].handleDelegation(text).catch(err =>
+      await AGENT_MODULES[toAgentId].handleDelegation(text, new Set(), event.channel).catch(err =>
         console.error(`[index] Delegation error for ${toAgentId}:`, err)
       );
     }
