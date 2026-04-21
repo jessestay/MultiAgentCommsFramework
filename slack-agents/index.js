@@ -172,9 +172,9 @@ app.event('message', async ({ event, say, client }) => {
   }
 
   // 3. If message is in a channel with a primary agent, respond to any substantive message
-  // (15+ chars filters out reactions-as-text, stray punctuation, very short noise)
+  // (3+ chars filters out single-char noise, emoji reactions-as-text, bare punctuation)
   const primaryId = CHANNEL_PRIMARY_AGENT[channelName];
-  if (primaryId && text.length >= 15) {
+  if (primaryId && text.length >= 3) {
     const agentModule = AGENT_MODULES[primaryId];
     if (agentModule?.handleMention) {
       console.log(`[index] Channel message → ${primaryId} in #${channelName}: "${text.slice(0, 80)}"`);
