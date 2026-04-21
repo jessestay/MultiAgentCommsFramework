@@ -1,5 +1,5 @@
 // index.js — MACF Slack Adapter v3
-// 8 MACF-aligned agents running as one Bolt Socket Mode process on Railway.
+// 9 MACF-aligned agents running as one Bolt Socket Mode process on Railway.
 // Each agent has an isolated persona, memory, and responsibility set.
 // Inter-agent communication: [from: {Agent} → {Agent}] {message} pattern.
 
@@ -27,7 +27,7 @@ const app = new App({
   logLevel: process.env.LOG_LEVEL || 'info',
 });
 
-// ─── Load all 8 agent modules ─────────────────────────────────────────────────
+// ─── Load all 9 agent modules ─────────────────────────────────────────────────
 const execPM   = require('./agents/execPM');
 const cmo      = require('./agents/cmo');
 const cco      = require('./agents/cco');
@@ -36,6 +36,7 @@ const cuxo     = require('./agents/cuxo');
 const cro      = require('./agents/cro');
 const lawyer   = require('./agents/lawyer');
 const cfo      = require('./agents/cfo');
+const cto      = require('./agents/cto');
 
 // Map agentId → module (for delegation routing)
 const AGENT_MODULES = {
@@ -47,6 +48,7 @@ const AGENT_MODULES = {
   cro,
   lawyer,
   cfo,
+  cto,
 };
 
 // ─── Channel → Primary Agent routing ─────────────────────────────────────────
@@ -56,7 +58,7 @@ const CHANNEL_PRIMARY_AGENT = {
   [CHANNELS.research]:  'cro',
   [CHANNELS.content]:   'cco',
   [CHANNELS.jobs]:      'jobcoach',
-  [CHANNELS.it]:        'execPM',  // #cto — exec-pm covers
+  [CHANNELS.it]:        'cto',     // #cto — CTO owns this channel
   [CHANNELS.management]:'execPM',  // #management — exec-pm is the coordinator
 };
 
@@ -274,6 +276,7 @@ async function start() {
   cro.init(app);
   lawyer.init(app);
   cfo.init(app);
+  cto.init(app);
 
   console.log('✅ All 8 MACF agents initialized');
 
@@ -301,7 +304,7 @@ async function start() {
 
   console.log('');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('🤖 MACF Slack Team v3 — LIVE via Socket Mode');
+  console.log('🤖 MACF Slack Team v3 — LIVE via Socket Mode (9 agents)');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('  🔵 Exec PM    (@exec-pm)   — #exec-pm + ALL channels');
   console.log('  📊 CMO        (@cmo)        — #marketing, #research');
