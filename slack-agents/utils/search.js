@@ -2,8 +2,9 @@
 //
 // Priority order (uses whichever is configured):
 //   1. Local relay (Desktop/Chrome MCP) — richest results, no extra API cost
-//   2. Brave Search API  — BRAVE_SEARCH_API_KEY in env
-//   3. Returns null      — agent falls back to its static knowledge
+//   2. Google Custom Search API  — GOOGLE_API_KEY + GOOGLE_SEARCH_CX in env
+//   3. Brave Search API          — BRAVE_SEARCH_API_KEY in env
+//   4. Returns null              — agent falls back to its static knowledge
 //
 // Agents should call search() for any task needing current information.
 // Never throw — always return null on failure so agents degrade gracefully.
@@ -11,7 +12,9 @@
 const relay = require('./local-relay');
 const fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
 
-const BRAVE_API_KEY = process.env.BRAVE_SEARCH_API_KEY || null;
+const BRAVE_API_KEY   = process.env.BRAVE_SEARCH_API_KEY || null;
+const GOOGLE_API_KEY  = process.env.GOOGLE_API_KEY || null;
+const GOOGLE_SEARCH_CX = process.env.GOOGLE_SEARCH_CX || null;
 
 /**
  * Search the web. Returns array of { title, url, snippet } or null.
@@ -28,7 +31,28 @@ async function search(query, limit = 5) {
     }
   }
 
-  // 2. Brave Search API
+  // 2. Google Custom Search API
+  if (GOOGLE_API_KEY && GOOGLE_SEARCH_CX) {
+    try {
+      const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_SEARCH_CX}&q=${encodeURIComponent(query)}&num=${Math.min(limit, 10)}`;
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      if (!res.ok) {
+        console.warn(`[search] Google API error: ${res.status}`);
+      } else {
+        const data = await res.json();
+        const results = (data.items || []).map(r => ({
+          title: r.title,
+          url: r.link,
+          snippet: r.snippet || '',
+        }));
+        if (results.length > 0) return results;
+      }
+    } catch (err) {
+      console.warn('[search] Google search failed:', err.message);
+    }
+  }
+
+  // 3. Brave Search API
   if (BRAVE_API_KEY) {
     try {
       const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${limit}`;
