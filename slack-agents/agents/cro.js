@@ -8,6 +8,7 @@ const state = require('../utils/state');
 const { generateReport } = require('../utils/anthropic');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
 const { relay, stripDelegations } = require('../utils/delegation');
+const { search: webSearch, browse, formatResults } = require('../utils/search');
 
 const AGENT = AGENTS.cro;
 const AGENT_ID = AGENT.id; // 'cro'
@@ -99,7 +100,13 @@ async function handleMention({ event, say }) {
 
   const threadCtx = event.threadContext || '';
   console.log(`[cro] Handling mention: "${text.slice(0, 80)}"`);
-  const context = `Jesse asked for research on: "${text}"${threadCtx}\nProvide findings, what they mean, and what Jesse should do with them.`;
+  // Try live web search first for better research quality
+  const searchResults = await webSearch(text, 5);
+  const searchCtx = searchResults
+    ? `\n\nLive search results:\n${formatResults(searchResults)}`
+    : '';
+
+  const context = `Jesse asked for research on: "${text}"${threadCtx}${searchCtx}\nProvide findings, what they mean, and what Jesse should do with them.`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
   await relay(response, AGENT_ID);
   await say(stripDelegations(response));
@@ -120,7 +127,13 @@ async function handleDelegation(messageText, visitedAgents = new Set(), channelI
   });
   state.push(AGENT_ID, 'researchLog', { topic: request.slice(0, 100), from: fromAgent, timestamp: new Date().toISOString() });
 
-  const context = `Research request from ${fromAgent}:\n"${request}"\n\nProvide a focused research brief addressing this specific request. Include sources where possible.`;
+  // Try live search for delegation research requests too
+  const searchResults = await webSearch(request, 5);
+  const searchCtx = searchResults
+    ? `\n\nLive search results:\n${formatResults(searchResults)}`
+    : '';
+
+  const context = `Research request from ${fromAgent}:\n"${request}"${searchCtx}\n\nProvide a focused research brief addressing this specific request. Include sources where possible.`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
 
   // Respond in the research channel and tag the requesting agent
