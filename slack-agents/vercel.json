@@ -1,23 +1,7 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "api/slack/events.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/slack/actions.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/slack/events",
-      "dest": "api/slack/events.js"
-    },
-    {
-      "src": "/api/slack/actions",
-      "dest": "api/slack/actions.js"
-    }
-  ]
+  "functions": {
+    "api/slack/events.js": { "runtime": "nodejs20.x" },
+    "api/slack/actions.js": { "runtime": "nodejs20.x" }
+  }
 }
