@@ -1,7 +1,1 @@
-{
-  "version": 2,
-  "functions": {
-    "api/slack/events.js": { "runtime": "nodejs20.x" },
-    "api/slack/actions.js": { "runtime": "nodejs20.x" }
-  }
-}
+{}
