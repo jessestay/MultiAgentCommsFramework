@@ -1,3 +1,5 @@
+  ✓ Injected tools for marketing
+  ✓ File changed
   [WARN] No callClaude patterns found in handleMessage
 // agents/marketing.js — Marketing Agent
 // Manages GoFundMe campaign for Louis (powered wheelchair, $3K goal),
@@ -165,13 +167,15 @@ async function handleMessage(message, context = {}) {
   }
 
   // General marketing question
-  response = await callClaude(
+  response = await callClaudeWithTools(
     SYSTEM_PROMPT,
     `Jesse (or another agent) says: "${message}"
 
 GoFundMe status: $${state.projects?.gofundme?.raised || 0} raised of $3,000 goal
 
 Respond as the Marketing Agent. Be specific and actionable.`,
+    [RUN_COWORK_TASK_TOOL],
+    createCoworkExecutor({ agentKey: 'marketing', channelId: channel, threadTs: thread_ts }),
     { maxTokens: 800 }
   );
 
