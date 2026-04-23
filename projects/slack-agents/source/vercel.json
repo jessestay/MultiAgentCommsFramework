@@ -42,6 +42,10 @@
       "dest": "/api/internal/invoke.js"
     },
     {
+      "src": "/api/cowork-bridge",
+      "dest": "/api/cowork-bridge.js"
+    },
+    {
       "src": "/api/cron/(.*)",
       "dest": "/api/cron/$1.js"
     },
