@@ -1,8 +1,10 @@
+  [WARN] No callClaude patterns found in handleMessage
 // agents/jobs.js — Jobs Agent
 // Job search for Director+ remote roles. Tracks applications,
 // drafts cover letters and outreach, follows up on leads.
 
-const { callClaude } = require('../lib/claude');
+const { callClaude, callClaudeWithTools } = require('../lib/claude');
+const { RUN_COWORK_TASK_TOOL, createCoworkExecutor } = require('../lib/tools');
 const { postAsAgent, postApprovalRequest, agentToAgent } = require('../lib/slack');
 const { getState, updateState, addTask } = require('../lib/state');
 
@@ -271,4 +273,3 @@ module.exports = {
   generateWeeklyStatus,
   SYSTEM_PROMPT,
 };
-
