@@ -69,7 +69,7 @@ Morning briefing for Jesse Stay — ${new Date().toLocaleDateString('en-US', {
   weekday: 'long', month: 'long', day: 'numeric', timeZone: 'America/Denver'
 })} MT
 
-GoFundMe: ${donation ? `$${donation.amount} raised of $2,800 (${donation.percentFunded}%)` : 'unavailable'}
+GoFundMe: ${donation ? `$${donation.amount} raised of $${donation.goal || '?'} (${donation.percentFunded}%)` : 'unavailable'}
 Latest transkrybe commit: ${commit ? `${commit.sha} — "${commit.message}" by ${commit.author}` : 'unavailable'}
 Merged PRs in last 24h: ${prs.length > 0 ? prs.map(p => `#${p.number} "${p.title}"`).join(', ') : 'None'}
 
