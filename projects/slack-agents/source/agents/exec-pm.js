@@ -1,6 +1,3 @@
-  ✓ Injected tools for exec-pm
-  ✓ File changed
-  [WARN] No callClaude patterns found in handleMessage
 // agents/exec-pm.js — Executive PM Agent
 //
 // Jesse's primary Slack interface. Tracks all projects, routes requests,
