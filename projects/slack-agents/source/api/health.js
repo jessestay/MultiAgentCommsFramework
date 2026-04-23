@@ -1,3 +1,4 @@
+// Deployed: 2026-04-23T18:06:32Z — web_search + cowork-bridge enabled
 // api/health.js — Health check endpoint
 // Also shows which agents are configured and cron schedules.
 
@@ -47,4 +48,3 @@ module.exports = async (req, res) => {
 
   res.status(200).json(health);
 };
-
