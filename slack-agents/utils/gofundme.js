@@ -1,17 +1,24 @@
-// utils/gofundme.js — Poll GoFundMe for donation total changes
-// GoFundMe doesn't have a public API, so we fetch the page and parse the total
+// utils/gofundme.js — Poll a GoFundMe campaign for donation total changes
+// GoFundMe doesn't have a public API, so we fetch the page and parse the total.
+// Configure via env vars:
+//   GOFUNDME_URL  — full campaign URL (if not set, polling is disabled)
+//   GOFUNDME_GOAL — numeric goal in USD (default 0)
 
 const fetch = (...args) => import('node-fetch').then(m => m.default(...args));
 const cheerio = require('cheerio');
 
-const GOFUNDME_URL = 'https://www.gofundme.com/f/help-louis-stay-get-a-wheelchair';
-const GOAL = 2800;
+const GOFUNDME_URL = process.env.GOFUNDME_URL || null;
+const GOAL = parseInt(process.env.GOFUNDME_GOAL || '0', 10);
 
 /**
  * Fetch current donation total from GoFundMe page.
- * Returns { amount, currency, percentFunded } or null on failure.
+ * Returns { amount, currency, percentFunded, goal, url } or null on failure/disabled.
  */
 async function fetchDonationTotal() {
+  if (!GOFUNDME_URL) {
+    console.log('[gofundme] No GOFUNDME_URL configured — polling disabled');
+    return null;
+  }
   try {
     const res = await fetch(GOFUNDME_URL, {
       headers: {
@@ -41,7 +48,6 @@ async function fetchDonationTotal() {
           const val = parseFloat(data.totalPaymentsDue.replace(/[^0-9.]/g, ''));
           if (!isNaN(val)) amount = val;
         }
-        // Also try fundedAmount, raisedAmount patterns
         if (data && data.fundedAmount) {
           const val = parseFloat(String(data.fundedAmount).replace(/[^0-9.]/g, ''));
           if (!isNaN(val)) amount = val;
@@ -49,7 +55,7 @@ async function fetchDonationTotal() {
       } catch (_) {}
     });
 
-    // Fallback: look for the raised amount in meta tags or visible text
+    // Fallback: look for the raised amount in meta tags
     if (amount === null) {
       const metaAmount = $('meta[property="og:description"]').attr('content');
       if (metaAmount) {
@@ -77,7 +83,7 @@ async function fetchDonationTotal() {
     return {
       amount,
       currency: 'USD',
-      percentFunded: Math.round((amount / GOAL) * 100),
+      percentFunded: GOAL > 0 ? Math.round((amount / GOAL) * 100) : 0,
       goal: GOAL,
       url: GOFUNDME_URL,
     };
@@ -93,7 +99,7 @@ async function fetchDonationTotal() {
 function formatDonationUpdate(prev, current) {
   const delta = current.amount - prev;
   const sign = delta >= 0 ? '+' : '';
-  return `💚 *GoFundMe update* — $${current.amount.toLocaleString()} raised of $${GOAL.toLocaleString()} (${current.percentFunded}%)\n${sign}$${Math.abs(delta).toFixed(2)} since last check\n${current.url}`;
+  return `\u{1F49A} *GoFundMe update* \u2014 $${current.amount.toLocaleString()} raised of $${GOAL.toLocaleString()} (${current.percentFunded}%)\n${sign}$${Math.abs(delta).toFixed(2)} since last check\n${current.url}`;
 }
 
 module.exports = { fetchDonationTotal, formatDonationUpdate, GOFUNDME_URL, GOAL };
