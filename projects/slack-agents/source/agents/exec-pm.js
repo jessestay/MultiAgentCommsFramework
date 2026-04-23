@@ -1,3 +1,4 @@
+  [WARN] No callClaude patterns found in handleMessage
 // agents/exec-pm.js — Executive PM Agent
 //
 // Jesse's primary Slack interface. Tracks all projects, routes requests,
@@ -6,7 +7,8 @@
 // v2: Added proactive task dispatch — when morning briefing runs, Exec PM
 // now also queues work for other agents based on project state.
 
-const { callClaude } = require('../lib/claude');
+const { callClaude, callClaudeWithTools } = require('../lib/claude');
+const { RUN_COWORK_TASK_TOOL, createCoworkExecutor } = require('../lib/tools');
 const { postAsAgent, postApprovalRequest, agentToAgent } = require('../lib/slack');
 const { getState, addTask, getAgentMemory, updateAgentMemory } = require('../lib/state');
 
