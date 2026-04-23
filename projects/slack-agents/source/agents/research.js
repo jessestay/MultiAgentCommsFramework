@@ -1,8 +1,10 @@
+  [WARN] No callClaude patterns found in handleMessage
 // agents/research.js — Research Agent
 // Background research for any agent or Jesse directly.
 // Web search, competitive intel, data gathering.
 
-const { callClaude } = require('../lib/claude');
+const { callClaude, callClaudeWithTools } = require('../lib/claude');
+const { RUN_COWORK_TASK_TOOL, createCoworkExecutor } = require('../lib/tools');
 const { postAsAgent } = require('../lib/slack');
 const { addTask } = require('../lib/state');
 
@@ -168,4 +170,3 @@ module.exports = {
   researchTranskrybeCompetitors,
   SYSTEM_PROMPT,
 };
-
