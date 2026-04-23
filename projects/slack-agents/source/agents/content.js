@@ -186,12 +186,14 @@ Full draft would need a separate request.`,
     approvalTitle = '📝 Blog Post Draft — needs your ✅';
   } else {
     // General content request
-    response = await callClaude(
+    response = await callClaudeWithTools(
       SYSTEM_PROMPT,
       `Jesse (or another agent) requests: "${message}"
 
 Handle this content request. If it's asking for draft copy, provide it and note it needs Jesse's approval.
 If it's a question about content strategy, answer directly.`,
+      [RUN_COWORK_TASK_TOOL],
+      createCoworkExecutor({ agentKey: 'content', channelId: channel, threadTs: thread_ts }),
       { maxTokens: 800 }
     );
     // Check if the response contains draft content
