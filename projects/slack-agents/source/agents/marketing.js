@@ -1,8 +1,10 @@
+  [WARN] No callClaude patterns found in handleMessage
 // agents/marketing.js — Marketing Agent
 // Manages GoFundMe campaign for Louis (powered wheelchair, $3K goal),
 // social content calendar, drafts copy, reports campaign metrics.
 
-const { callClaude } = require('../lib/claude');
+const { callClaude, callClaudeWithTools } = require('../lib/claude');
+const { RUN_COWORK_TASK_TOOL, createCoworkExecutor } = require('../lib/tools');
 const { postAsAgent, postApprovalRequest, agentToAgent } = require('../lib/slack');
 const { getState, updateState, addTask } = require('../lib/state');
 
@@ -202,4 +204,3 @@ module.exports = {
   generateWeeklyStatus,
   SYSTEM_PROMPT,
 };
-
