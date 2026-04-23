@@ -47,9 +47,9 @@ async function postProactiveResearch() {
   const seenTopics = state.get(AGENT_ID, 'seenTopics') || [];
 
   const topicPool = [
-    'GoFundMe fundraising growth tactics and what top medical campaigns do differently',
+    'Fundraising growth tactics for active campaigns (load campaign details from project context JSON)',
     'transkrybe competitors — music transcription tools landscape in 2026',
-    'ME/CFS and hEDS awareness content Jesse could amplify with his audience',
+    'Accessibility and disability advocacy content Jesse could amplify (load specific campaign context from project context JSON)',
     'Social media algorithm changes affecting Facebook and Twitter/X reach in 2026',
     'AI tools for music and audio that transkrybe should watch or partner with',
     'Remote executive hiring trends — what companies are looking for in 2026',
