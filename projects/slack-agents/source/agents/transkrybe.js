@@ -1,3 +1,5 @@
+  ✓ Injected tools for transkrybe
+  ✓ File changed
   [WARN] No callClaude patterns found in handleMessage
 // agents/transkrybe.js — Transkrybe Agent
 // Tracks dev status, open bugs, deployments for transkrybe.com SaaS product.
@@ -185,7 +187,7 @@ async function handleMessage(message, context = {}) {
     return;
   }
 
-  const response = await callClaude(
+  const response = await callClaudeWithTools(
     SYSTEM_PROMPT,
     `Jesse (or another agent) asks: "${message}"
 
@@ -195,6 +197,8 @@ ${githubData.issues?.length > 0 ? `Recent issues:\n${githubData.issues.slice(0, 
 Transkrybe state: ${JSON.stringify(state.projects?.transkrybe || {}, null, 2)}
 
 Respond as the Transkrybe Agent. Be specific and technical when needed. If this is a task, confirm you're tracking it.`,
+    [RUN_COWORK_TASK_TOOL],
+    createCoworkExecutor({ agentKey: 'transkrybe', channelId: channel, threadTs: thread_ts }),
     { maxTokens: 800 }
   );
 
