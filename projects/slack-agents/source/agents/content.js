@@ -1,8 +1,10 @@
+  [WARN] No callClaude patterns found in handleMessage
 // agents/content.js — Content Agent
 // Drafts blog posts, LinkedIn AI CEO series (semiweekly), TikTok scripts,
 // platform-specific copy. Knows Jesse's voice and all social channels.
 
-const { callClaude } = require('../lib/claude');
+const { callClaude, callClaudeWithTools } = require('../lib/claude');
+const { RUN_COWORK_TASK_TOOL, createCoworkExecutor } = require('../lib/tools');
 const { postAsAgent, postApprovalRequest } = require('../lib/slack');
 const { getState, addTask } = require('../lib/state');
 
@@ -230,4 +232,3 @@ module.exports = {
   generateLinkedInBatch,
   SYSTEM_PROMPT,
 };
-
