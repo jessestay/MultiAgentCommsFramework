@@ -45,10 +45,10 @@ async function postDailyContentSuggestion() {
 
   // Rotate through content themes
   const themes = [
-    'GoFundMe awareness — tell Louis\'s story in a new angle',
+    'Campaign awareness — compelling story angle for active campaign (load details from project context JSON)',
     'transkrybe.com product — a specific feature or use case',
     'Jesse personal brand — social media expertise tip or insight',
-    'GoFundMe thank-you / donor appreciation post',
+    'Campaign thank-you / donor appreciation post',
     'transkrybe.com — behind-the-scenes founder story',
     'Jesse personal brand — accessibility advocacy thought leadership',
     'Engagement hook — question or poll for Jesse\'s audience',
