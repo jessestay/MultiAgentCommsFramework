@@ -1,4 +1,3 @@
-  [WARN] No callClaude patterns found in handleMessage
 // agents/jobs.js — Jobs Agent
 // Job search for Director+ remote roles. Tracks applications,
 // drafts cover letters and outreach, follows up on leads.
