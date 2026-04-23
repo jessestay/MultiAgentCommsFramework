@@ -1,4 +1,3 @@
-  [WARN] No callClaude patterns found in handleMessage
 // agents/content.js — Content Agent
 // Drafts blog posts, LinkedIn AI CEO series (semiweekly), TikTok scripts,
 // platform-specific copy. Knows Jesse's voice and all social channels.
