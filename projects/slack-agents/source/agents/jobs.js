@@ -217,13 +217,15 @@ Keep it scannable on mobile.`,
 
   } else {
     // General jobs question
-    response = await callClaude(
+    response = await callClaudeWithTools(
       SYSTEM_PROMPT,
       `Jesse (or another agent) asks: "${message}"
 
 Job search state: ${JSON.stringify(jobState, null, 2)}
 
 Respond as the Jobs Agent. Be specific and actionable about Jesse's job search.`,
+      [RUN_COWORK_TASK_TOOL],
+      createCoworkExecutor({ agentKey: 'jobs', channelId: channel, threadTs: thread_ts }),
       { maxTokens: 800 }
     );
   }
