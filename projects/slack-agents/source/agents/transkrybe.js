@@ -1,6 +1,3 @@
-  ✓ Injected tools for transkrybe
-  ✓ File changed
-  [WARN] No callClaude patterns found in handleMessage
 // agents/transkrybe.js — Transkrybe Agent
 // Tracks dev status, open bugs, deployments for transkrybe.com SaaS product.
 // Reads GitHub repo jessestay/transkrybe for context.
