@@ -1,8 +1,10 @@
+  [WARN] No callClaude patterns found in handleMessage
 // agents/transkrybe.js — Transkrybe Agent
 // Tracks dev status, open bugs, deployments for transkrybe.com SaaS product.
 // Reads GitHub repo jessestay/transkrybe for context.
 
-const { callClaude } = require('../lib/claude');
+const { callClaude, callClaudeWithTools } = require('../lib/claude');
+const { RUN_COWORK_TASK_TOOL, createCoworkExecutor } = require('../lib/tools');
 const { postAsAgent, postApprovalRequest, agentToAgent } = require('../lib/slack');
 const { getState, updateState, addTask } = require('../lib/state');
 
@@ -206,4 +208,3 @@ module.exports = {
   fetchGitHubIssues,
   SYSTEM_PROMPT,
 };
-
