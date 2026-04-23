@@ -1,6 +1,3 @@
-  ✓ Injected tools for research
-  ✓ File changed
-  [WARN] No callClaude patterns found in handleMessage
 // agents/research.js — Research Agent
 // Background research for any agent or Jesse directly.
 // Web search, competitive intel, data gathering.
