@@ -63,7 +63,7 @@ async function pollGoFundMe() {
     const deltaText = isIncrease ? `+$${delta.toFixed(2)}` : `-$${Math.abs(delta).toFixed(2)}`;
 
     const context = `
-GoFundMe for Louis Stay (ME/CFS + hEDS) just changed:
+Active campaign just changed:
 - Previous total: $${lastAmount}
 - New total: $${current.amount} raised of $2,800 goal
 - Change: ${deltaText}
@@ -104,11 +104,11 @@ Weekly content calendar for Jesse Stay.
 Week of: ${weekStart.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
 
 Active campaigns:
-1. Louis Stay GoFundMe — $${gofundme?.amount || '?'} raised of $2,800
+1. Active campaign — $${gofundme?.amount || '?'} raised of $${gofundme?.goal || '?'}
 2. transkrybe.com music transcription SaaS — awareness and growth
 3. Jesse's personal brand — tech founder, dad, accessibility advocate
 
-Jesse's channels: Facebook (338K), Twitter/X (114.7K), LinkedIn, 3 TikToks, 3 YouTubes
+Jesse's channels: Facebook, Twitter/X, LinkedIn, TikTok, YouTube (load current stats from project context JSON)
 
 Create a Mon–Sun calendar:
 - 1 content piece per day
