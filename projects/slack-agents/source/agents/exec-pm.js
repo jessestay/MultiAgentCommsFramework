@@ -1,3 +1,5 @@
+  ✓ Injected tools for exec-pm
+  ✓ File changed
   [WARN] No callClaude patterns found in handleMessage
 // agents/exec-pm.js — Executive PM Agent
 //
@@ -202,7 +204,7 @@ async function handleMessage(message, context = {}) {
     ? `${SYSTEM_PROMPT}\n\nThis is a scheduled autonomous task. Execute it completely and post results to your channel.`
     : SYSTEM_PROMPT;
 
-  const response = await callClaude(
+  const response = await callClaudeWithTools(
     systemPrompt,
     `${isScheduled ? 'SCHEDULED TASK: ' : 'Jesse says: '}"${message}"
 
@@ -217,6 +219,8 @@ ${JSON.stringify(memory, null, 2)}
 ${historyContext}
 
 Respond as the Exec PM. Keep responses brief and actionable.`,
+    [RUN_COWORK_TASK_TOOL],
+    createCoworkExecutor({ agentKey: 'exec-pm', channelId: channel, threadTs: thread_ts }),
     { maxTokens: 1000 }
   );
 
