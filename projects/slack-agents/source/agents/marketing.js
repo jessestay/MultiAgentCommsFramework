@@ -1,6 +1,3 @@
-  ✓ Injected tools for marketing
-  ✓ File changed
-  [WARN] No callClaude patterns found in handleMessage
 // agents/marketing.js — Marketing Agent
 // Manages GoFundMe campaign for Louis (powered wheelchair, $3K goal),
 // social content calendar, drafts copy, reports campaign metrics.
