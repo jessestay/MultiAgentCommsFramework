@@ -65,7 +65,7 @@ async function pollGoFundMe() {
     const context = `
 Active campaign just changed:
 - Previous total: $${lastAmount}
-- New total: $${current.amount} raised of $2,800 goal
+- New total: $${current.amount} raised of $${current.goal || '?'} goal
 - Change: ${deltaText}
 - Progress: ${current.percentFunded}%
 - URL: ${GOFUNDME_URL}
