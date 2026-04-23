@@ -1,3 +1,5 @@
+  ✓ Injected tools for research
+  ✓ File changed
   [WARN] No callClaude patterns found in handleMessage
 // agents/research.js — Research Agent
 // Background research for any agent or Jesse directly.
@@ -147,7 +149,7 @@ async function handleMessage(message, context = {}) {
     response = await researchCompany(company);
   } else {
     // General research request
-    response = await callClaude(
+    response = await callClaudeWithTools(
       SYSTEM_PROMPT,
       `Research request${isAgentRequest ? ' (from another agent)' : ' from Jesse'}: "${message}"
 
@@ -155,6 +157,8 @@ Provide thorough, actionable research. Use your knowledge to give the best answe
 If you'd normally need to search the web, use your training data but clearly note it and suggest Jesse verify anything time-sensitive.
 
 TL;DR first, then details, then "Recommended action:".`,
+      [RUN_COWORK_TASK_TOOL],
+      createCoworkExecutor({ agentKey: 'research', channelId: channel, threadTs: thread_ts }),
       { maxTokens: 1000 }
     );
   }
