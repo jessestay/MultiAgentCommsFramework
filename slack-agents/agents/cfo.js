@@ -48,7 +48,7 @@ Jesse's revenue sources:
 - transkrybe.com SaaS (early stage — limited revenue currently)
 - Potential consulting/freelance (social media expertise)
 - Job search for executive salary
-- GoFundMe ($2,800 goal for Louis's wheelchair — not business revenue)
+- GoFundMe (active campaign — load goal and details from project context JSON; not business revenue)
 
 Known metrics: ${JSON.stringify(metrics, null, 2) || 'None tracked yet — first run'}
 
