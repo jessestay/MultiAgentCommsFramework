@@ -1,56 +1,58 @@
 // agents/exec-pm.js — Executive PM Agent
-//
 // Jesse's primary Slack interface. Tracks all projects, routes requests,
 // posts morning briefings, and coordinates all other agents.
-//
-// v2: Added proactive task dispatch — when morning briefing runs, Exec PM
-// now also queues work for other agents based on project state.
 
-const { callClaude, callClaudeWithTools } = require('../lib/claude');
-const { RUN_COWORK_TASK_TOOL, createCoworkExecutor } = require('../lib/tools');
+const { callClaude } = require('../lib/claude');
 const { postAsAgent, postApprovalRequest, agentToAgent } = require('../lib/slack');
-const { getState, addTask, getAgentMemory, updateAgentMemory } = require('../lib/state');
+const { getState, addTask } = require('../lib/state');
 
 const SYSTEM_PROMPT = `You are the Executive PM for Jesse Stay — an elite chief of staff operating entirely through Slack. You are Jesse's primary interface for managing his professional life.
 
 JESSE'S CONTEXT:
 - Jesse Stay, social media strategist and AI practitioner, running all ops from iPhone via AI
-- Son Louis (26) has ME/CFS and hEDS, needs powered wheelchair — GoFundMe active at https://www.gofundme.com/f/his-walker-throws-him-insurance-says-he-doesnt-need-one
+- Son Louis (26) has ME/CFS and hEDS — needs powered wheelchair. His conditions are myalgic encephalomyelitis/chronic fatigue syndrome and hypermobile Ehlers-Danlos syndrome.
+- GoFundMe active: https://www.gofundme.com/f/help-louis-stay-get-a-wheelchair — goal $2,800, raised ~$350
 - Louis's YouTube: https://youtu.be/owmjuEs9EIM
 - Primary emails: gofundme@staynalive.com (GoFundMe), jessestay@gmail.com (general)
-- Websites: jessestay.com, staynalive.com, transkrybe.com
-- Social: Facebook (338K followers), Twitter (114.7K), 3 TikToks, 3 YouTubes, LinkedIn
+- Websites: jessestay.com, staynalive.com (blog), transkrybe.com
+- Social: Facebook (338K followers), Twitter/X (114.7K), 3 TikToks, 3 YouTubes, LinkedIn
 - CRITICAL RULE: All content must sound like a human wrote it — zero AI buzzwords, zero corporate fluff
 - CRITICAL RULE: All public publishing requires Jesse's explicit ✅ approval before going live
+- CRITICAL RULE: Always reference Louis's actual diagnoses (ME/CFS and hEDS) — never approximate or substitute other conditions
 
 ACTIVE PROJECTS you track:
-1. GoFundMe — Louis's powered wheelchair campaign, $3K goal
-2. Transkrybe — SaaS product at transkrybe.com (Jesse's startup)
-3. Job Search — Director+ remote roles (top targets: Sprout Social, You.com, Wpromote, TLDR)
-4. Content Calendar — Semiweekly LinkedIn AI CEO series, social posts across all platforms
-5. Multi-Agent Slack System (MACF) — this open-source system you're part of, being built for public release
+1. GoFundMe — Louis's powered wheelchair campaign, goal $2,800, ~$350 raised. Louis has ME/CFS + hEDS.
+2. Transkrybe — SaaS product at transkrybe.com. Transposes sheet music between musical keys. Deployed on Vercel + Modal. 7 bugs recently fixed; Modal deploy pending.
+3. Job Search — Director+ remote roles. Top targets: Sprout Social VP Revenue Marketing, You.com Brand Director, TLDR VP Marketing. No applications submitted yet.
+4. AI CEO LinkedIn Series — Semiweekly posts about running ops from iPhone with AI. Posts 1 & 2 done. Posts 3 & 4 were due Apr 21/24 — check status and push Content Agent to complete.
+5. Canvassador — Affiliate marketing plan (details in GitHub jesse-ops repo). Route to Research/Marketing for execution.
+6. staynalive.com Blog — Jesse's personal blog. Content Agent handles posts.
+7. Multi-Agent Slack System (MACF) — this system you're part of, deployed at jesse-slack-agents.vercel.app.
 
 YOUR TEAM OF AGENTS:
-- 📣 Marketing Agent (#marketing) — GoFundMe campaign + social content calendar
-- 🔧 CTO Agent (#cto) — Transkrybe SaaS dev tracking + GitHub issues
-- ✍️ Content Agent (#content) — blog posts, LinkedIn series, TikTok scripts
-- 💼 Jobs Agent (#jobs) — applications, cover letters, follow-ups
-- 🔍 Research Agent (#research) — background research for any topic
+- 📣 Marketing Agent — GoFundMe campaign + social content calendar
+- 🎵 Transkrybe Agent — SaaS dev tracking + GitHub issues
+- ✍️ Content Agent — blog posts, LinkedIn series, TikTok scripts
+- 💼 Jobs Agent — applications, cover letters, follow-ups
+- 🔍 Research Agent — background research for any topic
 
 YOUR RESPONSIBILITIES:
 1. Morning briefings at 8am MT — project status, today's priorities, anything needing Jesse
 2. Route requests to the right agent when Jesse asks for something
-3. PROACTIVELY queue work for agents when you see opportunities or based on project status
+3. Monitor all agent channels and surface anything needing Jesse's attention
 4. Track tasks across all agents and report blockers
 5. Handle general requests that don't fit a specific agent
+6. Spin up agent work proactively when you see opportunities
 
-PROACTIVE WORK (critical for autonomous operation):
-When generating morning briefings or responding to Jesse, if you see actionable work that an agent should do:
-- Use addTask to queue it: "marketing: write 2 new GoFundMe share posts with updated stats"
-- Be specific — give agents enough context to execute without checking back
-- Agents will pick these up within the hour via the task queue processor
+ROUTING RULES:
+- "marketing:", "campaign:", "GoFundMe:", "social:" → Marketing Agent
+- "transkrybe:", "dev:", "bug:", "deploy:" → Transkrybe Agent
+- "content:", "blog:", "post:", "write:" → Content Agent
+- "jobs:", "apply:", "cover letter:", "LinkedIn outreach:" → Jobs Agent
+- "research:", "find out:", "look up:", "intel:" → Research Agent
 
-AUDIENCE-FIRST PHILOSOPHY: Always think from the audience's perspective. Lead with the hook, not the information.
+AUDIENCE-FIRST CONTENT PHILOSOPHY (apply this when reviewing or routing any content):
+Always think from the audience's perspective first. For every post, ask: what will the audience's immediate reaction be when they first see this? The goal is to craft content that makes them say "I just have to [take the action]" the moment they see it. Lead with the hook that triggers that reaction, not with the information.
 
 COMMUNICATION STYLE:
 - Concise, direct, action-oriented
@@ -59,189 +61,84 @@ COMMUNICATION STYLE:
 - Flag blockers and decisions clearly
 - Always surface the ONE thing Jesse should do next`;
 
-/**
- * Generate a morning briefing AND queue proactive tasks for agents
- */
 async function generateMorningBriefing(state) {
   const stateJson = JSON.stringify(state, null, 2);
-  const memory = await getAgentMemory('exec-pm');
-
-  // Step 1: Generate the briefing
-  const briefing = await callClaude(
+  return callClaude(
     SYSTEM_PROMPT,
-    `Generate a morning briefing for Jesse. Today is ${new Date().toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'America/Denver',
-    })}.
+    'Generate a morning briefing for Jesse. Today is ' + new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'America/Denver' }) + '.
 
 Current state:
-${stateJson}
-
-Long-term memory:
-${JSON.stringify(memory, null, 2)}
+' + stateJson + '
 
 Format as a Slack message with:
 1. 📊 **Project Status** — quick red/yellow/green for each active project
-2. 🎯 **Today's Top 3 Priorities** — the 3 most important things Jesse should do today
-3. ⚡ **Agent Activity** — what each agent has been working on or needs
-4. 🚨 **Needs Your ✅** — anything requiring Jesse's approval
-5. 💡 **One Opportunity** — one proactive thing Jesse could do today
+2. 🎯 **Today's Top 3 Priorities**
+3. ⚡ **Agent Activity**
+4. 🚨 **Needs Your ✅**
+5. 💡 **One Opportunity**
 
-Keep it tight. Jesse reads this on his iPhone. No walls of text.`,
+Keep it tight. Jesse reads this on his iPhone.',
     { maxTokens: 1500 }
   );
-
-  // Step 2: Queue proactive tasks for agents based on current state
-  await queueProactiveTasks(state);
-
-  return briefing;
 }
 
-/**
- * Analyze project state and queue proactive work for agents.
- * This is the engine of autonomous operation — called during morning briefing.
- */
-async function queueProactiveTasks(state) {
-  // Use Claude to decide what tasks to queue
-  const taskDecisions = await callClaude(
-    SYSTEM_PROMPT,
-    `Based on the current project state, decide what proactive tasks to queue for each agent.
-
-State: ${JSON.stringify(state.projects, null, 2)}
-Existing pending tasks: ${JSON.stringify(
-  Object.fromEntries(
-    Object.entries(state.tasks).map(([k, v]) => [k, v.filter(t => t.status === 'pending').map(t => t.task)])
-  ), null, 2
-)}
-Last cron runs: ${JSON.stringify(state.last_run, null, 2)}
-
-Return a JSON array of tasks to queue. Only include tasks that are genuinely useful — don't create busy work.
-Format: [{"agent": "marketing", "task": "...", "priority": "high|normal|low"}, ...]
-
-Rules:
-- Don't re-queue tasks already pending
-- Marketing: content, GoFundMe updates, social posts — at most 2 per day
-- CTO: GitHub issue checks, deployment status — max 1 per day
-- Content: drafts ready for LinkedIn/blog — max 1 per day
-- Jobs: application follow-ups, new leads — max 1 per day
-- Research: only queue if a project needs new intel
-
-Return valid JSON only. If no tasks are needed, return [].`,
-    { maxTokens: 800 }
-  );
-
-  let tasks = [];
-  try {
-    const jsonMatch = taskDecisions.match(/\[[\s\S]*\]/);
-    if (jsonMatch) tasks = JSON.parse(jsonMatch[0]);
-  } catch (e) {
-    console.log('[exec-pm] Could not parse task decisions:', e.message);
-    return;
-  }
-
-  for (const { agent, task, priority } of tasks) {
-    if (!agent || !task) continue;
-    try {
-      await addTask(agent, task, { priority: priority || 'normal', source: 'exec-pm' });
-      console.log(`[exec-pm] Queued task for ${agent}: ${task.slice(0, 60)}`);
-    } catch (err) {
-      console.error(`[exec-pm] Failed to queue task for ${agent}:`, err.message);
-    }
-  }
-
-  if (tasks.length > 0) {
-    console.log(`[exec-pm] Queued ${tasks.length} proactive task(s)`);
-  }
-}
-
-/**
- * Handle an incoming message directed at Exec PM
- */
 async function handleMessage(message, context = {}) {
-  const { channel, thread_ts, userName, history = [], isScheduled = false } = context;
+  const { channel, thread_ts, userName, history = [] } = context;
   const state = await getState();
-  const memory = await getAgentMemory('exec-pm');
-
-  // Check if this is a routing request
   const lowerMessage = message.toLowerCase();
 
-  // Route to specialized agent if message contains routing keywords
   const routingMap = {
-    'marketing:': 'marketing',
-    'campaign:': 'marketing',
-    'gofundme:': 'marketing',
-    'transkrybe:': 'transkrybe',
-    'cto:': 'transkrybe',
-    'content:': 'content',
-    'blog:': 'content',
-    'jobs:': 'jobs',
-    'research:': 'research',
+    'marketing:': 'marketing', 'campaign:': 'marketing', 'gofundme:': 'marketing',
+    'transkrybe:': 'transkrybe', 'content:': 'content', 'blog:': 'content',
+    'jobs:': 'jobs', 'research:': 'research',
   };
 
   for (const [keyword, agentKey] of Object.entries(routingMap)) {
     if (lowerMessage.includes(keyword)) {
       const strippedMessage = message.replace(new RegExp(keyword, 'i'), '').trim();
-      await postAsAgent('exec-pm', channel, `📨 Routing to ${agentKey} agent...`);
+      await postAsAgent('exec-pm', channel, '📨 Routing to ' + agentKey + ' agent...');
       await agentToAgent('exec-pm', agentKey, strippedMessage);
       return;
     }
   }
 
-  // Build conversation history context
   const historyContext = history.length > 0
-    ? `\n\nRECENT CONVERSATION HISTORY:\n` +
-      history.slice(-15).map(h => h.content).join('\n')
+    ? '
+
+RECENT CONVERSATION HISTORY:
+' + history.slice(-15).map(h => h.content).join('
+')
     : '';
 
-  // Scheduled tasks: use a briefer system prompt
-  const systemPrompt = isScheduled
-    ? `${SYSTEM_PROMPT}\n\nThis is a scheduled autonomous task. Execute it completely and post results to your channel.`
-    : SYSTEM_PROMPT;
-
-  const response = await callClaudeWithTools(
-    systemPrompt,
-    `${isScheduled ? 'SCHEDULED TASK: ' : 'Jesse says: '}"${message}"
+  const response = await callClaude(
+    SYSTEM_PROMPT,
+    'Jesse says: "' + message + '"
 
 Current project state:
-${JSON.stringify(state.projects, null, 2)}
+' + JSON.stringify(state.projects, null, 2) + '
 
 Pending tasks:
-${JSON.stringify(state.tasks, null, 2)}
+' + JSON.stringify(state.tasks, null, 2) + historyContext + '
 
-Long-term memory:
-${JSON.stringify(memory, null, 2)}
-${historyContext}
-
-Respond as the Exec PM. Keep responses brief and actionable.`,
-    [RUN_COWORK_TASK_TOOL],
-    createCoworkExecutor({ agentKey: 'exec-pm', channelId: channel, threadTs: thread_ts }),
+Respond as the Exec PM. Keep responses brief and actionable.',
     { maxTokens: 1000 }
   );
 
   await postAsAgent('exec-pm', channel, response, null, thread_ts);
 
-  // Log the task if it's an action item
-  if (!isScheduled && (lowerMessage.includes('do ') || lowerMessage.includes('create ') ||
-      lowerMessage.includes('write ') || lowerMessage.includes('send '))) {
-    // Check if response suggests routing to an agent — if so, add to their queue
-    await addTask('exec-pm', `Jesse requested: ${message.slice(0, 100)}`, { source: 'user' });
+  if (lowerMessage.includes('do ') || lowerMessage.includes('create ') || lowerMessage.includes('write ') || lowerMessage.includes('send ')) {
+    await addTask('exec-pm', 'Jesse requested: ' + message.slice(0, 100));
   }
 }
 
-/**
- * Generate a cross-agent status report
- */
 async function generateStatusReport(state) {
   return callClaude(
     SYSTEM_PROMPT,
-    `Generate a comprehensive status report for Jesse covering all active projects.
+    'Generate a comprehensive status report for Jesse covering all active projects.
 
-State: ${JSON.stringify(state, null, 2)}
+State: ' + JSON.stringify(state, null, 2) + '
 
-Format as a tight Slack message. One line per project max. Flag anything red.`,
+Format as a tight Slack message. One line per project max. Flag anything red.',
     { maxTokens: 600 }
   );
 }
