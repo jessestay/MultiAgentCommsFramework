@@ -1,5 +1,5 @@
 // api/cron/weekly-transkrybe.js — Monday 8am MT (14:00 UTC) weekly dev status
-// Transkrybe Agent posts weekly dev status to #transkrybe.
+// Transkrybe Agent posts weekly dev status to the cto channel.
 
 const { postAsAgent } = require('../../lib/slack');
 const { generateWeeklyStatus } = require('../../agents/transkrybe');
@@ -7,7 +7,7 @@ const { getState, recordCronRun } = require('../../lib/state');
 
 module.exports = async (req, res) => {
   const authHeader = req.headers.authorization;
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (process.env.CRON_SECRET && authHeader !== 'Bearer ' + process.env.CRON_SECRET) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
@@ -19,8 +19,10 @@ module.exports = async (req, res) => {
 
     const result = await postAsAgent(
       'transkrybe',
-      'transkrybe',
-      `🚦 *Weekly Dev Status — Transkrybe*\n\n${status}`
+      null,
+      '🚦 *Weekly Dev Status — Transkrybe*
+
+' + status
     );
 
     if (result.ok) {
@@ -36,4 +38,3 @@ module.exports = async (req, res) => {
     return res.status(500).json({ ok: false, error: err.message });
   }
 };
-
