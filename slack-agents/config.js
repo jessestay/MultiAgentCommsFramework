@@ -66,6 +66,10 @@ Delegation names — use these exact names when delegating:
 - CTO — technical architecture, transkrybe build, GitHub, infrastructure, AI/ML
 - Job Coach — executive job search, pipeline, career strategy
 - CUXO — UX design, accessibility audit, transkrybe frontend
+
+DMs: You can DM Jesse directly when something is private, sensitive, or not for the whole channel — an unapproved draft, a delicate question, a quiet heads-up. Small group DMs work for private huddles. Default to the channel; DM when privacy matters. Never DM another agent — you share one process, so route inter-agent talk through the [from: X → Y] delegation format instead.
+
+TASKS: Commitments become Vikunja tasks. When you take on work, it gets a task with exactly one owner and a due date; mark it done when delivered. Exec PM owns the board — it prioritizes by revenue impact, keeps the backlog ordered, and makes sure nothing slips.
 `;
 
 // ─── Agent Definitions ────────────────────────────────────────────────────────
@@ -92,6 +96,8 @@ You run morning briefings at 8am MT in #management: project status, GitHub activ
 You don't write code, design assets, copy, legal docs, or financial plans. All of that gets delegated to the right person, and then you follow up to make sure it happened.
 
 Delegation format: [from: Exec PM → AgentName] specific, clear request.
+
+TASK OWNERSHIP (Vikunja): You own the team's task board. Every delegation you make becomes a tracked task with exactly one owner and a due date. You triage the board regularly: overdue work gets escalated, unassigned work gets an owner, and everything is prioritized by expected revenue impact — work that makes the company money comes first, then urgency, then effort. Stale tasks get killed or re-scoped. Nothing slips through the cracks on your watch.
 
 ${JESSE_CONTEXT}
 ${HUMAN_VOICE}`,
@@ -380,8 +386,53 @@ const DELEGATION_TARGETS = {
   'fbexpert':                'facebook',
 };
 
+// ─── Vikunja task management ────────────────────────────────────────────────
+// Each agent has their own Vikunja account (SETUP.md Part 5). Team tasks live
+// in VIKUNJA_PROJECT_ID. Auth is a per-agent API token (VIKUNJA_TOKEN_<AGENTID>)
+// falling back to the shared VIKUNJA_TOKEN. Without VIKUNJA_URL + a token,
+// task tracking is a silent no-op — Slack keeps working normally.
+function envInt(name) {
+  const v = process.env[name];
+  if (!v) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+const VIKUNJA = {
+  url: process.env.VIKUNJA_URL || null,
+  projectId: envInt('VIKUNJA_PROJECT_ID'),
+  // agent id → Vikunja user id (filled in after creating the agent accounts)
+  users: {
+    execPM:   envInt('VIKUNJA_USER_EXECPM'),
+    cmo:      envInt('VIKUNJA_USER_CMO'),
+    cco:      envInt('VIKUNJA_USER_CCO'),
+    cro:      envInt('VIKUNJA_USER_CRO'),
+    cfo:      envInt('VIKUNJA_USER_CFO'),
+    cto:      envInt('VIKUNJA_USER_CTO'),
+    cuxo:     envInt('VIKUNJA_USER_CUXO'),
+    lawyer:   envInt('VIKUNJA_USER_LAWYER'),
+    jobcoach: envInt('VIKUNJA_USER_JOBCOACH'),
+    facebook: envInt('VIKUNJA_USER_FACEBOOK'),
+  },
+};
+
+// Keyword → agent routing for unassigned tasks during Exec PM triage.
+// First match wins — specific patterns before general ones.
+const TASK_ROUTING = [
+  { pattern: /facebook|meta ads/i,                         agent: 'facebook' },
+  { pattern: /legal|contract|compliance|lawyer|gdpr/i,      agent: 'lawyer' },
+  { pattern: /budget|invoice|finance|accounting|tax|mrr/i,  agent: 'cfo' },
+  { pattern: /code|transkrybe|bug|deploy|github|server/i,   agent: 'cto' },
+  { pattern: /design|ux|landing page/i,                     agent: 'cuxo' },
+  { pattern: /job|resume|interview|application/i,           agent: 'jobcoach' },
+  { pattern: /research|competitor|analysis/i,               agent: 'cro' },
+  { pattern: /content|blog|draft|newsletter|video|podcast/i, agent: 'cco' },
+  { pattern: /market|brand|campaign|\bads\b|social/i,       agent: 'cmo' },
+];
+
 module.exports = {
   CHANNELS, ALL_CHANNELS, CHANNEL_IDS,
-  AGENTS, JESSE_CONTEXT, HUMAN_VOICE,
+  AGENTS, JESSE_CONTEXT, HUMAN_VOICE, JESSE_SLACK_ID,
   AGENT_BY_HANDLE, AGENT_BY_ID, DELEGATION_TARGETS,
+  VIKUNJA, TASK_ROUTING,
 };

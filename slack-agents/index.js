@@ -9,6 +9,7 @@ const { App } = require('@slack/bolt');
 const { AGENTS, CHANNELS, CHANNEL_IDS, DELEGATION_TARGETS } = require('./config');
 const state = require('./utils/state');
 const delegation = require('./utils/delegation');
+const { isDMEvent } = require('./utils/dm');
 
 // ─── Validate environment ─────────────────────────────────────────────────────
 const REQUIRED_ENV = ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET', 'SLACK_APP_TOKEN', 'ANTHROPIC_API_KEY'];
@@ -130,6 +131,8 @@ function detectAddressedAgent(text) {
     'cro': 'cro',
     'lawyer': 'lawyer', 'counsel': 'lawyer',
     'cfo': 'cfo',
+    'cto': 'cto', 'tech': 'cto',
+    'facebook': 'facebook', 'facebook expert': 'facebook', 'fb expert': 'facebook',
   };
   for (const [pattern, agentId] of Object.entries(handleMap)) {
     // Match @handle or "AgentName:" at start of message
@@ -229,6 +232,17 @@ app.event('message', async ({ event, say, client }) => {
     return;
   }
 
+  // 2b. DMs: no channel primary agent here — default to Exec PM (Jesse's
+  // single point of contact) unless another agent was addressed above.
+  // (Requires the message.im / message.mpim event subscriptions — SETUP.md 1c.)
+  if (isDMEvent(event)) {
+    console.log(`[index] DM → execPM: "${text.slice(0, 80)}"`);
+    await execPM.handleMention({ event, say, client }).catch(err =>
+      console.error('[index] DM handling error:', err)
+    );
+    return;
+  }
+
   // 3. If message is in a channel with a primary agent, respond to any substantive message
   // (3+ chars filters out single-char noise, emoji reactions-as-text, bare punctuation)
   const primaryId = CHANNEL_PRIMARY_AGENT[channelName];
@@ -298,6 +312,25 @@ app.command('/jobs', async ({ ack, say }) => {
   await jobcoach.searchJobs().catch(err => {
     console.error('[index] Manual job scan error:', err);
     say('Job scan failed. Check Railway logs.');
+  });
+});
+
+app.command('/tasks', async ({ ack, say }) => {
+  await ack();
+  const tasks = require('./utils/tasks');
+  const summary = await tasks.openTasksSummary().catch(err => {
+    console.error('[index] /tasks error:', err);
+    return null;
+  });
+  await say(summary || 'Task tracking is not configured yet — see SETUP.md Part 5 (Vikunja).');
+});
+
+app.command('/triage', async ({ ack, say }) => {
+  await ack();
+  await say('Triaging the task board...');
+  await execPM.triageBoard().catch(err => {
+    console.error('[index] Manual triage error:', err);
+    say('Triage failed. Check Railway logs.');
   });
 });
 
@@ -372,8 +405,9 @@ async function start() {
   console.log('  ⚖️  Lawyer     (@lawyer)     — #management');
   console.log('  💰 CFO        (@cfo)        — #management');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('Slash commands: /health /briefing /research /content /jobs');
-  console.log('Delegation: [from: AgentA → AgentB] message');
+  console.log('Slash commands: /health /briefing /research /content /jobs /tasks /triage');
+  console.log('Delegation: [from: AgentA → AgentB] message  (auto-tracked as a Vikunja task)');
+  console.log('DMs: DM the bot — prefix with @handle to reach a specific agent, else Exec PM answers');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 }
 
