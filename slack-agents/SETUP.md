@@ -29,6 +29,9 @@ future change should too:
   and carried out in **threads** so the channel stays readable.
 - Results and handoffs are posted where the work was requested, not filed
   away in a side channel.
+- DMs between members are normal wherever they'd be normal on a human team.
+- Every request made *of* the end user follows the step-by-step standard in
+  Part 7, on every DM channel.
 
 ## Part 1 — Slack App Changes
 
@@ -312,3 +315,41 @@ cp .env.example .env
 npm install
 npm run dev
 ```
+
+---
+
+## Part 7 — End-user communication standard
+
+### DM channels
+
+A "DM channel" is any direct line between the end user and a member, or between
+members. The MACF recognizes three, and **all follow the same DM rules**
+(Part 6):
+
+- **Slack DMs** — `message.im` / `message.mpim` via this repo's bot.
+- **Muse chat** — the user's conversation with the assistant. The assistant
+  speaks here as the team's consolidated voice.
+- **Claude dispatch** — any Claude-initiated handoff that reaches the end user:
+  subagent reports, scheduled-job deliveries, background task results.
+
+Rules on every channel: the end user may reach any member and every member
+responds; only the CEO-role holder initiates direct end-user contact; teammates
+may DM each other whenever it would be normal on a human team.
+
+### Request format — Google's developer documentation framework
+
+Every request the team makes *of* the end user, on any DM channel, is a single
+consolidated step-by-step message:
+
+1. **Goal** — one line: what this accomplishes and why.
+2. **Prerequisites** — everything needed before step 1 (access, accounts,
+   decisions only the end user can make).
+3. **Numbered steps** — one imperative action per step ("Open…", "Add…",
+   "Tell me…"), each with its expected outcome so success is verifiable.
+4. **If stuck** — what to do when a step fails.
+5. **One message per need** — never scatter asks across messages, channels,
+   or members.
+
+This is the standard for all end-user communication in the MACF. It is also
+injected into every agent's system prompt (`HUMAN_VOICE` in `config.js`), and
+the recognized channels are declared as `DM_CHANNELS` in `config.js`.

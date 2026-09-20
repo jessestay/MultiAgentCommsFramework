@@ -1,7 +1,7 @@
 // tests/config.test.js — Validates agent config structure
 'use strict';
 
-const { AGENTS, CHANNELS, ALL_CHANNELS, DELEGATION_TARGETS, AGENT_BY_ID } = require('../config');
+const { AGENTS, CHANNELS, ALL_CHANNELS, DELEGATION_TARGETS, AGENT_BY_ID, DM_CHANNELS, HUMAN_VOICE } = require('../config');
 
 describe('MACF Config — 8 agents defined', () => {
   const EXPECTED_AGENTS = ['execPM', 'cmo', 'cco', 'jobcoach', 'cuxo', 'cro', 'lawyer', 'cfo'];
@@ -120,5 +120,17 @@ describe('MACF role system prompts', () => {
       expect(agent.systemPrompt).toContain("Jesse's ✅");
       expect(agent.systemPrompt).toContain('isolated memory');
     });
+  });
+});
+
+describe('MACF end-user communication standard', () => {
+  test('DM_CHANNELS declares Slack, Muse, and Claude dispatch', () => {
+    expect(DM_CHANNELS).toEqual(expect.arrayContaining(['slack', 'muse', 'claude-dispatch']));
+  });
+
+  test('HUMAN_VOICE carries the step-by-step end-user request standard', () => {
+    expect(HUMAN_VOICE).toMatch(/step-by-step/i);
+    expect(HUMAN_VOICE).toMatch(/Google's developer documentation framework/);
+    expect(HUMAN_VOICE).toMatch(/CEO-role holder/);
   });
 });

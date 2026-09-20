@@ -57,6 +57,36 @@ Hard rules:
 // Reassign by changing this one constant; everything else keys off it.
 const CEO_AGENT_ID = 'execPM';
 
+// ─── DM channels ──────────────────────────────────────────────────────────────
+// A "DM channel" is any direct line between the end user and a member, or
+// between members. The MACF recognizes three, and every one of them follows
+// the same DM rules (Part 6):
+//   - slack:           Slack DMs via message.im / message.mpim (this repo's bot)
+//   - muse:            the user's chat with the assistant — the assistant speaks
+//                      here as the team's consolidated voice
+//   - claude-dispatch: any Claude-initiated handoff that reaches the end user —
+//                      subagent reports, scheduled-job deliveries, background
+//                      task results
+// Rules on every channel: the end user may reach any member and every member
+// responds; only the CEO-role holder initiates direct end-user contact;
+// teammates may DM each other whenever it would be normal on a human team;
+// any request made OF the end user follows the end-user request standard below.
+const DM_CHANNELS = ['slack', 'muse', 'claude-dispatch'];
+
+// ─── End-user request standard ───────────────────────────────────────────────
+// Every request the team makes OF the end user, on any DM channel, is a single
+// consolidated step-by-step message following Google's developer documentation
+// framework:
+//   1. Goal — one line: what this accomplishes and why.
+//   2. Prerequisites — everything needed before step 1 (access, accounts,
+//      decisions only the end user can make).
+//   3. Numbered steps — one imperative action per step ("Open…", "Add…",
+//      "Tell me…"), each with its expected outcome so success is verifiable.
+//   4. If stuck — what to do when a step fails.
+//   5. One message per need — never scatter asks across messages, channels,
+//      or members. In the Muse channel the assistant speaks as the team's
+//      consolidated voice.
+
 // ─── Communication Style (injected into every agent) ─────────────────────────
 // Jesse's explicit instruction: agents should talk like real humans with
 // individual personalities. No formatted reports, no bullet-point walls,
@@ -78,6 +108,8 @@ Delegation names — use these exact names when delegating:
 - CUXO — UX design, accessibility audit, transkrybe frontend
 
 DMs: Private 1:1s and small huddles with teammates are normal — your private channel is the [from: X → Y] delegation format, which never posts to a channel. Use it freely, the way humans use DMs. Jesse (the end user) may DM anyone directly, and you always respond when he does. But never initiate a DM to Jesse unless you hold the CEO role. Need something from him? Go through the PM/CEO, and only after you're sure the team can't handle it without his input.
+
+End-user requests: the team speaks to Jesse with one voice, on every DM channel (Slack DMs, Muse chat, Claude dispatch). Any need the team has of Jesse is delivered as a single consolidated step-by-step message following Google's developer documentation framework: one-line goal, prerequisites, then numbered steps — one imperative action per step with its expected outcome — and what to do if a step fails. Never scatter asks across messages, channels, or members. Only the CEO-role holder delivers these to Jesse; everyone else routes the need through the PM/CEO.
 
 TASKS: Commitments become Vikunja tasks. When you take on work, it gets a task with exactly one owner and a due date; mark it done when delivered. Exec PM owns the board — it prioritizes by revenue impact, keeps the backlog ordered, and makes sure nothing slips.
 `;
@@ -442,7 +474,7 @@ const TASK_ROUTING = [
 
 module.exports = {
   CHANNELS, ALL_CHANNELS, CHANNEL_IDS,
-  AGENTS, JESSE_CONTEXT, HUMAN_VOICE, JESSE_SLACK_ID, CEO_AGENT_ID,
+  AGENTS, JESSE_CONTEXT, HUMAN_VOICE, JESSE_SLACK_ID, CEO_AGENT_ID, DM_CHANNELS,
   AGENT_BY_HANDLE, AGENT_BY_ID, DELEGATION_TARGETS,
   VIKUNJA, TASK_ROUTING,
 };
