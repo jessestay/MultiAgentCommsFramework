@@ -349,6 +349,9 @@ consolidated step-by-step message:
 4. **If stuck** — what to do when a step fails.
 5. **One message per need** — never scatter asks across messages, channels,
    or members.
+6. **Links, not hunts** — whenever a step asks the end user to open something
+   or go somewhere, include the direct link (or a button/widget where the
+   channel supports one) so the action is one tap.
 
 This is the standard for all end-user communication in the MACF. It is also
 injected into every agent's system prompt (`HUMAN_VOICE` in `config.js`), and

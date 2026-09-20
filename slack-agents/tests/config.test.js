@@ -132,5 +132,6 @@ describe('MACF end-user communication standard', () => {
     expect(HUMAN_VOICE).toMatch(/step-by-step/i);
     expect(HUMAN_VOICE).toMatch(/Google's developer documentation framework/);
     expect(HUMAN_VOICE).toMatch(/CEO-role holder/);
+    expect(HUMAN_VOICE).toMatch(/direct link/i);
   });
 });
