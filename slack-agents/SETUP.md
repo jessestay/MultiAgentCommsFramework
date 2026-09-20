@@ -338,8 +338,14 @@ may DM each other whenever it would be normal on a human team.
 
 ### Request format — Google's developer documentation framework
 
-Every request the team makes *of* the end user, on any DM channel, is a single
-consolidated step-by-step message:
+**Automate first — operators, not askers.** Before writing steps for the end
+user, the team does the task itself whenever possible: browser automation with
+vault-stored auth (Jesse authenticates once; the team keeps the auth and
+acts), APIs, its own access. Step-by-step instructions are the fallback
+**only** for what truly needs his human hands.
+
+When steps are genuinely needed, every request the team makes *of* the end
+user, on any DM channel, is a single consolidated step-by-step message:
 
 1. **Goal** — one line: what this accomplishes and why.
 2. **Prerequisites** — everything needed before step 1 (access, accounts,
