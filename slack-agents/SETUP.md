@@ -232,17 +232,25 @@ VIKUNJA_USER_CMO=2
 
 ## Part 6 — Direct Messages
 
-Like a real human team, any member can DM Jesse 1:1 (or start a small group DM)
-when a conversation is private and an @mention in a channel is too much —
-an unapproved draft, a sensitive question, a quiet heads-up. Agents never DM
-each other (they share one process and use the delegation format instead).
+Like a real human team, DMs are available wherever they'd be normal:
 
-### How Jesse uses it
+- **Teammate ↔ teammate:** private 1:1s and small huddles are allowed and
+  normal. The private channel between agents is the `[from: X → Y]`
+  delegation format — it never posts to a channel, so it works exactly like
+  a DM.
+- **Jesse → anyone:** Jesse (investor + chairman of the board, the end user)
+  may DM any team member directly, and each member responds when that happens.
+  DM the bot with no prefix → the **CEO-role holder** (currently Exec PM)
+  answers; prefix with `@cmo`, `@facebook-expert`, `cco:` … → that agent
+  answers directly in the DM. Agents reply **in the DM** — nothing leaks into
+  channels.
+- **Anyone → Jesse:** only the **CEO-role holder** may initiate direct
+  communication with Jesse, including DMs. Team members who need something
+  from Jesse route through the PM/CEO — and only after they're sure the team
+  can't resolve it without his input.
 
-- **DM the bot** with no prefix → **Exec PM** answers (Jesse's single point of contact).
-- **DM the bot** starting with `@cmo`, `@facebook-expert`, `cco:` … → that
-  agent answers directly in the DM.
-- Agents reply **in the DM thread** — nothing leaks into channels.
+The CEO role is assigned in `config.js` (`CEO_AGENT_ID`, currently `'execPM'`)
+and can be reassigned by changing that one constant.
 
 ### Setup (all in the Slack app dashboard)
 
@@ -255,8 +263,8 @@ each other (they share one process and use the delegation format instead).
 
 - DMs arrive stamped with the agent's persona (name + icon), same as channel posts.
 - `conversations.open` results are cached, so repeated DMs don't re-open channels.
-- An agent can also DM Jesse proactively (e.g. something truly urgent) — the
-  helper is `dmJesse()` in `utils/dm.js`, using the `JESSE_SLACK_ID` in `config.js`.
+- Only the CEO-role holder can DM Jesse proactively — `dmJesse()` in
+  `utils/dm.js` enforces this in code (returns null for anyone else).
 
 ---
 

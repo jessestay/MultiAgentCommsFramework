@@ -34,7 +34,7 @@ const CHANNEL_IDS = {
 const JESSE_SLACK_ID = 'U12QFAS8L';
 
 const JESSE_CONTEXT = `
-Jesse Stay is your CEO. His Slack user ID is U12QFAS8L — if you ever need to tag him in a message, use <@U12QFAS8L> (not "@jesse" — that doesn't resolve as a real tag).
+Jesse Stay is the investor and chairman of the board — the end user this team serves. His Slack user ID is U12QFAS8L — if you ever need to tag him in a message, use <@U12QFAS8L> (not "@jesse" — that doesn't resolve as a real tag).
 
 transkrybe.com — music transcription SaaS he's building. Next.js frontend, Modal/Python backend. GitHub: jessestay/transkrybe.
 
@@ -47,6 +47,16 @@ Hard rules:
 2. You have isolated memory — you can't see what other agents know. Use delegation to get info: [from: YourRole \u2192 TargetRole] your message.
 `;
 
+// ─── CEO communication role ─────────────────────────────────────────────────
+// The CEO-assigned role is the ONLY team member that may directly communicate
+// with the end user (Jesse — investor and chairman of the board), including
+// initiating DMs. The end user may DM anyone directly, and every member
+// responds. Team members who need something from the end user route through
+// the PM/CEO, and only when the team can't resolve it without them.
+// Teammate-to-teammate DMs are always allowed — that's normal human-team behavior.
+// Reassign by changing this one constant; everything else keys off it.
+const CEO_AGENT_ID = 'execPM';
+
 // ─── Communication Style (injected into every agent) ─────────────────────────
 // Jesse's explicit instruction: agents should talk like real humans with
 // individual personalities. No formatted reports, no bullet-point walls,
@@ -54,7 +64,7 @@ Hard rules:
 const HUMAN_VOICE = `
 How to communicate: Write like a person talking to their CEO, not like a bot producing a report. Short paragraphs. Plain sentences. No headers, no bullet-point lists unless the information genuinely requires it (a list of 5+ discrete items, a spec table, that kind of thing). No emoji in the message body — your username icon is enough. Be direct, be specific, and sound like yourself. If you're not sure whether something sounds human, read it back out loud. If it sounds like a press release or an AI summary, rewrite it.
 
-How to route work: Jesse only hears from Exec PM. Route results back to Exec PM using the delegation format. The only exception is when you genuinely need Jesse's direct input or decision — and in that case, tag him properly using <@U12QFAS8L> (NOT "Jesse" or "@Jesse" in plain text — those don't create real Slack notifications). Never say "Jesse should..." without tagging him if you need his response. When tagging him, be brief and specific about what you need from him.
+How to route work: The CEO-role holder (currently Exec PM) is the team's single point of contact with Jesse. Route results back through the CEO using the delegation format. If you genuinely need Jesse's direct input or decision and you don't hold the CEO role, delegate to the PM/CEO — they decide whether it truly needs Jesse. Only reach Jesse directly when the team cannot resolve it without him. When the CEO does tag him, be brief and specific about what is needed.
 
 Delegation names — use these exact names when delegating:
 - Exec PM (or execpm) — coordinates everything, talks to Jesse
@@ -67,7 +77,7 @@ Delegation names — use these exact names when delegating:
 - Job Coach — executive job search, pipeline, career strategy
 - CUXO — UX design, accessibility audit, transkrybe frontend
 
-DMs: You can DM Jesse directly when something is private, sensitive, or not for the whole channel — an unapproved draft, a delicate question, a quiet heads-up. Small group DMs work for private huddles. Default to the channel; DM when privacy matters. Never DM another agent — you share one process, so route inter-agent talk through the [from: X → Y] delegation format instead.
+DMs: Private 1:1s and small huddles with teammates are normal — your private channel is the [from: X → Y] delegation format, which never posts to a channel. Use it freely, the way humans use DMs. Jesse (the end user) may DM anyone directly, and you always respond when he does. But never initiate a DM to Jesse unless you hold the CEO role. Need something from him? Go through the PM/CEO, and only after you're sure the team can't handle it without his input.
 
 TASKS: Commitments become Vikunja tasks. When you take on work, it gets a task with exactly one owner and a due date; mark it done when delivered. Exec PM owns the board — it prioritizes by revenue impact, keeps the backlog ordered, and makes sure nothing slips.
 `;
@@ -432,7 +442,7 @@ const TASK_ROUTING = [
 
 module.exports = {
   CHANNELS, ALL_CHANNELS, CHANNEL_IDS,
-  AGENTS, JESSE_CONTEXT, HUMAN_VOICE, JESSE_SLACK_ID,
+  AGENTS, JESSE_CONTEXT, HUMAN_VOICE, JESSE_SLACK_ID, CEO_AGENT_ID,
   AGENT_BY_HANDLE, AGENT_BY_ID, DELEGATION_TARGETS,
   VIKUNJA, TASK_ROUTING,
 };

@@ -6,7 +6,7 @@
 require('dotenv').config();
 
 const { App } = require('@slack/bolt');
-const { AGENTS, CHANNELS, CHANNEL_IDS, DELEGATION_TARGETS } = require('./config');
+const { AGENTS, CHANNELS, CHANNEL_IDS, DELEGATION_TARGETS, CEO_AGENT_ID } = require('./config');
 const state = require('./utils/state');
 const delegation = require('./utils/delegation');
 const { isDMEvent } = require('./utils/dm');
@@ -232,12 +232,14 @@ app.event('message', async ({ event, say, client }) => {
     return;
   }
 
-  // 2b. DMs: no channel primary agent here — default to Exec PM (Jesse's
-  // single point of contact) unless another agent was addressed above.
+  // 2b. DMs: no channel primary agent here — default to the CEO-role holder
+  // (Jesse's single point of contact) unless another agent was addressed above.
+  // Jesse may DM anyone directly; every member responds when that happens.
   // (Requires the message.im / message.mpim event subscriptions — SETUP.md 1c.)
   if (isDMEvent(event)) {
-    console.log(`[index] DM → execPM: "${text.slice(0, 80)}"`);
-    await execPM.handleMention({ event, say, client }).catch(err =>
+    const ceoId = CEO_AGENT_ID && AGENT_MODULES[CEO_AGENT_ID] ? CEO_AGENT_ID : 'execPM';
+    console.log(`[index] DM → ${ceoId}: "${text.slice(0, 80)}"`);
+    await AGENT_MODULES[ceoId].handleMention({ event, say, client }).catch(err =>
       console.error('[index] DM handling error:', err)
     );
     return;
@@ -407,7 +409,7 @@ async function start() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('Slash commands: /health /briefing /research /content /jobs /tasks /triage');
   console.log('Delegation: [from: AgentA → AgentB] message  (auto-tracked as a Vikunja task)');
-  console.log('DMs: DM the bot — prefix with @handle to reach a specific agent, else Exec PM answers');
+  console.log('DMs: DM the bot — prefix with @handle to reach a specific agent, else the CEO role answers');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 }
 

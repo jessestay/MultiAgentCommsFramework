@@ -84,4 +84,18 @@ describe('sendAgentDM / sendGroupDM', () => {
     expect(state.get).toHaveBeenCalledWith('dm', `dm_channel_${JESSE_SLACK_ID}`);
     expect(ch).toBe('D_JESSE');
   });
+
+  test('dmJesse refuses agents that do not hold the CEO role', async () => {
+    const client = mockClient();
+    const ch = await dm.dmJesse(client, AGENTS.cmo, 'hey Jesse');
+    expect(ch).toBeNull();
+    expect(client.chat.postMessage).not.toHaveBeenCalled();
+    expect(client.conversations.open).not.toHaveBeenCalled();
+  });
+
+  test('CEO_AGENT_ID is exported and currently held by Exec PM', () => {
+    const { CEO_AGENT_ID } = require('../config');
+    expect(CEO_AGENT_ID).toBe('execPM');
+    expect(AGENTS[CEO_AGENT_ID]).toBeDefined();
+  });
 });
