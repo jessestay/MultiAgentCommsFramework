@@ -335,7 +335,7 @@ async function start() {
   cto.init(app);
   facebook.init(app);
 
-  console.log('✅ All 8 MACF agents initialized');
+  console.log('✅ All 10 MACF agents initialized');
 
   // Open WebSocket connection to Slack
   await app.start();

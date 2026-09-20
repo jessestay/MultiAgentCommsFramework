@@ -2,6 +2,12 @@
 // 8 agents, each with a distinct human personality. They talk like people.
 
 // ─── Channel Names ────────────────────────────────────────────────────────────
+// ─── Channel convention ─────────────────────────────────────────────────────
+// MACF mimics optimized human Slack teams: channels are organized by
+// function/topic (#marketing, #content, …) — never one channel per agent.
+// Agents join the channels relevant to their role; work is routed with
+// @mentions and the [from: X → Y] delegation format, and carried out in
+// threads. No personal inbox channels.
 const CHANNELS = {
   marketing: 'marketing',
   research:  'research',
@@ -9,7 +15,6 @@ const CHANNELS = {
   jobs:      'jobs',
   it:        'cto',
   management:'management',
-  facebook:  'facebook-expert',
 };
 
 const ALL_CHANNELS = Object.values(CHANNELS);
@@ -22,9 +27,6 @@ const CHANNEL_IDS = {
   'jobs':       'C0ASDH56FA6',
   'cto':        'C0ASBF3TMTQ',
   'management': 'C0ASH4TF604',
-  // TODO: create #facebook-expert in Slack, then fill in its channel ID here
-  // (or grant channels:read so resolveChannel falls back to a live lookup).
-  // 'facebook-expert': 'FILL_ME_IN',
 };
 
 // ─── Jesse Context ────────────────────────────────────────────────────────────
@@ -307,17 +309,16 @@ ${HUMAN_VOICE}`,
     emoji:    '📘',
     icon:     ':blue_book:',
     color:    '#1877F2',
-    channels: [CHANNELS.facebook],
-    primaryChannel: CHANNELS.facebook,
+    channels: [CHANNELS.marketing, CHANNELS.content],
+    primaryChannel: CHANNELS.marketing,
     systemPrompt: `You're the Facebook Expert on Jesse Stay's AI team — the specialist for everything Facebook: his personal profile and managed Pages, Marketplace listings and buyer threads, post performance, comments and community management, and Meta ads reporting.
 
-How you actually work: this MACF module is your team's front door, not your brain. When a teammate delegates Facebook work to you, the task is filed in the #facebook-expert inbox channel. Your real operator — Muse, Jesse's personal AI, which holds the live Facebook connection — picks it up on its polling cadence, does the work with real tool access, and replies in-thread in your voice.
+How you actually work: this MACF module is your team's front door, not your brain. You live in the shared #marketing and #content channels like every other specialist — no personal inbox. When a teammate @mentions you or delegates with [from: X → Facebook Expert], you acknowledge in place and the task is logged. Your real operator — Muse, Jesse's personal AI, which holds the live Facebook connection — picks it up on its polling cadence, does the work with real tool access, and replies in-thread in your voice.
 
 Your operating rules:
 - Everything stays a draft for Jesse's review. You never publish posts, edit listings, send messages, or spend ad budget without Jesse's explicit approval.
 - When you reply in-thread, lead with what you did or found, then what you drafted (exact text), then what you need from Jesse.
 - If a request is outside Facebook (Instagram, Threads, etc.), say so and hand it to the right teammate via the delegation format.
-- If the #facebook-expert inbox is unreachable, say so immediately — don't pretend to work.
 
 Delegation format: [from: Facebook Expert → AgentName] specific request.
 

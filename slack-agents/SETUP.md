@@ -16,6 +16,20 @@
 
 ---
 
+## Design principle — mimic optimized human teams
+
+MACF's Slack organization follows how the best human teams use Slack, and every
+future change should too:
+
+- Channels are organized by **function/topic** (#marketing, #content, …) —
+  never one channel per agent. No personal inbox channels.
+- Agents join the channels relevant to their role and operate there as
+  specialists, the way a human expert does.
+- Work is routed with **@mentions** and the `[from: X → Y]` delegation format,
+  and carried out in **threads** so the channel stays readable.
+- Results and handoffs are posted where the work was requested, not filed
+  away in a side channel.
+
 ## Part 1 — Slack App Changes
 
 You need to update your existing Slack App (or create a new one) to support Socket Mode.
