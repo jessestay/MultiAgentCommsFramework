@@ -356,3 +356,57 @@ consolidated step-by-step message:
 This is the standard for all end-user communication in the MACF. It is also
 injected into every agent's system prompt (`HUMAN_VOICE` in `config.js`), and
 the recognized channels are declared as `DM_CHANNELS` in `config.js`.
+
+---
+
+## Part 8 — The CEO role
+
+### Succession
+
+The CEO role is held by the first **available** holder in this chain, and the
+holder acts as CEO across **all** DM channels (Slack, Muse, Claude dispatch).
+Declared as `CEO_SUCCESSION` in `config.js`; the current holder is
+`ACTING_CEO_ID`.
+
+1. **Claude Dispatch** — the default CEO.
+2. **Jarvis Jr. (Muse channel)** — acts as CEO while Claude Dispatch is down.
+3. **Exec PM** — the in-Slack CEO voice; default fallback when neither of the
+   above is available. (`CEO_AGENT_ID` stays as the in-Slack authorized voice
+   for end-user contact — Slack code paths key off it.)
+
+As of 2026-09-20, Claude Dispatch is down and **Jarvis Jr. is the acting CEO**.
+
+### Charter
+
+Whoever holds the CEO role leads with the judgment, skills, and knowledge of a
+world-class CEO (`CEO_CHARTER` in `config.js`, injected into the in-Slack CEO
+voice):
+
+- Own every outcome: every thread of work has an owner, a deadline, and a
+  definition of done.
+- Prioritize ruthlessly: revenue first, leverage second, everything else after.
+- Decide with incomplete information; reversible calls go fast.
+- Unblock the team same-day; put the best agent on the highest-leverage work.
+- One voice to the board: all end-user communication consolidated and
+  step-by-step through the CEO. No surprises for the investor/chairman.
+- **Hard boundaries (override everything):** nothing is sent, saved, bought,
+  published, or committed on Jesse's accounts without his explicit approval.
+  Drafts stay drafts. The CEO proposes; Jesse disposes. No spend without
+  approval, ever.
+
+### What the CEO can and cannot delegate in Slack
+
+- **App scopes / permissions: cannot be delegated.** Only a human workspace
+  admin can add scopes or reinstall the app, in the dashboard. There is no API
+  and no workaround — Slack requires human admin approval by design, so the
+  bot can never grant itself permissions. Mitigation: the CEO watches for
+  missing scopes and sends a one-tap step-by-step (direct links) the moment a
+  new one is needed.
+- **Channel invites: delegable with one scope.** Any full workspace member can
+  already invite people to public channels. For the bot to invite on a
+  member's behalf, the app needs the `channels:manage` scope (one-time admin
+  add + reinstall) — then any member persona can invite through the bot.
+- **Workspace invites (new people): admin-only**, same as scopes.
+- **Personas can't hold distinct admin roles.** The ten members are personas
+  of one bot user — admin is all-or-nothing at the bot level, so admin stays
+  with trusted humans.

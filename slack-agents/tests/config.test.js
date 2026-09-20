@@ -135,3 +135,25 @@ describe('MACF end-user communication standard', () => {
     expect(HUMAN_VOICE).toMatch(/direct link/i);
   });
 });
+
+describe('MACF CEO role', () => {
+  const { CEO_SUCCESSION, ACTING_CEO_ID, CEO_CHARTER } = require('../config');
+
+  test('CEO succession chain is Claude Dispatch -> Jarvis Jr. -> Exec PM', () => {
+    expect(CEO_SUCCESSION).toEqual(['claude-dispatch', 'jarvis-jr', 'execPM']);
+  });
+
+  test('acting CEO is one of the succession holders', () => {
+    expect(CEO_SUCCESSION).toContain(ACTING_CEO_ID);
+  });
+
+  test('CEO charter is exported and upholds Jesse\'s hard boundaries', () => {
+    expect(CEO_CHARTER).toMatch(/world-class CEO/);
+    expect(CEO_CHARTER).toMatch(/explicit approval/);
+    expect(CEO_CHARTER).toMatch(/No spend without approval/);
+  });
+
+  test('in-Slack CEO voice (Exec PM) carries the charter', () => {
+    expect(AGENTS.execPM.systemPrompt).toContain('CEO CHARTER');
+  });
+});

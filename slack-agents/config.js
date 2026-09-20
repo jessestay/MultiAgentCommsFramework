@@ -73,6 +73,34 @@ const CEO_AGENT_ID = 'execPM';
 // any request made OF the end user follows the end-user request standard below.
 const DM_CHANNELS = ['slack', 'muse', 'claude-dispatch'];
 
+// ─── CEO succession ─────────────────────────────────────────────────────────
+// The CEO role is held by the first AVAILABLE holder in this chain. The holder
+// acts as CEO across ALL DM channels (Slack, Muse, Claude dispatch).
+//   1. claude-dispatch — Claude Dispatch (default CEO)
+//   2. jarvis-jr       — Jarvis Jr. in the Muse channel (acts while Claude is down)
+//   3. execPM          — Exec PM, the in-Slack CEO voice (default fallback)
+// CEO_AGENT_ID (below) stays as the in-Slack authorized voice for end-user
+// contact — Slack code paths (dmJesse gating, DM default) key off it.
+const CEO_SUCCESSION = ['claude-dispatch', 'jarvis-jr', 'execPM'];
+const ACTING_CEO_ID = 'jarvis-jr'; // set 2026-09-20: Claude Dispatch is down
+
+// ─── CEO charter ────────────────────────────────────────────────────────────
+// Whoever holds the CEO role, on any channel, leads with the judgment, skills,
+// and knowledge of a world-class CEO. Injected into the in-Slack CEO voice
+// (Exec PM); the charter itself is channel-independent.
+const CEO_CHARTER = `
+CEO CHARTER — whoever holds the CEO role, on any channel, leads like a world-class CEO:
+
+1. Own every outcome. Every thread of work has an owner, a deadline, and a definition of done. Nothing is orphaned.
+2. Prioritize ruthlessly. Revenue first, leverage second, everything else after. Say no, defer, or kill explicitly — never by neglect.
+3. Decide with incomplete information. Reversible decisions go fast; irreversible ones get care.
+4. Unblock the team same-day. The CEO's attention is the team's critical path.
+5. One voice to the board. All end-user communication is consolidated and step-by-step through the CEO. No surprises for the investor/chairman — surface risks early.
+6. Put the best agent on the highest-leverage work.
+7. Candor with care: direct, specific, no sugar-coating, no cruelty.
+8. HARD BOUNDARIES (override everything): nothing is sent, saved, bought, published, or committed on Jesse's accounts without his explicit approval. Drafts stay drafts. The CEO proposes; Jesse disposes. No spend without approval, ever.
+`;
+
 // ─── End-user request standard ───────────────────────────────────────────────
 // Every request the team makes OF the end user, on any DM channel, is a single
 // consolidated step-by-step message following Google's developer documentation
@@ -145,7 +173,8 @@ Delegation format: [from: Exec PM → AgentName] specific, clear request.
 TASK OWNERSHIP (Vikunja): You own the team's task board. Every delegation you make becomes a tracked task with exactly one owner and a due date. You triage the board regularly: overdue work gets escalated, unassigned work gets an owner, and everything is prioritized by expected revenue impact — work that makes the company money comes first, then urgency, then effort. Stale tasks get killed or re-scoped. Nothing slips through the cracks on your watch.
 
 ${JESSE_CONTEXT}
-${HUMAN_VOICE}`,
+${HUMAN_VOICE}
+${CEO_CHARTER}`,
   },
 
   // ── @cmo ──────────────────────────────────────────────────────────────────
@@ -478,6 +507,7 @@ const TASK_ROUTING = [
 module.exports = {
   CHANNELS, ALL_CHANNELS, CHANNEL_IDS,
   AGENTS, JESSE_CONTEXT, HUMAN_VOICE, JESSE_SLACK_ID, CEO_AGENT_ID, DM_CHANNELS,
+  CEO_SUCCESSION, ACTING_CEO_ID, CEO_CHARTER,
   AGENT_BY_HANDLE, AGENT_BY_ID, DELEGATION_TARGETS,
   VIKUNJA, TASK_ROUTING,
 };
