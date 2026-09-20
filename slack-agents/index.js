@@ -37,6 +37,7 @@ const cro      = require('./agents/cro');
 const lawyer   = require('./agents/lawyer');
 const cfo      = require('./agents/cfo');
 const cto      = require('./agents/cto');
+const facebook = require('./agents/facebook');
 
 // Map agentId → module (for delegation routing)
 const AGENT_MODULES = {
@@ -49,6 +50,7 @@ const AGENT_MODULES = {
   lawyer,
   cfo,
   cto,
+  facebook,
 };
 
 // ─── Channel → Primary Agent routing ─────────────────────────────────────────
@@ -331,6 +333,7 @@ async function start() {
   lawyer.init(app);
   cfo.init(app);
   cto.init(app);
+  facebook.init(app);
 
   console.log('✅ All 8 MACF agents initialized');
 
