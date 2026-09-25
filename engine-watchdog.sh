@@ -30,12 +30,35 @@ if [ "${HATCHET_ENABLED:-0}" = "1" ]; then
   # variables are inherited by the macf process only (see engine/HATCHET.md).
   # The log redirect is opened by this root shell before the user switch, so
   # no log-file permission change is needed.
+  #
+  # VM RESILIENCE (2026-09-25): the VM snapshot-restores the system filesystem
+  # on reboot, wiping /etc/passwd, /home/macf, and resetting /home/hatch to
+  # drwxrws--- (which locks macf out). Self-heal all of it here:
+  if ! id macf >/dev/null 2>&1; then
+    echo "[watchdog] recreating missing user macf (VM snapshot-restore wiped it)" >> "$WATCHDOG_LOG"
+    useradd -m -s /bin/bash macf
+  fi
+  # The overlay FS blocks chgrp; macf is the only non-root shell user, so
+  # other-access bits are safe. o+x on $HOME = traverse-only (no listing).
+  chmod o+x "$HOME" 2>/dev/null
+  # The engine's dotenv must read .env (vars are also inherited, belt and suspenders).
+  chmod o+r "$ENGINE_DIR/.env" 2>/dev/null
+  # The embedded sidecar binary lives in the persistent workspace (the VM
+  # wipes /home/macf on reboot, and the SDK's fetch() doesn't use the proxy
+  # so re-download fails). Supply it directly to skip the download.
+  export HATCHET_CLIENT_EMBEDDED_BINARY_PATH="$ENGINE_DIR/../hatchet-sidecar/hatchet-embedded-sidecar_linux_amd64"
   set -a
   # shellcheck disable=SC1091
   . "$ENGINE_DIR/.env"
   set +a
   runuser -u macf -- env HOME=/home/macf HATCHET_ENABLED=1 \
-    node engine/runStandalone.js >> "$ENGINE_LOG" 2>&1 &
+    nohup node engine/runStandalone.js >> "$ENGINE_LOG" 2>&1 &
+    # NOTE: nohup is REQUIRED. Without it, the engine dies when the invoking
+    # exec session ends (observed live: "Session terminated, killing shell..."
+    # took the embedded Postgres down). Never launch the engine from a
+    # `background: true` exec — the runtime kills the whole process tree on
+    # session completion. Use a normal foreground exec; the & backgrounds it
+    # and it reparents to init.
 else
   nohup node engine/runStandalone.js >> "$ENGINE_LOG" 2>&1 &
 fi
