@@ -111,15 +111,18 @@ async function ensureEngineCron(hatchet, workflow) {
 // `deps` are passed through to the task fn (see runEngineTick).
 // Returns { workflow, task, worker }.
 async function registerEngineWorkflows(hatchet, deps) {
-  const task = hatchet.task({
+  // v1 SDK API shape (see @hatchet-dev/typescript-sdk/v1/declaration.d.ts):
+  // `hatchet.workflow()` takes NO `tasks` option — its options are name /
+  // description / concurrency / onCrons / onEvents etc. Tasks attach via
+  // `workflow.task({...})`. Passing a bogus `tasks` key is silently ignored
+  // and the server then rejects PutWorkflow with "tasks list cannot be nil"
+  // (seen live 2026-09-25).
+  const workflow = hatchet.workflow({ name: ENGINE_TICK_WORKFLOW });
+  const task = workflow.task({
     name: ENGINE_TICK_TASK,
     fn: () => runEngineTick(deps),
     retries: TICK_RETRIES,
     backoff: TICK_BACKOFF,
-  });
-  const workflow = hatchet.workflow({
-    name: ENGINE_TICK_WORKFLOW,
-    tasks: [task],
   });
   // worker.start() registers the workflow server-side; the cron trigger can
   // only resolve it by name AFTER this (see ensureEngineCron).

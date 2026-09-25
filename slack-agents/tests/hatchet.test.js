@@ -56,19 +56,24 @@ afterAll(() => {
 });
 
 // Fake Hatchet client with the REAL v1 API shape:
-//   task({name, fn, retries, backoff}) / workflow({name, tasks}) /
+//   workflow({name}) -> workflow.task({name, fn, retries, backoff}) /
 //   crons.create(workflow, {name, expression, input}) /
 //   crons.list({workflow}) / crons.delete(id) /
 //   worker(name, opts) (async) / stopEmbedded().
+// NOTE: hatchet.workflow() takes NO `tasks` option (see declaration.d.ts) —
+// tasks attach via workflow.task(). A mock encoding workflow({name, tasks})
+// would hide a real "tasks list cannot be nil" server rejection.
 function makeClient() {
   const taskObj = { __kind: 'task' };
-  const workflowObj = { __kind: 'workflow' };
+  const workflowObj = {
+    __kind: 'workflow',
+    task: jest.fn(() => taskObj),
+  };
   const workerObj = {
     start: jest.fn().mockResolvedValue(),
     stop: jest.fn().mockResolvedValue(),
   };
   const client = {
-    task: jest.fn(() => taskObj),
     workflow: jest.fn(() => workflowObj),
     crons: {
       create: jest.fn().mockResolvedValue({ metadata: { id: 'cron-1' } }),
@@ -149,10 +154,11 @@ describe('createHatchetClient()', () => {
 describe('registerEngineWorkflows()', () => {
   test('registers ONE durable task with retries: 3 and backoff { factor, maxSeconds }', async () => {
     const h = loadHatchetFresh();
-    const { client } = makeClient();
+    const { client, workflowObj } = makeClient();
     await h.registerEngineWorkflows(client, makeDeps());
-    expect(client.task).toHaveBeenCalledTimes(1);
-    const opts = client.task.mock.calls[0][0];
+    expect(client.workflow).toHaveBeenCalledTimes(1);
+    expect(workflowObj.task).toHaveBeenCalledTimes(1);
+    const opts = workflowObj.task.mock.calls[0][0];
     expect(opts.name).toBe('engine-tick-task');
     expect(opts.retries).toBe(3);
     expect(opts.backoff).toEqual({ factor: 2, maxSeconds: 300 });
@@ -166,7 +172,9 @@ describe('registerEngineWorkflows()', () => {
     expect(client.workflow).toHaveBeenCalledTimes(1);
     const opts = client.workflow.mock.calls[0][0];
     expect(opts.name).toBe('engine-tick');
-    expect(opts.tasks).toEqual([taskObj]);
+    // v1 API: tasks attach via workflow.task(), never a `tasks` constructor opt
+    expect(opts.tasks).toBeUndefined();
+    expect(workflowObj.task).toHaveBeenCalledTimes(1);
     expect(ret.workflow).toBe(workflowObj);
     expect(ret.task).toBe(taskObj);
   });
@@ -254,10 +262,10 @@ describe('registerEngineWorkflows()', () => {
 
   test('the registered task fn is the lock-first tick', async () => {
     const h = loadHatchetFresh();
-    const { client } = makeClient();
+    const { client, workflowObj } = makeClient();
     const deps = makeDeps();
     await h.registerEngineWorkflows(client, deps);
-    const fn = client.task.mock.calls[0][0].fn;
+    const fn = workflowObj.task.mock.calls[0][0].fn;
     // lock acquired -> runCycle exactly once, after the lock call
     await fn();
     expect(deps.acquireLock).toHaveBeenCalledWith({ holderId: 'test-holder:42' });
@@ -268,10 +276,10 @@ describe('registerEngineWorkflows()', () => {
 
   test('the registered task fn skips runCycle when the lock is held elsewhere', async () => {
     const h = loadHatchetFresh();
-    const { client } = makeClient();
+    const { client, workflowObj } = makeClient();
     const deps = makeDeps({ acquireLock: jest.fn().mockResolvedValue(false) });
     await h.registerEngineWorkflows(client, deps);
-    const fn = client.task.mock.calls[0][0].fn;
+    const fn = workflowObj.task.mock.calls[0][0].fn;
     await expect(fn()).resolves.toBeUndefined();
     expect(deps.acquireLock).toHaveBeenCalledTimes(1);
     expect(deps.runCycle).not.toHaveBeenCalled();
@@ -411,7 +419,7 @@ describe('startEngineWorker()', () => {
     const { client, workflowObj, workerObj } = makeClient();
     const deps = makeDeps();
     const { worker } = await captureHandlers(h, client, deps);
-    expect(client.task).toHaveBeenCalledTimes(1);
+    expect(workflowObj.task).toHaveBeenCalledTimes(1);
     expect(client.crons.create).toHaveBeenCalledTimes(1);
     expect(client.worker).toHaveBeenCalledWith('engine-worker', { workflows: [workflowObj] });
     expect(workerObj.start).toHaveBeenCalledTimes(1);
