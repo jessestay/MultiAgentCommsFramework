@@ -1,0 +1,35 @@
+# litellm-config.yaml — LiteLLM proxy config for the MACF Slack team (local models)
+#
+# Used when the Slack agents run with AI_BACKEND=litellm. The agents call
+# http://127.0.0.1:4000/v1/chat/completions with model 'quick' | 'smart' | 'best';
+# LiteLLM maps those aliases to local Ollama models below.
+#
+# Start (on the team's own machine):
+#   litellm --config litellm-config.yaml --host 127.0.0.1 --port 4000
+#
+# NOTE: the ollama/<...> model IDs below are PLACEHOLDERS. The concrete model
+# IDs will be chosen from a later inventory of the desktop's installed Ollama
+# models and hardware. Replace them before use.
+#
+# Local only: every entry points at Ollama on localhost. Do not add cloud or
+# paid providers here, and do not configure fallbacks to them.
+
+model_list:
+  - model_name: quick
+    litellm_params:
+      model: ollama/<quick-model-placeholder>
+      api_base: http://127.0.0.1:11434
+
+  - model_name: smart
+    litellm_params:
+      model: ollama/<smart-model-placeholder>
+      api_base: http://127.0.0.1:11434
+
+  - model_name: best
+    litellm_params:
+      model: ollama/<best-model-placeholder>
+      api_base: http://127.0.0.1:11434
+
+litellm_settings:
+  drop_params: true
+  num_retries: 0
