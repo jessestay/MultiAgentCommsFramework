@@ -67,8 +67,10 @@ async function mainAsync() {
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
 
-  // Keep the process alive; the engine's own interval does the work.
-  setInterval(() => {}, 1_000_000).unref();
+  // Keep the process alive: this no-op interval stays ref'd so the event
+  // loop never drains, even if the engine's own interval is stopped.
+  // (Never unref() it — an unref'd timer keeps nothing alive.)
+  setInterval(() => {}, 1_000_000);
 }
 
 if (require.main === module) {

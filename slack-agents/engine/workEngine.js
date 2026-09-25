@@ -346,8 +346,9 @@ function init(app) {
     runCycle().catch(err => log('cycle error:', err.message));
   }, CYCLE_MIN * 60_000);
 
-  // Keep the process alive as a service: never let the loop die silently.
-  if (timer.unref) timer.unref();
+  // Keep the process alive as a service: the cycle interval must stay
+  // ref'd so the event loop never drains. (Never unref() it — an unref'd
+  // timer lets Node exit once the first cycle finishes.)
 }
 
 function stop() {
