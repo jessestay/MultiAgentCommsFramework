@@ -19,9 +19,10 @@ const {
 } = require('../config');
 const vikunja = require('../utils/vikunja');
 const tasks = require('../utils/tasks');
-const { generateReport } = require('../utils/anthropic');
+const { generateReport, isConfigured: llmConfigured } = require('../utils/anthropic');
 const { dmJesse } = require('../utils/dm');
 const state = require('../utils/state');
+const { acquireLock, isLockTask, holderId: lockHolderId } = require('./lock');
 
 const ENGINE_ID = 'workEngine';
 const CYCLE_MIN = parseInt(process.env.WORK_ENGINE_CYCLE_MIN || '30', 10);
@@ -257,6 +258,18 @@ async function runCycle() {
     return;
   }
 
+  // Single-instance: only the lock holder works. Everyone else stands down
+  // BEFORE touching the board, Slack, or Jesse. The holder is passed
+  // explicitly ('<hostname>:<pid>') so lock ownership is auditable.
+  const holdsLock = await acquireLock({ holderId: lockHolderId() }).catch(err => {
+    log('lock error (fail closed):', err.message);
+    return false;
+  });
+  if (!holdsLock) {
+    log('lock held elsewhere — standing down this cycle');
+    return;
+  }
+
   let raw;
   try {
     raw = await vikunja.listTasks('execPM', VIKUNJA.projectId, {
@@ -266,7 +279,8 @@ async function runCycle() {
     log('could not list tasks:', err.message);
     return;
   }
-  const open = (Array.isArray(raw) ? raw : (raw && raw.tasks) || []).filter(t => !t.done);
+  const open = (Array.isArray(raw) ? raw : (raw && raw.tasks) || [])
+    .filter(t => !t.done && !isLockTask(t));
   log(`cycle: ${open.length} open tasks`);
 
   // 1. Jesse-gated items → immediate ping (one DM per cycle, first sighting;
@@ -283,6 +297,15 @@ async function runCycle() {
   }
   if (toPing.length) {
     await pingJesse(toPing).catch(err => log('pingJesse error:', err.message));
+  }
+
+  // 1b. No LLM on this host → watch mode. Gated pings (above) are the
+  // critical job and they're done; task work and idle proposals both need
+  // the model, so skip them. The desktop engine (which holds the API key)
+  // does the heavy lifting whenever it's live — the lock hands off cleanly.
+  if (!llmConfigured()) {
+    log('no LLM on this host — watch mode: gated pings sent, skipping task work');
+    return;
   }
 
   // 2. Work the top actionable task (dormant and Jesse-gated excluded).

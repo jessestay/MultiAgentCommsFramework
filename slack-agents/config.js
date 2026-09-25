@@ -523,6 +523,7 @@ for (const [key, agent] of Object.entries(AGENTS)) {
 // Delegation target name → agent id (for routing)
 const DELEGATION_TARGETS = {
   'execpm':                  'execPM',
+  'exec pm':                 'execPM',
   'executivesecretary':      'execPM',
   'executivepm':             'execPM',
   'cmo':                     'cmo',
@@ -542,6 +543,7 @@ const DELEGATION_TARGETS = {
   'research':                'cro',
   'researchofficer':         'cro',
   'jobcoach':                'jobcoach',
+  'job coach':               'jobcoach',
   'cuxo':                    'cuxo',
   'chiefuxofficer':          'cuxo',
   'ux':                      'cuxo',
