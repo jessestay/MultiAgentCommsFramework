@@ -41,8 +41,9 @@ if [ "${HATCHET_ENABLED:-0}" = "1" ]; then
   # The overlay FS blocks chgrp; macf is the only non-root shell user, so
   # other-access bits are safe. o+x on $HOME = traverse-only (no listing).
   chmod o+x "$HOME" 2>/dev/null
-  # The engine's dotenv must read .env (vars are also inherited, belt and suspenders).
-  chmod o+r "$ENGINE_DIR/.env" 2>/dev/null
+  # NOTE: .env stays 600 (root-only). The macf engine process inherits all
+  # vars from this root shell's environment (set -a + source above), so it
+  # does not need to read .env directly. Never chmod o+r the .env.
   # The embedded sidecar binary lives in the persistent workspace (the VM
   # wipes /home/macf on reboot, and the SDK's fetch() doesn't use the proxy
   # so re-download fails). Supply it directly to skip the download.
