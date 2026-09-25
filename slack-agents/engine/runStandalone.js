@@ -13,9 +13,17 @@ const { WebClient } = require('@slack/web-api');
 const { resolveSlackToken } = require('./slackToken');
 const workEngine = require('./workEngine');
 const tasks = require('../utils/tasks');
+const { HATCHET } = require('../config');
 const { releaseLock } = require('./lock');
 
 function main() {
+  return mainAsync().catch((err) => {
+    console.error('[standalone] fatal:', err && err.message);
+    process.exit(1);
+  });
+}
+
+async function mainAsync() {
   const token = resolveSlackToken();
   if (!token) {
     console.error('[standalone] no Slack token available (SLACK_BOT_TOKEN unset and custom.slack surrogate unavailable). Exiting.');
@@ -26,6 +34,25 @@ function main() {
     console.error('[standalone] Vikunja is not configured (VIKUNJA_URL/VIKUNJA_TOKEN) — nothing to work from. Exiting.');
     process.exit(1);
     return; // exit() may be stubbed in tests — never start the engine below
+  }
+
+  // Hatchet mode: the durable engine-tick workflow drives the cycle. The
+  // worker owns the process lifecycle (including SIGTERM/SIGINT and the
+  // immediate first tick), so none of the native wiring below runs.
+  // HATCHET is read at module load (top-level require) so tests can
+  // re-require with fresh env via jest.isolateModules.
+  if (HATCHET.ENABLED) {
+    console.log('[standalone] HATCHET_ENABLED=1 — booting embedded Hatchet engine');
+    const hatchet = require('./hatchet');
+    const lock = require('./lock');
+    const client = await hatchet.createHatchetClient();
+    await hatchet.startEngineWorker(client, {
+      runCycle: workEngine.runCycle,
+      acquireLock: lock.acquireLock,
+      releaseLock: lock.releaseLock,
+      holderId: lock.holderId(),
+    });
+    return;
   }
 
   const client = new WebClient(token);

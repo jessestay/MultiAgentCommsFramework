@@ -597,6 +597,17 @@ const VIKUNJA = {
   },
 };
 
+// ─── Hatchet (durable execution layer) ───────────────────────────────────────
+// HATCHET_ENABLED=1 routes the 24/7 engine through an embedded Hatchet engine
+// (engine/hatchet.js) instead of the native in-process loop. Default off —
+// flipping it on is a deliberate, separately-authorized step (the embedded
+// engine must run as a non-root user; see engine/HATCHET.md).
+// HATCHET_CRON overrides the tick schedule (default: every 30 minutes).
+const HATCHET = {
+  ENABLED: process.env.HATCHET_ENABLED === '1',
+  CRON: process.env.HATCHET_CRON || '*/30 * * * *',
+};
+
 // Keyword → agent routing for unassigned tasks during Exec PM triage.
 // First match wins — specific patterns before general ones.
 const TASK_ROUTING = [
@@ -616,6 +627,6 @@ module.exports = {
   AGENTS, JESSE_CONTEXT, HUMAN_VOICE, JESSE_SLACK_ID, CEO_AGENT_ID, DM_CHANNELS,
   CEO_SUCCESSION, ACTING_CEO_ID, CEO_CHARTER,
   AGENT_BY_HANDLE, AGENT_BY_ID, DELEGATION_TARGETS,
-  VIKUNJA, TASK_ROUTING,
+  VIKUNJA, TASK_ROUTING, HATCHET,
   EXPERT_WIRING, LENS_BY_SLUG,
 };
