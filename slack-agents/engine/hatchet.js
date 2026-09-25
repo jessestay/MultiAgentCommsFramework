@@ -127,8 +127,18 @@ async function registerEngineWorkflows(hatchet, deps) {
   // worker.start() registers the workflow server-side; the cron trigger can
   // only resolve it by name AFTER this (see ensureEngineCron).
   const worker = await hatchet.worker('engine-worker', { workflows: [workflow] });
-  await worker.start();
+  // NOTE (2026-09-25, found live): the v1 SDK's worker.start() "resolves when
+  // the worker is stopped or killed" — it runs the blocking action-listener
+  // loop and never resolves during normal operation. Awaiting it hangs the
+  // boot forever (the worker IS healthy and listening; the cron + immediate
+  // tick below simply never run). Registration (PutWorkflow) already completed
+  // inside hatchet.worker() — Worker.create awaits registerWorkflows — so run
+  // start() in the background and proceed.
   console.log('[hatchet] engine-worker started — workflow registered server-side');
+  worker.start().catch((err) => {
+    console.error('[hatchet] worker loop failed:', err && err.message ? err.message : err);
+    process.exitCode = 1;
+  });
   await ensureEngineCron(hatchet, workflow);
   console.log(`[hatchet] registered ${ENGINE_TICK_WORKFLOW} on cron "${cronSchedule()}"`);
   return { workflow, task, worker };

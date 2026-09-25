@@ -11,15 +11,21 @@
 //     rejection propagates.
 //   - registerEngineWorkflows(hatchet, deps): declares ONE durable task
 //     'engine-tick-task' (retries: 3, backoff { factor, maxSeconds }), ONE
-//     workflow 'engine-tick' wrapping it, creates + STARTS the
-//     'engine-worker' (worker.start() registers the workflow server-side),
-//     THEN ensures the cron trigger 'engine-tick-cron' with the expression
-//     from config HATCHET.CRON. Returns { workflow, task, worker }.
+//     workflow 'engine-tick' wrapping it, creates the 'engine-worker' via
+//     hatchet.worker() — whose Worker.create AWAITS registerWorkflows, so
+//     PutWorkflow completes server-side before worker() resolves — then runs
+//     worker.start() in the BACKGROUND (the v1 SDK's start() "resolves when
+//     the worker is stopped or killed": it runs the blocking action-listener
+//     loop and never resolves in normal operation; awaiting it hangs the boot
+//     forever, found live 2026-09-25), THEN ensures the cron trigger
+//     'engine-tick-cron' with the expression from config HATCHET.CRON.
+//     Returns { workflow, task, worker }.
 //     BUG REGRESSION (2026-09-25): the v1 SDK resolves a cron's workflow by
 //     name server-side; hatchet.workflow() only builds a LOCAL declaration.
-//     Creating the cron BEFORE worker.start() resolves -> HTTP 400
+//     Creating the cron BEFORE hatchet.worker() resolves -> HTTP 400
 //     'workflow not found' -> [standalone] fatal. So cron creation must
-//     happen strictly after worker.start() resolves.
+//     happen strictly after hatchet.worker() resolves (registration done),
+//     and MUST NOT await worker.start() (it never resolves).
 //   - ensureEngineCron(hatchet, workflow): idempotent cron ensure — lists
 //     existing triggers; skips creation when 'engine-tick-cron' already
 //     exists with the same expression (embedded Postgres persists across
@@ -70,7 +76,11 @@ function makeClient() {
     task: jest.fn(() => taskObj),
   };
   const workerObj = {
-    start: jest.fn().mockResolvedValue(),
+    // REAL SDK BEHAVIOR (2026-09-25, found live): the v1 SDK's worker.start()
+    // "resolves when the worker is stopped or killed" — it runs the blocking
+    // action-listener loop and NEVER resolves during normal operation. A mock
+    // of mockResolvedValue() hides the production hang; the mock must block.
+    start: jest.fn().mockReturnValue(new Promise(() => {})),
     stop: jest.fn().mockResolvedValue(),
   };
   const client = {
@@ -191,16 +201,56 @@ describe('registerEngineWorkflows()', () => {
 
   // REGRESSION (2026-09-25): the v1 SDK resolves the cron's workflow by
   // name server-side; hatchet.workflow() is a local declaration only, so
-  // crons.create BEFORE worker.start() resolves -> HTTP 400 'workflow not
-  // found' -> [standalone] fatal. The cron trigger must be created strictly
-  // after worker.start() resolves.
-  test('REGRESSION: cron trigger is created only AFTER worker.start() resolves', async () => {
+  // crons.create BEFORE hatchet.worker() resolves (registration done) ->
+  // HTTP 400 'workflow not found' -> [standalone] fatal. The cron trigger
+  // must be created strictly after hatchet.worker() resolves.
+  test('REGRESSION: cron trigger is created only AFTER hatchet.worker() resolves', async () => {
     const h = loadHatchetFresh();
     const { client, workerObj } = makeClient();
     await h.registerEngineWorkflows(client, makeDeps());
     expect(client.crons.create).toHaveBeenCalledTimes(1);
-    expect(workerObj.start.mock.invocationCallOrder[0])
+    expect(client.worker.mock.invocationCallOrder[0])
       .toBeLessThan(client.crons.create.mock.invocationCallOrder[0]);
+    expect(workerObj.start).toHaveBeenCalledTimes(1);
+  });
+
+  // REGRESSION (2026-09-25, found live): the v1 SDK's worker.start() never
+  // resolves in normal operation (blocking action-listener loop). Awaiting
+  // it hangs the boot forever — the worker is healthy and listening, but the
+  // cron ensure + immediate tick never run. registerEngineWorkflows must
+  // COMPLETE (return { workflow, task, worker }) while start() is still
+  // pending. The mock's start() returns a never-resolving promise, exactly
+  // like the real SDK.
+  test('REGRESSION: completes while worker.start() is still pending (never awaited)', async () => {
+    const h = loadHatchetFresh();
+    const { client, workerObj } = makeClient();
+    const ret = await Promise.race([
+      h.registerEngineWorkflows(client, makeDeps()),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('registerEngineWorkflows hung on worker.start()')), 5000)),
+    ]);
+    expect(ret.worker).toBe(workerObj);
+    expect(workerObj.start).toHaveBeenCalledTimes(1);
+    expect(client.crons.create).toHaveBeenCalledTimes(1);
+  });
+
+  // The background worker loop must not take the process down silently: a
+  // start() rejection logs and marks the exit code.
+  test('worker.start() rejection is logged and sets process.exitCode = 1', async () => {
+    const h = loadHatchetFresh();
+    const { client, workerObj } = makeClient();
+    const boom = new Error('listener died');
+    workerObj.start.mockReturnValueOnce(Promise.reject(boom));
+    const errSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const prevExitCode = process.exitCode;
+    try {
+      await h.registerEngineWorkflows(client, makeDeps());
+      await new Promise((resolve) => setImmediate(resolve)); // let the .catch run
+      expect(errSpy).toHaveBeenCalledWith('[hatchet] worker loop failed:', 'listener died');
+      expect(process.exitCode).toBe(1);
+    } finally {
+      errSpy.mockRestore();
+      process.exitCode = prevExitCode;
+    }
   });
 
   test('creates a cron trigger with the default expression', async () => {
