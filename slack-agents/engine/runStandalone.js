@@ -46,6 +46,11 @@ async function mainAsync() {
     const hatchet = require('./hatchet');
     const lock = require('./lock');
     const client = await hatchet.createHatchetClient();
+    // The work engine needs its Slack client even in Hatchet mode — without
+    // init(), every tick skips with "no Slack client yet". (Bug found live
+    // 2026-09-25: Hatchet engine ran but all cycles were no-ops.)
+    const slackClient = new WebClient(token);
+    workEngine.init({ client: slackClient });
     await hatchet.startEngineWorker(client, {
       runCycle: workEngine.runCycle,
       acquireLock: lock.acquireLock,

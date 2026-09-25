@@ -3,9 +3,10 @@
 // TDD contract for the runStandalone.js flag gating (implementation lands
 // separately). When HATCHET_ENABLED=1, main() must route startup through
 // ../engine/hatchet (createHatchetClient + startEngineWorker with injected
-// deps) and must NOT call workEngine.init; one immediate tick runs at
-// startup. When the flag is off (default), behavior is unchanged and the
-// hatchet module is never touched.
+// deps) and MUST call workEngine.init with a Slack WebClient (otherwise every
+// tick skips with "no Slack client yet" — regression found live 2026-09-25);
+// one immediate tick runs at startup. When the flag is off (default),
+// behavior is unchanged and the hatchet module is never touched.
 'use strict';
 
 // Env must be set BEFORE config loads — VIKUNJA.projectId is read at require
@@ -137,7 +138,7 @@ describe('HATCHET_ENABLED=1', () => {
     hatchet.createHatchetClient.mockResolvedValue(FAKE_CLIENT);
   });
 
-  test('routes startup through Hatchet and never calls workEngine.init', async () => {
+  test('routes startup through Hatchet and initializes the work engine Slack client', async () => {
     const mod = loadFresh();
     await mod.main();
     expect(exitSpy).not.toHaveBeenCalled();
@@ -148,7 +149,11 @@ describe('HATCHET_ENABLED=1', () => {
     expect(deps.runCycle).toBe(workEngine.runCycle);
     expect(deps.acquireLock).toBe(acquireLock);
     expect(deps.releaseLock).toBe(releaseLock);
-    expect(workEngine.init).not.toHaveBeenCalled();
+    // REGRESSION (2026-09-25, found live): without workEngine.init, every
+    // Hatchet tick skips with "no Slack client yet" — the engine runs but
+    // does nothing. The Slack client must be initialized in Hatchet mode too.
+    expect(workEngine.init).toHaveBeenCalledTimes(1);
+    expect(workEngine.init.mock.calls[0][0]).toHaveProperty('client');
     expect(workEngine.stop).not.toHaveBeenCalled();
   });
 
