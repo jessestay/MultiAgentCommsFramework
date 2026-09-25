@@ -6,9 +6,11 @@
 require('dotenv').config();
 
 const { App } = require('@slack/bolt');
-const { AGENTS, CHANNELS, CHANNEL_IDS, DELEGATION_TARGETS } = require('./config');
+const { AGENTS, CHANNELS, CHANNEL_IDS, DELEGATION_TARGETS, CEO_AGENT_ID } = require('./config');
 const state = require('./utils/state');
 const delegation = require('./utils/delegation');
+const { isDMEvent } = require('./utils/dm');
+const workEngine = require('./engine/workEngine');
 
 // ─── Validate environment ─────────────────────────────────────────────────────
 const REQUIRED_ENV = ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET', 'SLACK_APP_TOKEN', 'ANTHROPIC_API_KEY'];
@@ -37,6 +39,7 @@ const cro      = require('./agents/cro');
 const lawyer   = require('./agents/lawyer');
 const cfo      = require('./agents/cfo');
 const cto      = require('./agents/cto');
+const facebook = require('./agents/facebook');
 
 // Map agentId → module (for delegation routing)
 const AGENT_MODULES = {
@@ -49,6 +52,7 @@ const AGENT_MODULES = {
   lawyer,
   cfo,
   cto,
+  facebook,
 };
 
 // ─── Channel → Primary Agent routing ─────────────────────────────────────────
@@ -128,6 +132,8 @@ function detectAddressedAgent(text) {
     'cro': 'cro',
     'lawyer': 'lawyer', 'counsel': 'lawyer',
     'cfo': 'cfo',
+    'cto': 'cto', 'tech': 'cto',
+    'facebook': 'facebook', 'facebook expert': 'facebook', 'fb expert': 'facebook',
   };
   for (const [pattern, agentId] of Object.entries(handleMap)) {
     // Match @handle or "AgentName:" at start of message
@@ -227,6 +233,19 @@ app.event('message', async ({ event, say, client }) => {
     return;
   }
 
+  // 2b. DMs: no channel primary agent here — default to the CEO-role holder
+  // (Jesse's single point of contact) unless another agent was addressed above.
+  // Jesse may DM anyone directly; every member responds when that happens.
+  // (Requires the message.im / message.mpim event subscriptions — SETUP.md 1c.)
+  if (isDMEvent(event)) {
+    const ceoId = CEO_AGENT_ID && AGENT_MODULES[CEO_AGENT_ID] ? CEO_AGENT_ID : 'execPM';
+    console.log(`[index] DM → ${ceoId}: "${text.slice(0, 80)}"`);
+    await AGENT_MODULES[ceoId].handleMention({ event, say, client }).catch(err =>
+      console.error('[index] DM handling error:', err)
+    );
+    return;
+  }
+
   // 3. If message is in a channel with a primary agent, respond to any substantive message
   // (3+ chars filters out single-char noise, emoji reactions-as-text, bare punctuation)
   const primaryId = CHANNEL_PRIMARY_AGENT[channelName];
@@ -299,6 +318,34 @@ app.command('/jobs', async ({ ack, say }) => {
   });
 });
 
+app.command('/tasks', async ({ ack, say }) => {
+  await ack();
+  const tasks = require('./utils/tasks');
+  const summary = await tasks.openTasksSummary().catch(err => {
+    console.error('[index] /tasks error:', err);
+    return null;
+  });
+  await say(summary || 'Task tracking is not configured yet — see SETUP.md Part 5 (Vikunja).');
+});
+
+app.command('/triage', async ({ ack, say }) => {
+  await ack();
+  await say('Triaging the task board...');
+  await execPM.triageBoard().catch(err => {
+    console.error('[index] Manual triage error:', err);
+    say('Triage failed. Check Railway logs.');
+  });
+});
+
+app.command('/engine', async ({ ack, say }) => {
+  await ack();
+  await say('Work engine: running a cycle now — pulling the board, working the top task (or idling into revenue mode).');
+  await workEngine.runCycle().catch(err => {
+    console.error('[index] Work engine cycle error:', err);
+    say('Work engine cycle failed. Check logs.');
+  });
+});
+
 // ─── Error handling ───────────────────────────────────────────────────────────
 app.error(async (error) => {
   console.error('[bolt] Unhandled Bolt error:', error);
@@ -331,11 +378,17 @@ async function start() {
   lawyer.init(app);
   cfo.init(app);
   cto.init(app);
+  facebook.init(app);
 
-  console.log('✅ All 8 MACF agents initialized');
+  console.log('✅ All 10 MACF agents initialized');
 
   // Open WebSocket connection to Slack
   await app.start();
+
+  // ── MACF 24/7 Work Engine ──
+  // In-process service loop: PM-led, Vikunja-backed, idle-time revenue mode.
+  // Starts with the bot, so the team keeps working wherever the bot runs at boot.
+  workEngine.init(app);
 
   // Auto-join all configured channels so the bot receives message.channels events
   // Requires channels:join scope on the bot token
@@ -369,8 +422,9 @@ async function start() {
   console.log('  ⚖️  Lawyer     (@lawyer)     — #management');
   console.log('  💰 CFO        (@cfo)        — #management');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('Slash commands: /health /briefing /research /content /jobs');
-  console.log('Delegation: [from: AgentA → AgentB] message');
+  console.log('Slash commands: /health /briefing /research /content /jobs /tasks /triage');
+  console.log('Delegation: [from: AgentA → AgentB] message  (auto-tracked as a Vikunja task)');
+  console.log('DMs: DM the bot — prefix with @handle to reach a specific agent, else the CEO role answers');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 }
 

@@ -93,4 +93,8 @@ Context: ${context}`,
   });
 }
 
-module.exports = { chat, generateProactivePost, generateReport, QUICK_MODEL, SMART_MODEL, BEST_MODEL };
+module.exports = { chat, generateProactivePost, generateReport, QUICK_MODEL, SMART_MODEL, BEST_MODEL,
+  // True when this host can actually call the model (API key present).
+  // Hosts without a key (e.g. the VM stopgap) run the engine in watch mode:
+  // lock + board scan + Jesse-gated pings, no LLM task work.
+  isConfigured: () => !!process.env.ANTHROPIC_API_KEY };
