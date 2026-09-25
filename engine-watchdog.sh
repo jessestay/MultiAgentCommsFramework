@@ -5,6 +5,19 @@
 # Pattern lives in this file so pgrep never matches the caller's command line.
 ENGINE_DIR="$HOME/workspace/macf/slack-agents"
 ENGINE_LOG="$HOME/workspace/macf/engine-standalone.log"
+VIKUNJA_DIR="$HOME/workspace/macf/vikunja"
+# Vikunja liveness: the task board must be up or the engine fail-closes every
+# cycle. The VM reboots with no boot service for Vikunja (systemd unit is gone,
+# no cron), so this 15-min watchdog is its supervision too. start.sh is
+# idempotent (probe-first, exits 0 when already up).
+if ! curl -sf --max-time 5 -o /dev/null http://127.0.0.1:3456/api/v1/info; then
+  echo "watchdog: vikunja not responding, restarting"
+  # Anchored at ^ so this can never match a shell whose command line merely
+  # mentions the pattern (an unanchored pkill once killed its own caller).
+  pkill -f "^/home/hatch/workspace/macf/vikunja/bin/vikunja web" 2>/dev/null || true
+  sleep 1
+  bash "$VIKUNJA_DIR/start.sh" || echo "watchdog: vikunja restart FAILED"
+fi
 if pgrep -f "node engine/runStandalone\.js" >/dev/null 2>&1; then
   exit 0
 fi
