@@ -61,8 +61,55 @@ async function runEngineTick(deps) {
   await runCycle();
 }
 
-// Register the engine-tick task + workflow + cron trigger on a client.
+// Idempotent cron-trigger ensure for the engine-tick workflow.
+//
+// BUG FIX (2026-09-25): in the v1 SDK, `hatchet.workflow()` only builds a
+// LOCAL declaration — the workflow registers with the engine when the
+// worker STARTS. The cron client resolves the workflow by NAME server-side,
+// so crons.create BEFORE worker.start() resolves -> HTTP 400
+// 'workflow not found' -> [standalone] fatal, process exits. Callers must
+// therefore: declare -> create worker -> await worker.start() -> THEN call
+// this.
+//
+// Idempotency: the embedded Postgres persists in ~/.hatchet-embedded across
+// restarts, so a second boot must not fail re-creating the trigger. This
+// lists existing triggers, skips creation when 'engine-tick-cron' already
+// exists with the same expression (log it), and deletes + recreates when
+// the expression differs. Returns the existing or newly created trigger.
+async function ensureEngineCron(hatchet, workflow) {
+  const expression = cronSchedule();
+  const crons = hatchet.crons || hatchet.cron; // `crons` is canonical; `cron` is the legacy alias
+  let existing;
+  try {
+    const listed = await crons.list({ workflow });
+    existing = (listed && listed.rows || []).find((c) => c && c.name === ENGINE_TICK_CRON);
+  } catch (err) {
+    // Fresh engine / transient list failure: fall through to create, which
+    // succeeds when no conflicting trigger exists.
+    console.warn('[hatchet] cron list failed; attempting create:', err.message);
+  }
+  if (existing) {
+    if (existing.cron === expression) {
+      console.log(`[hatchet] cron trigger "${ENGINE_TICK_CRON}" already registered with expression "${expression}" — skipping`);
+      return existing;
+    }
+    const cronId = (existing.metadata && existing.metadata.id) || existing;
+    console.log(`[hatchet] cron trigger "${ENGINE_TICK_CRON}" expression changed ("${existing.cron}" -> "${expression}") — recreating`);
+    await crons.delete(cronId);
+  }
+  const created = await crons.create(workflow, {
+    name: ENGINE_TICK_CRON,
+    expression,
+    input: {},
+  });
+  console.log(`[hatchet] created cron trigger "${ENGINE_TICK_CRON}" with expression "${expression}"`);
+  return created;
+}
+
+// Register the engine-tick task + workflow, start the engine worker, and
+// ensure the cron trigger — in THAT order (see ensureEngineCron).
 // `deps` are passed through to the task fn (see runEngineTick).
+// Returns { workflow, task, worker }.
 async function registerEngineWorkflows(hatchet, deps) {
   const task = hatchet.task({
     name: ENGINE_TICK_TASK,
@@ -74,22 +121,21 @@ async function registerEngineWorkflows(hatchet, deps) {
     name: ENGINE_TICK_WORKFLOW,
     tasks: [task],
   });
-  await hatchet.cron.create(workflow, {
-    name: ENGINE_TICK_CRON,
-    expression: cronSchedule(),
-    input: {},
-  });
+  // worker.start() registers the workflow server-side; the cron trigger can
+  // only resolve it by name AFTER this (see ensureEngineCron).
+  const worker = await hatchet.worker('engine-worker', { workflows: [workflow] });
+  await worker.start();
+  console.log('[hatchet] engine-worker started — workflow registered server-side');
+  await ensureEngineCron(hatchet, workflow);
   console.log(`[hatchet] registered ${ENGINE_TICK_WORKFLOW} on cron "${cronSchedule()}"`);
-  return { workflow, task };
+  return { workflow, task, worker };
 }
 
 // Register workflows, start the worker, fire one immediate tick (mirrors the
 // native engine's 90s first-cycle), and wire graceful shutdown.
 // `deps`: { runCycle, acquireLock, releaseLock?, holderId }. Returns the worker.
 async function startEngineWorker(hatchet, deps) {
-  const { workflow } = await registerEngineWorkflows(hatchet, deps);
-  const worker = await hatchet.worker('engine-worker', { workflows: [workflow] });
-  await worker.start();
+  const { worker } = await registerEngineWorkflows(hatchet, deps);
   console.log('[hatchet] worker started');
 
   // Immediate tick on boot; cron drives the rest.
@@ -129,6 +175,7 @@ async function startEngineWorker(hatchet, deps) {
 module.exports = {
   createHatchetClient,
   runEngineTick,
+  ensureEngineCron,
   registerEngineWorkflows,
   startEngineWorker,
   ENGINE_TICK_WORKFLOW,

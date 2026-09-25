@@ -1,6 +1,7 @@
 // tests/hatchet.test.js — Hatchet durable-execution layer for the 24/7 engine
 //
-// TDD contract for engine/hatchet.js (implementation lands separately).
+// TDD contract for engine/hatchet.js.
+//
 // The engine's 30-minute work cycle moves from workEngine's internal
 // setInterval to a durable Hatchet task + workflow + cron trigger, so a
 // crash anywhere resumes the tick instead of silently stopping the team.
@@ -8,22 +9,33 @@
 // Module contract under test:
 //   - createHatchetClient(): HatchetEmbeddedClient.init() -> client; init
 //     rejection propagates.
-//   - registerEngineWorkflows(hatchet, deps): registers ONE durable task
+//   - registerEngineWorkflows(hatchet, deps): declares ONE durable task
 //     'engine-tick-task' (retries: 3, backoff { factor, maxSeconds }), ONE
-//     workflow 'engine-tick' wrapping it, and a cron trigger
-//     'engine-tick-cron' with the expression from config HATCHET.CRON.
-//     Returns { workflow, task }.
+//     workflow 'engine-tick' wrapping it, creates + STARTS the
+//     'engine-worker' (worker.start() registers the workflow server-side),
+//     THEN ensures the cron trigger 'engine-tick-cron' with the expression
+//     from config HATCHET.CRON. Returns { workflow, task, worker }.
+//     BUG REGRESSION (2026-09-25): the v1 SDK resolves a cron's workflow by
+//     name server-side; hatchet.workflow() only builds a LOCAL declaration.
+//     Creating the cron BEFORE worker.start() resolves -> HTTP 400
+//     'workflow not found' -> [standalone] fatal. So cron creation must
+//     happen strictly after worker.start() resolves.
+//   - ensureEngineCron(hatchet, workflow): idempotent cron ensure — lists
+//     existing triggers; skips creation when 'engine-tick-cron' already
+//     exists with the same expression (embedded Postgres persists across
+//     restarts, so a second boot must not fail); deletes + recreates when
+//     the expression differs.
 //   - runEngineTick(deps): lock-first tick — acquireLock({ holderId }); skip
 //     runCycle when the lock is not acquired.
-//   - startEngineWorker(hatchet, deps): registers workflows, creates/starts
-//     the 'engine-worker', performs ONE immediate tick, and wires SIGTERM /
+//   - startEngineWorker(hatchet, deps): registers workflows (worker started
+//     inside registration), performs ONE immediate tick, and wires SIGTERM /
 //     SIGINT -> worker.stop() -> releaseLock({ holderId }) ->
 //     client.stopEmbedded() -> process.exit(0). Returns the worker.
 //   - Name constants: ENGINE_TICK_WORKFLOW, ENGINE_TICK_TASK, DEFAULT_CRON.
 //
 // Everything external is mocked — the embedded SDK entry point is stubbed
-// with the REAL v1 call shape (task/workflow/cron.create/worker), so no
-// embedded Postgres ever boots in unit tests.
+// with the REAL v1 call shape (task/workflow/crons.create/crons.list/
+// crons.delete/worker), so no embedded Postgres ever boots in unit tests.
 'use strict';
 
 const FILE_ENV_BACKUP = { ...process.env };
@@ -45,8 +57,9 @@ afterAll(() => {
 
 // Fake Hatchet client with the REAL v1 API shape:
 //   task({name, fn, retries, backoff}) / workflow({name, tasks}) /
-//   cron.create(workflow, {name, expression, input}) / worker(name, opts)
-//   (async) / stopEmbedded().
+//   crons.create(workflow, {name, expression, input}) /
+//   crons.list({workflow}) / crons.delete(id) /
+//   worker(name, opts) (async) / stopEmbedded().
 function makeClient() {
   const taskObj = { __kind: 'task' };
   const workflowObj = { __kind: 'workflow' };
@@ -57,11 +70,27 @@ function makeClient() {
   const client = {
     task: jest.fn(() => taskObj),
     workflow: jest.fn(() => workflowObj),
-    cron: { create: jest.fn().mockResolvedValue({ id: 'cron-1' }) },
+    crons: {
+      create: jest.fn().mockResolvedValue({ metadata: { id: 'cron-1' } }),
+      list: jest.fn().mockResolvedValue({ rows: [] }),
+      delete: jest.fn().mockResolvedValue(),
+    },
     worker: jest.fn().mockResolvedValue(workerObj),
     stopEmbedded: jest.fn().mockResolvedValue(),
   };
   return { client, taskObj, workflowObj, workerObj };
+}
+
+// An existing cron row as the real SDK returns it (CronWorkflows contract:
+// name, cron (expression), metadata.id).
+function existingCronRow(overrides = {}) {
+  return {
+    metadata: { id: 'cron-existing' },
+    name: 'engine-tick-cron',
+    cron: '*/30 * * * *',
+    workflowName: 'engine-tick',
+    ...overrides,
+  };
 }
 
 // deps are INJECTED — hatchet.js must not hard-require engine/lock.js.
@@ -142,12 +171,36 @@ describe('registerEngineWorkflows()', () => {
     expect(ret.task).toBe(taskObj);
   });
 
+  test('creates the engine-worker with the workflow and starts it', async () => {
+    const h = loadHatchetFresh();
+    const { client, workflowObj, workerObj } = makeClient();
+    const ret = await h.registerEngineWorkflows(client, makeDeps());
+    expect(client.worker).toHaveBeenCalledTimes(1);
+    expect(client.worker).toHaveBeenCalledWith('engine-worker', { workflows: [workflowObj] });
+    expect(workerObj.start).toHaveBeenCalledTimes(1);
+    expect(ret.worker).toBe(workerObj);
+  });
+
+  // REGRESSION (2026-09-25): the v1 SDK resolves the cron's workflow by
+  // name server-side; hatchet.workflow() is a local declaration only, so
+  // crons.create BEFORE worker.start() resolves -> HTTP 400 'workflow not
+  // found' -> [standalone] fatal. The cron trigger must be created strictly
+  // after worker.start() resolves.
+  test('REGRESSION: cron trigger is created only AFTER worker.start() resolves', async () => {
+    const h = loadHatchetFresh();
+    const { client, workerObj } = makeClient();
+    await h.registerEngineWorkflows(client, makeDeps());
+    expect(client.crons.create).toHaveBeenCalledTimes(1);
+    expect(workerObj.start.mock.invocationCallOrder[0])
+      .toBeLessThan(client.crons.create.mock.invocationCallOrder[0]);
+  });
+
   test('creates a cron trigger with the default expression', async () => {
     const h = loadHatchetFresh();
     const { client, workflowObj } = makeClient();
     await h.registerEngineWorkflows(client, makeDeps());
-    expect(client.cron.create).toHaveBeenCalledTimes(1);
-    expect(client.cron.create).toHaveBeenCalledWith(
+    expect(client.crons.create).toHaveBeenCalledTimes(1);
+    expect(client.crons.create).toHaveBeenCalledWith(
       workflowObj,
       expect.objectContaining({
         name: 'engine-tick-cron',
@@ -161,9 +214,41 @@ describe('registerEngineWorkflows()', () => {
     const h = loadHatchetFresh(); // config re-reads env inside the isolated registry
     const { client, workflowObj } = makeClient();
     await h.registerEngineWorkflows(client, makeDeps());
-    expect(client.cron.create).toHaveBeenCalledWith(
+    expect(client.crons.create).toHaveBeenCalledWith(
       workflowObj,
       expect.objectContaining({ expression: '17 3 * * *' })
+    );
+  });
+
+  test('REGRESSION: duplicate boot with the same expression skips cron creation', async () => {
+    const h = loadHatchetFresh();
+    const { client, workerObj } = makeClient();
+    // Embedded Postgres persists — engine-tick-cron already exists from the
+    // first boot with the same expression.
+    client.crons.list.mockResolvedValue({ rows: [existingCronRow()] });
+    const ret = await h.registerEngineWorkflows(client, makeDeps());
+    // Workflow registration still happens (server-side upsert by name)...
+    expect(workerObj.start).toHaveBeenCalledTimes(1);
+    // ...but the existing trigger is reused, never recreated.
+    expect(client.crons.list).toHaveBeenCalledTimes(1);
+    expect(client.crons.delete).not.toHaveBeenCalled();
+    expect(client.crons.create).not.toHaveBeenCalled();
+    expect(ret.workflow).toBeDefined();
+  });
+
+  test('REGRESSION: duplicate boot with a changed expression deletes + recreates', async () => {
+    const h = loadHatchetFresh();
+    const { client, workflowObj } = makeClient();
+    client.crons.list.mockResolvedValue({
+      rows: [existingCronRow({ cron: '0 * * * *' })],
+    });
+    await h.registerEngineWorkflows(client, makeDeps());
+    expect(client.crons.delete).toHaveBeenCalledTimes(1);
+    expect(client.crons.delete).toHaveBeenCalledWith('cron-existing');
+    expect(client.crons.create).toHaveBeenCalledTimes(1);
+    expect(client.crons.create).toHaveBeenCalledWith(
+      workflowObj,
+      expect.objectContaining({ expression: '*/30 * * * *' })
     );
   });
 
@@ -190,6 +275,64 @@ describe('registerEngineWorkflows()', () => {
     await expect(fn()).resolves.toBeUndefined();
     expect(deps.acquireLock).toHaveBeenCalledTimes(1);
     expect(deps.runCycle).not.toHaveBeenCalled();
+  });
+});
+
+describe('ensureEngineCron()', () => {
+  test('creates the trigger when none exists', async () => {
+    const h = loadHatchetFresh();
+    const { client, workflowObj } = makeClient();
+    const got = await h.ensureEngineCron(client, workflowObj);
+    expect(client.crons.list).toHaveBeenCalledTimes(1);
+    expect(client.crons.create).toHaveBeenCalledTimes(1);
+    expect(client.crons.create).toHaveBeenCalledWith(
+      workflowObj,
+      expect.objectContaining({
+        name: 'engine-tick-cron',
+        expression: '*/30 * * * *',
+      })
+    );
+    expect(got).toEqual({ metadata: { id: 'cron-1' } });
+  });
+
+  test('skips creation when the trigger already exists with the same expression', async () => {
+    const h = loadHatchetFresh();
+    const { client, workflowObj } = makeClient();
+    client.crons.list.mockResolvedValue({ rows: [existingCronRow()] });
+    const got = await h.ensureEngineCron(client, workflowObj);
+    expect(client.crons.create).not.toHaveBeenCalled();
+    expect(client.crons.delete).not.toHaveBeenCalled();
+    expect(got).toEqual(existingCronRow());
+  });
+
+  test('ignores other cron triggers on the same workflow', async () => {
+    const h = loadHatchetFresh();
+    const { client, workflowObj } = makeClient();
+    client.crons.list.mockResolvedValue({
+      rows: [existingCronRow({ name: 'something-else', cron: '0 * * * *' })],
+    });
+    await h.ensureEngineCron(client, workflowObj);
+    expect(client.crons.create).toHaveBeenCalledTimes(1);
+  });
+
+  test('deletes + recreates when the expression changed', async () => {
+    const h = loadHatchetFresh();
+    const { client, workflowObj } = makeClient();
+    client.crons.list.mockResolvedValue({
+      rows: [existingCronRow({ cron: '0 * * * *' })],
+    });
+    await h.ensureEngineCron(client, workflowObj);
+    expect(client.crons.delete).toHaveBeenCalledTimes(1);
+    expect(client.crons.delete).toHaveBeenCalledWith('cron-existing');
+    expect(client.crons.create).toHaveBeenCalledTimes(1);
+  });
+
+  test('a list failure falls through to create (fresh-engine resilience)', async () => {
+    const h = loadHatchetFresh();
+    const { client, workflowObj } = makeClient();
+    client.crons.list.mockRejectedValue(new Error('connection reset'));
+    await h.ensureEngineCron(client, workflowObj);
+    expect(client.crons.create).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -269,10 +412,19 @@ describe('startEngineWorker()', () => {
     const deps = makeDeps();
     const { worker } = await captureHandlers(h, client, deps);
     expect(client.task).toHaveBeenCalledTimes(1);
-    expect(client.cron.create).toHaveBeenCalledTimes(1);
+    expect(client.crons.create).toHaveBeenCalledTimes(1);
     expect(client.worker).toHaveBeenCalledWith('engine-worker', { workflows: [workflowObj] });
     expect(workerObj.start).toHaveBeenCalledTimes(1);
     expect(worker).toBe(workerObj);
+  });
+
+  test('cron creation still happens strictly after worker.start() resolves', async () => {
+    const h = loadHatchetFresh();
+    const { client, workerObj } = makeClient();
+    const deps = makeDeps();
+    await captureHandlers(h, client, deps);
+    expect(workerObj.start.mock.invocationCallOrder[0])
+      .toBeLessThan(client.crons.create.mock.invocationCallOrder[0]);
   });
 
   test('performs exactly one immediate tick on startup', async () => {
