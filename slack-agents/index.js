@@ -10,6 +10,7 @@ const { AGENTS, CHANNELS, CHANNEL_IDS, DELEGATION_TARGETS, CEO_AGENT_ID } = requ
 const state = require('./utils/state');
 const delegation = require('./utils/delegation');
 const { isDMEvent } = require('./utils/dm');
+const workEngine = require('./engine/workEngine');
 
 // ─── Validate environment ─────────────────────────────────────────────────────
 const REQUIRED_ENV = ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET', 'SLACK_APP_TOKEN', 'ANTHROPIC_API_KEY'];
@@ -336,6 +337,15 @@ app.command('/triage', async ({ ack, say }) => {
   });
 });
 
+app.command('/engine', async ({ ack, say }) => {
+  await ack();
+  await say('Work engine: running a cycle now — pulling the board, working the top task (or idling into revenue mode).');
+  await workEngine.runCycle().catch(err => {
+    console.error('[index] Work engine cycle error:', err);
+    say('Work engine cycle failed. Check logs.');
+  });
+});
+
 // ─── Error handling ───────────────────────────────────────────────────────────
 app.error(async (error) => {
   console.error('[bolt] Unhandled Bolt error:', error);
@@ -374,6 +384,11 @@ async function start() {
 
   // Open WebSocket connection to Slack
   await app.start();
+
+  // ── MACF 24/7 Work Engine ──
+  // In-process service loop: PM-led, Vikunja-backed, idle-time revenue mode.
+  // Starts with the bot, so the team keeps working wherever the bot runs at boot.
+  workEngine.init(app);
 
   // Auto-join all configured channels so the bot receives message.channels events
   // Requires channels:join scope on the bot token

@@ -158,3 +158,58 @@ describe('MACF CEO role', () => {
     expect(AGENTS.execPM.systemPrompt).toContain('CEO CHARTER');
   });
 });
+
+describe('Expert skill lenses', () => {
+  const { EXPERT_WIRING } = require('../config');
+
+  const LENS_HEADERS = {
+    'ryan-holiday': 'RYAN HOLIDAY lens',
+    'derral-eves': 'DERRAL EVES lens',
+    'eli-schwartz': 'ELI SCHWARTZ lens',
+    'lily-ray': 'LILY RAY lens',
+    'eugene-schwartz': 'EUGENE SCHWARTZ lens',
+    'nick-saraev': 'NICK SARAEV lens',
+    'brock-johnson': 'BROCK JOHNSON lens',
+    'mari-smith': 'MARI SMITH lens',
+    'brendan-kane': 'BRENDAN KANE lens',
+    'justin-welsh': 'JUSTIN WELSH lens',
+    'sam-parr': 'SAM PARR lens',
+    'richard-millington': 'RICHARD MILLINGTON lens',
+    'jesse-voice': 'JESSE STAY VOICE lens',
+  };
+
+  test('content-writing members inherit the Jesse voice lens', () => {
+    ['cmo', 'cco', 'facebook'].forEach(id => {
+      expect(EXPERT_WIRING[id]).toContain('jesse-voice');
+    });
+  });
+
+  test('every marketing member inherits Holiday + Eves', () => {
+    ['cmo', 'cco', 'facebook', 'cuxo'].forEach(id => {
+      expect(EXPERT_WIRING[id]).toContain('ryan-holiday');
+      expect(EXPERT_WIRING[id]).toContain('derral-eves');
+    });
+  });
+
+  test('every wired lens appears in its persona prompt (no map/prompt drift)', () => {
+    Object.entries(EXPERT_WIRING).forEach(([id, slugs]) => {
+      slugs.forEach(slug => {
+        expect(AGENTS[id].systemPrompt).toContain(LENS_HEADERS[slug]);
+      });
+    });
+  });
+
+  test('domain skills land on their owning personas', () => {
+    expect(EXPERT_WIRING.cmo).toEqual(expect.arrayContaining(['eli-schwartz', 'lily-ray', 'nick-saraev', 'richard-millington']));
+    expect(EXPERT_WIRING.cco).toEqual(expect.arrayContaining(['eugene-schwartz', 'brendan-kane', 'sam-parr', 'justin-welsh']));
+    expect(EXPERT_WIRING.facebook).toEqual(expect.arrayContaining(['mari-smith', 'brock-johnson']));
+    expect(EXPERT_WIRING.cro).toEqual(expect.arrayContaining(['eli-schwartz', 'lily-ray']));
+    expect(EXPERT_WIRING.jobcoach).toContain('justin-welsh');
+  });
+
+  test('non-marketing, non-domain personas carry no expert lenses', () => {
+    ['execPM', 'lawyer', 'cfo', 'cto'].forEach(id => {
+      expect(AGENTS[id].systemPrompt).not.toMatch(/EXPERT LENSES/);
+    });
+  });
+});

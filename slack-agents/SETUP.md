@@ -416,3 +416,45 @@ voice):
 - **Personas can't hold distinct admin roles.** The ten members are personas
   of one bot user — admin is all-or-nothing at the bot level, so admin stays
   with trusted humans.
+
+---
+
+## Part 9 — The 24/7 Work Engine (`engine/workEngine.js`)
+
+The team's muscle. This is **not** a cron job or a scheduled task — it is an
+in-process service loop that starts with the bot (`workEngine.init(app)` in
+`index.js`) and runs every `WORK_ENGINE_CYCLE_MIN` minutes (default 30, first
+cycle 90s after boot). Wherever the bot runs at boot, the team keeps working:
+on the desktop via the `macf-slack-runtime` scheduled task (logon trigger →
+`run_task.cmd` → `node index.js`), or on Railway via the Procfile.
+
+Each cycle, the engine:
+
+1. **Pulls the board** — lists open Vikunja tasks, highest priority first.
+2. **Pings Jesse immediately** (one DM per cycle, CEO-role holder only) for
+   tasks the team cannot do: his logins, approvals, payments. First sighting
+   pings; re-pings only when time-critical and 24h+ since the last ping.
+   Tasks marked held/parked/guardrail (e.g. HOLD-001) are dormant — never
+   pinged, never worked.
+3. **Works the top actionable task** — routes it to the owning persona via
+   `TASK_ROUTING`, generates the deliverable with that persona's system
+   prompt, posts it to the persona's channel, and comments the Vikunja task.
+   A task is marked done only when the deliverable fully satisfies it with no
+   Jesse approval needed; otherwise it stays open with a status comment.
+   Tasks are revisited after a cooldown (6h, 2h for high priority).
+4. **Idle mode** — when nothing is actionable, the engine invents one
+   revenue/improvement proposal (max 1 per 12h), posts it to #management, and
+   creates a Vikunja task for it so the board refills. Draft-only, always.
+
+Hard boundaries are injected into every work prompt: nothing is ever sent,
+published, bought, or charged without Jesse's explicit approval.
+
+**Env knobs:** `WORK_ENGINE_ENABLED=1` (set 0 to disable), `WORK_ENGINE_CYCLE_MIN`,
+`WORK_ENGINE_COOLDOWN_H`, `WORK_ENGINE_IDLE_PROPOSAL_H`.
+
+**Manual trigger:** `/engine` in Slack runs one cycle on demand.
+
+**Vikunja caution (learned 2026-09-25):** Vikunja v2.6.0's `POST /tasks/{id}`
+*replaces* the whole task — a partial POST silently wipes omitted fields like
+`description`. Always use `utils/vikunja.js` `updateTask`/`completeTask`
+(which GET + merge + POST); never raw-POST partial fields.

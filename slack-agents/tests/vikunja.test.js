@@ -107,12 +107,19 @@ describe('task endpoints', () => {
     expect(JSON.parse(calls[0].opts.body)).toEqual({ user_id: 9 });
   });
 
-  test('completeTask marks done via POST', async () => {
-    const calls = mockFetch(() => okJson({ id: 42, done: true }));
+  test('completeTask GETs then POSTs merged task (partial POST would wipe fields)', async () => {
+    const calls = mockFetch((url, opts) =>
+      (!opts.method || opts.method === 'GET')
+        ? okJson({ id: 42, title: 'T', description: 'keep me', done: false, priority: 2 })
+        : okJson({ id: 42, done: true }));
     await vikunja.completeTask('execPM', 42);
     expect(calls[0].url).toBe('https://tasks.example.com/api/v1/tasks/42');
-    expect(calls[0].opts.method).toBe('POST');
-    expect(JSON.parse(calls[0].opts.body)).toEqual({ done: true });
+    expect(calls[0].opts.method || 'GET').toBe('GET');
+    expect(calls[1].opts.method).toBe('POST');
+    const body = JSON.parse(calls[1].opts.body);
+    expect(body.done).toBe(true);
+    expect(body.description).toBe('keep me'); // must not be wiped
+    expect(body.title).toBe('T');
   });
 
   test('listTasks passes filter and sort params', async () => {

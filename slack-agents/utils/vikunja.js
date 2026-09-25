@@ -92,9 +92,19 @@ async function createTask(agentId, projectId, { title, description = '', priorit
   return request(agentId, `/projects/${projectId}/tasks`, { method: 'PUT', body });
 }
 
-// Partial update: POST /tasks/{id}  (e.g. { done: true }, { priority: 4 }, { title })
+// Partial update: GET the task, merge fields over its current writable state,
+// then POST the merged object. (Vikunja's POST /tasks/{id} REPLACES the whole
+// task — a bare partial POST silently wipes fields like description.
+// Incident 2026-09-25: two task descriptions were wiped this way; restored.)
 async function updateTask(agentId, taskId, fields) {
-  return request(agentId, `/tasks/${taskId}`, { method: 'POST', body: fields });
+  const current = await getTask(agentId, taskId);
+  const keep = {};
+  for (const k of ['title', 'description', 'done', 'due_date', 'priority',
+                   'start_date', 'end_date', 'hex_color', 'is_favorite',
+                   'bucket_id', 'repeat_after', 'repeat_mode']) {
+    if (current[k] !== undefined && current[k] !== null) keep[k] = current[k];
+  }
+  return request(agentId, `/tasks/${taskId}`, { method: 'POST', body: { ...keep, ...fields } });
 }
 
 async function getTask(agentId, taskId) {
