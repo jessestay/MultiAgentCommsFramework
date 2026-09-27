@@ -6,7 +6,7 @@
 // agent (utils/tasks.js) — silent no-op when Vikunja isn't configured.
 //
 // Loop prevention: tracks which agents have already been invoked in this chain.
-// Each agent can appear at most once per chain (naturally caps at 8 hops for 8 agents).
+// Each agent can appear at most once per chain (naturally caps at 11 hops for 11 agents).
 // No arbitrary depth limit — it runs as long as the chain has new agents to visit.
 
 const tasks = require('./tasks');

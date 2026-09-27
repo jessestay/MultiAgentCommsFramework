@@ -29,7 +29,7 @@ const app = new App({
   logLevel: process.env.LOG_LEVEL || 'info',
 });
 
-// ─── Load all 9 agent modules ─────────────────────────────────────────────────
+// ─── Load all 11 agent modules ─────────────────────────────────────────────────
 const execPM   = require('./agents/execPM');
 const cmo      = require('./agents/cmo');
 const cco      = require('./agents/cco');
@@ -40,6 +40,7 @@ const lawyer   = require('./agents/lawyer');
 const cfo      = require('./agents/cfo');
 const cto      = require('./agents/cto');
 const facebook = require('./agents/facebook');
+const hr       = require('./agents/hr');
 
 // Map agentId → module (for delegation routing)
 const AGENT_MODULES = {
@@ -53,6 +54,7 @@ const AGENT_MODULES = {
   cfo,
   cto,
   facebook,
+  hr,
 };
 
 // ─── Channel → Primary Agent routing ─────────────────────────────────────────
@@ -134,6 +136,7 @@ function detectAddressedAgent(text) {
     'cfo': 'cfo',
     'cto': 'cto', 'tech': 'cto',
     'facebook': 'facebook', 'facebook expert': 'facebook', 'fb expert': 'facebook',
+    'hr': 'hr', 'head of hr': 'hr',
   };
   for (const [pattern, agentId] of Object.entries(handleMap)) {
     // Match @handle or "AgentName:" at start of message
@@ -368,7 +371,7 @@ async function start() {
   // Wire delegation module so agents can relay in-process
   delegation.init(AGENT_MODULES, DELEGATION_TARGETS);
 
-  // Initialize all 8 agents (registers cron jobs, captures app.client)
+  // Initialize all 11 agents (registers cron jobs, captures app.client)
   execPM.init(app);
   cmo.init(app);
   cco.init(app);
@@ -379,8 +382,9 @@ async function start() {
   cfo.init(app);
   cto.init(app);
   facebook.init(app);
+  hr.init(app);
 
-  console.log('✅ All 10 MACF agents initialized');
+  console.log('✅ All 11 MACF agents initialized');
 
   // Open WebSocket connection to Slack
   await app.start();

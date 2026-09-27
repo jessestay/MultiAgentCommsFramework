@@ -63,7 +63,7 @@ afterAll(() => {
 });
 
 // ─── Agent module interface tests ─────────────────────────────────────────────
-const AGENT_FILES = ['execPM', 'cmo', 'cco', 'jobcoach', 'cuxo', 'cro', 'lawyer', 'cfo'];
+const AGENT_FILES = ['execPM', 'cmo', 'cco', 'jobcoach', 'cuxo', 'cro', 'lawyer', 'cfo', 'hr'];
 
 describe('All agent modules export required interface', () => {
   AGENT_FILES.forEach(agentId => {
@@ -133,6 +133,7 @@ describe('handleDelegation() matches correct patterns', () => {
     ['lawyer', '[from: CFO → Lawyer] Review the consultant agreement'],
     ['cfo',    '[from: Exec PM → CFO] What are our SaaS metrics targets?'],
     ['jobcoach','[from: Exec PM → Job Coach] Run a pipeline report'],
+    ['hr',     '[from: Exec PM → Head of HR] Build an onboarding skill for new members'],
   ];
 
   delegationCases.forEach(([agentId, message]) => {
