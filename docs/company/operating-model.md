@@ -78,6 +78,29 @@ content, outreach, social, PR. Every proof asset (see Proof Portfolio epic)
 must ladder up to it. If a message doesn't reinforce the category, it
 doesn't ship.
 
+## Visibility: channels alive = company alive
+
+Jesse's functional definition of MACF (Sep 29, 2026): **the team is constantly
+chatting in the Slack channels as they work.** Small gaps are fine relative to
+how long a task takes, but the team never stops chatting to grow the company
+and get things done.
+
+This is the PRIMARY health metric for the whole operating model:
+
+- Every executive narrates their work in their channel like a real human
+  colleague: what they're starting, what they're deciding, what they found,
+  what's next. Not robotic status pings — real working chatter.
+- Execs talk to each other in channels: execPM coordinating, CMO asking CCO
+  for assets, CRO sharing prospect signals, CFO posting numbers.
+- No dead air: if a loop has natural idle time, the exec uses it for the
+  ideation pipeline, market research, or helping another exec — and says so
+  in the channel.
+- The engine posts a "starting" narration when it picks up each task and the
+  deliverable when done. Idle proposals are pitched in #management, never
+  silently filed.
+- CEO glance test: #marketing, #management, #content, #cto must show fresh
+  work chatter. A silent channel is treated as an outage until proven otherwise.
+
 ## Hard boundaries (never violated)
 
 - Nothing is ever sent, published, posted publicly, bought, or charged

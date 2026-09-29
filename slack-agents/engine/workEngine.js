@@ -142,6 +142,13 @@ ${boundaries}
 Do the work now. Produce the concrete deliverable: research findings, a draft, analysis, code, a plan — whatever the task calls for, within the boundaries above.
 Write it in the team's voice: direct, no fluff, no headers unless the deliverable needs them.
 
+NARRATION (standing CEO directive — the team must be SEEN working): narrate
+your work the way a real teammate talks in the channel while they work — what
+you're doing, what you're deciding, what you just found, what's next. First
+person, conversational, no corporate filler, no robotic status pings. The team
+reads this live; make them feel the work happening. If you're blocked or need
+another exec, say so plainly and name them.
+
 After the deliverable, on its own final line, write exactly one of:
 TASK-DONE: YES — <one line why no Jesse approval is needed>
 TASK-DONE: NO — <one line: what still needs Jesse or what remains>
@@ -149,6 +156,15 @@ TASK-DONE: NO — <one line: what still needs Jesse or what remains>
 
   let output;
   try {
+    // Narrate the start FIRST: Jesse's acceptance criterion is a visibly
+    // working team — channels alive = company alive. The deliverable lands
+    // after, so the channel sees the doing, not just the done.
+    const startChannel = await resolveChannelId(owner.primaryChannel).catch(() => null);
+    if (startChannel) {
+      await postAs(ownerId, startChannel,
+        `On it: ${task.title} — digging in now, reporting back here as I go.`
+      ).catch(err => log('start narration failed:', err.message));
+    }
     output = await generateReport({ systemPrompt: owner.systemPrompt, context, maxTokens: 2000 });
   } catch (err) {
     log(`LLM error on task #${task.id}:`, err.message);
