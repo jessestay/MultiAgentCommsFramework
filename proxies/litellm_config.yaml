@@ -39,6 +39,28 @@
 # =============================================================================
 
 model_list:
+  # ---- Runtime-compat aliases (router-policy.js expects these names). --------
+  #      macf-mid: mid-tier, budget-first = local Ollama. $0.
+  #      (OpenRouter free model deepseek-chat-v3-0324:free went paid-only Sep 29.)
+  - model_name: macf-mid
+    litellm_params:
+      model: ollama/qwen2.5:3b-instruct-q4_K_M
+      api_base: os.environ/OLLAMA_URL
+  # ---- macf-classify: tiny classifier, local only. $0. ----------------------
+  - model_name: macf-classify
+    litellm_params:
+      model: ollama/qwen2.5:3b-instruct-q4_K_M
+      api_base: os.environ/OLLAMA_URL
+  # ---- macf-smart-or: runtime legacy name -> same as macf-smart. ------------
+  - model_name: macf-smart-or
+    litellm_params:
+      model: ollama/qwen2.5:3b-instruct-q4_K_M
+      api_base: os.environ/OLLAMA_URL
+  # ---- macf-frontier-or: runtime legacy name -> OpenRouter free. ------------
+  - model_name: macf-frontier-or
+    litellm_params:
+      model: openrouter/meta-llama/llama-3.3-70b-instruct:free
+      api_key: os.environ/OPENROUTER_API_KEY
   # ---- macf-cheap: local Qwen only. Routine/fast work. $0. -----------------
   - model_name: macf-cheap
     litellm_params:
