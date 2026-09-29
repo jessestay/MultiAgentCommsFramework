@@ -1,60 +1,46 @@
-# Desktop-App Subscription Bridge — Feasibility Assessment
+# Desktop-App Subscription Bridge — Planned Major Feature
 **Date:** 2026-09-29
-**Question:** Can MACF ride Jesse's desktop-app subscriptions (Muse app,
-Claude Desktop, Gemini app, ChatGPT app) at $0 marginal cost as tier 2 of the
-budget-first routing chain?
+**Status:** BACKLOG — major feature, prioritized after budget runway improves
+**Jesse's directive:** "Don't mark the desktop app subscriptions as infeasible — I can fund subscriptions. That needs to be a major feature of the MACF across multiple subscription LLMs."
 
-## Verdict
+## Vision
 
-| App | Programmatic access? | Feasible? |
-|-----|---------------------|-----------|
-| Claude (Desktop / Code) | Yes — Claude Code OAuth token | **Yes, with caveats** |
-| Muse (Meta AI app) | No local API or CLI | No |
-| Gemini app | No local API or CLI | No |
-| ChatGPT app | No local API or CLI | No |
+MACF rides the user's existing AI subscriptions at $0 marginal cost per request as tier 2 of the budget-first routing chain (after local, before OpenRouter). Priority order: **Muse → Claude → Gemini → ChatGPT**.
 
-Only **Claude** has a viable subscription-riding path. The other three apps
-expose no supported local API, CLI, or automation surface — bridging them
-would require fragile GUI/browser automation, which is unsuitable as a
-24/7 production backend (breaks on UI updates, violates ToS, unreliable).
+This is a key MACF differentiator: users already pay for these subscriptions. MACF should use them instead of burning per-token API fees.
 
-## Claude subscription path (implemented)
+## Per-app status
 
-The Slack runtime already implements this in
-`slack-agents/utils/litellm-gateway.js`:
+| App | Subscription path | Status |
+|-----|------------------|--------|
+| Claude (Desktop / Code) | Claude Code OAuth token via `routeViaClaudeSubscription()` in `slack-agents/utils/litellm-gateway.js` | **Nearest-term** — code exists, needs active subscription + fresh OAuth token |
+| Muse (Meta AI app) | No local API today | **Research needed** — monitor Meta for API/CLI surface |
+| Gemini app | No local API today | **Research needed** — monitor Google for API/CLI surface |
+| ChatGPT app | No local API today | **Research needed** — monitor OpenAI for API/CLI surface |
 
-- `routeViaClaudeSubscription()` calls Anthropic's API directly using a
-  Claude Code OAuth bearer token with the OAuth beta header.
+## Claude subscription path (code exists)
+
+The Slack runtime already implements this in `slack-agents/utils/litellm-gateway.js`:
+
+- `routeViaClaudeSubscription()` calls Anthropic's API directly using a Claude Code OAuth bearer token with the OAuth beta header.
 - Enabled via `USE_CLAUDE_SUBSCRIPTION=true`.
-- It runs **upstream of the LiteLLM gateway** — the runtime tries the
-  subscription before ever calling `:4000`.
+- Runs **upstream of the LiteLLM gateway** — the runtime tries the subscription before ever calling `:4000`.
 
-### Current blockers (2026-09-29)
+### To activate (when Jesse funds it)
 
-1. **Subscription past due.** Per records, Jesse's Claude Max payment failed
-   2026-09-26; Claude Code access was disabled. The bridge cannot work until
-   the subscription is reactivated.
-2. **No OAuth token present.** `~/.claude/.credentials.json` contains only
-   MCP OAuth entries, not a Claude account OAuth block. The
-   `CLAUDE_CODE_OAUTH_TOKEN` source is unverified this session.
+1. Reactivate the Claude subscription (Max payment failed 2026-09-26).
+2. Run a bounded `claude -p` test to capture a fresh OAuth token.
+3. Set `USE_CLAUDE_SUBSCRIPTION=true` in the runtime `.env`.
 
-**Next step:** When Jesse reactivates the subscription, run a bounded
-`claude -p` test to capture a fresh OAuth token, then set
-`USE_CLAUDE_SUBSCRIPTION=true`.
+## Design principles for the full feature
 
-## Why not UI automation for the other apps
+- **Graceful degradation:** If a subscription lapses or its bridge breaks, the chain falls through to the next tier automatically. No single subscription is a hard dependency.
+- **Per-app isolation:** Each bridge is independent — Muse breaking doesn't affect Claude.
+- **No fragile UI automation in v1:** Bridges must use supported APIs, OAuth tokens, or CLIs. DOM scraping is explicitly out of scope until a supported path exists.
+- **User-funded:** The user brings their own subscriptions; MACF never pays for or manages them.
 
-- **Fragility:** Selectors and layouts change without notice; a 24/7 bridge
-  built on DOM scraping breaks silently.
-- **Policy:** Automating consumer app UIs to extract inference at scale
-  risks account termination.
-- **Cost/benefit:** The engineering effort to maintain four separate
-  UI-automation bridges exceeds the savings vs. OpenRouter free-tier models,
-  which already fill the $0-cost slot in the chain.
+## Open research
 
-## Recommendation
-
-Keep tier 2 as **Claude-subscription-only**, implemented in the runtime
-layer (not the gateway). Document the other apps as infeasible. If Jesse
-wants them anyway, that requires his explicit acceptance of the
-instability and account-policy risk.
+- Watch for Meta/Google/OpenAI exposing local API or CLI access for their consumer apps.
+- Evaluate whether official "agent mode" or MCP surfaces in these apps could serve as a bridge.
+- Revisit feasibility quarterly or when vendors ship new integration surfaces.
