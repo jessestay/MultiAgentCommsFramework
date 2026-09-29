@@ -14,6 +14,9 @@
 // quality matters. Pass model:'smart' or model:'best' to override.
 
 const Anthropic = require('@anthropic-ai/sdk');
+// LiteLLM gateway fallback: when this host holds no direct provider key,
+// route through the desktop gateway (budget-first routing is CEO policy).
+const litellm = require('./litellm');
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -45,6 +48,12 @@ function resolveModel(model) {
  * @returns {Promise<string>}
  */
 async function chat({ systemPrompt, userMessage, model = DEFAULT_MODEL, maxTokens = 1024 }) {
+  // No direct provider key on this host → fall through to the LiteLLM
+  // gateway (desktop, budget-first tiers). This is what takes the VM engine
+  // out of watch mode.
+  if (!process.env.ANTHROPIC_API_KEY && litellm.isConfigured()) {
+    return litellm.chat({ systemPrompt, userMessage, model, maxTokens });
+  }
   const resolvedModel = resolveModel(model);
   try {
     const response = await client.messages.create({
@@ -94,7 +103,7 @@ Context: ${context}`,
 }
 
 module.exports = { chat, generateProactivePost, generateReport, QUICK_MODEL, SMART_MODEL, BEST_MODEL,
-  // True when this host can actually call the model (API key present).
-  // Hosts without a key (e.g. the VM stopgap) run the engine in watch mode:
-  // lock + board scan + Jesse-gated pings, no LLM task work.
-  isConfigured: () => !!process.env.ANTHROPIC_API_KEY };
+  // True when this host can actually call the model: a direct provider key,
+  // or the LiteLLM gateway path (desktop, budget-first). Hosts with neither
+  // run the engine in watch mode: lock + board scan + Jesse-gated pings only.
+  isConfigured: () => !!process.env.ANTHROPIC_API_KEY || litellm.isConfigured() };

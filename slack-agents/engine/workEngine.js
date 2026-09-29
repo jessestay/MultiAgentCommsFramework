@@ -177,7 +177,11 @@ TASK-DONE: NO — <one line: what still needs Jesse or what remains>
   await vikunja.addComment('execPM', task.id, comment).catch(err =>
     log(`comment failed on #${task.id}:`, err.message));
 
-  if (doneYes) {
+  // Standing LOOP tasks are never auto-completed: the loop must survive every
+  // cycle. (The task text also instructs the model to end TASK-DONE: NO;
+  // this guard makes it structural, not prompt-dependent.)
+  const isLoopTask = /^LOOP:/i.test(task.title || '');
+  if (doneYes && !isLoopTask) {
     await vikunja.completeTask('execPM', task.id).catch(err =>
       log(`complete failed on #${task.id}:`, err.message));
     log(`task #${task.id} completed`);
