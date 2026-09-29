@@ -56,11 +56,12 @@ model_list:
     litellm_params:
       model: ollama/qwen2.5:3b-instruct-q4_K_M
       api_base: os.environ/OLLAMA_URL
-  # ---- macf-frontier-or: runtime legacy name -> OpenRouter free. ------------
+  # ---- macf-frontier-or: runtime legacy name -> local (OpenRouter free tier
+  #      is dead as of Sep 29; budget-first = local). -------------------------
   - model_name: macf-frontier-or
     litellm_params:
-      model: openrouter/meta-llama/llama-3.3-70b-instruct:free
-      api_key: os.environ/OPENROUTER_API_KEY
+      model: ollama/qwen2.5:3b-instruct-q4_K_M
+      api_base: os.environ/OLLAMA_URL
   # ---- macf-cheap: local Qwen only. Routine/fast work. $0. -----------------
   - model_name: macf-cheap
     litellm_params:
