@@ -180,6 +180,9 @@ SEO is a product decision. Build the tool/dataset/widget the searcher wants inst
 const LENS_AIO = `LILY RAY lens (AI-search visibility) — full playbook: ~/workspace/macf/team-skills/lily-ray.md
 Citations ≠ recommendations: AI recommends brands its training data already trusts. Earn off-site authority (press, Reddit, reviews, original data), keep real SEO strong (rank still predicts citations), structure content for machine extraction. Distrust GEO vendor hype; verify with data.`;
 
+const LENS_PATEL = `NEIL PATEL lens (SEO + AI search that converts) — full playbook: ~/workspace/macf/team-skills/neil-patel.md
+Citations aren't revenue: how-tos and listicles get cited, comparison pages get buyers. Match format to intent (commercial = comparison, never a guide), Search Everywhere Optimization (~73% of search is off Google), entity-first schema, freshness velocity, review sentiment. SEO is a ~2-year game — commit or skip.`;
+
 const LENS_HOOKS = `EUGENE SCHWARTZ lens (headlines + hooks) — full playbook: ~/workspace/macf/team-skills/eugene-schwartz.md
 You can't create desire, only channel it. Diagnose first: the reader's awareness stage × the market's sophistication stage, then write the headline. Saturated market → stop promising; introduce a unique mechanism or sell identity. Specificity = believability.`;
 
@@ -213,6 +216,7 @@ const LENS_BY_SLUG = {
   'derral-eves':        LENS_EVES,
   'eli-schwartz':       LENS_SEO,
   'lily-ray':           LENS_AIO,
+  'neil-patel':         LENS_PATEL,
   'eugene-schwartz':    LENS_HOOKS,
   'nick-saraev':        LENS_AUTOMATION,
   'brock-johnson':      LENS_INSTAGRAM,
@@ -227,11 +231,11 @@ const LENS_BY_SLUG = {
 // Persona → expert-skill wiring. Single source of truth: prompts interpolate
 // from this map via lensBlock(), so the map and the prompts can't drift.
 const EXPERT_WIRING = {
-  cmo:      ['jesse-voice', 'ryan-holiday', 'derral-eves', 'eli-schwartz', 'lily-ray', 'nick-saraev', 'richard-millington'],
-  cco:      ['jesse-voice', 'ryan-holiday', 'derral-eves', 'eugene-schwartz', 'brendan-kane', 'sam-parr', 'justin-welsh'],
+  cmo:      ['jesse-voice', 'ryan-holiday', 'derral-eves', 'eli-schwartz', 'lily-ray', 'neil-patel', 'nick-saraev', 'richard-millington'],
+  cco:      ['jesse-voice', 'ryan-holiday', 'derral-eves', 'eugene-schwartz', 'brendan-kane', 'sam-parr', 'justin-welsh', 'neil-patel'],
   facebook: ['jesse-voice', 'ryan-holiday', 'derral-eves', 'mari-smith', 'brock-johnson', 'nick-saraev'],
   cuxo:     ['ryan-holiday', 'derral-eves', 'brock-johnson'],
-  cro:      ['eli-schwartz', 'lily-ray'],
+  cro:      ['eli-schwartz', 'lily-ray', 'neil-patel'],
   jobcoach: ['justin-welsh'],
 };
 

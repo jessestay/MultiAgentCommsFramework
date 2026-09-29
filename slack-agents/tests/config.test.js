@@ -167,6 +167,7 @@ describe('Expert skill lenses', () => {
     'derral-eves': 'DERRAL EVES lens',
     'eli-schwartz': 'ELI SCHWARTZ lens',
     'lily-ray': 'LILY RAY lens',
+    'neil-patel': 'NEIL PATEL lens',
     'eugene-schwartz': 'EUGENE SCHWARTZ lens',
     'nick-saraev': 'NICK SARAEV lens',
     'brock-johnson': 'BROCK JOHNSON lens',
