@@ -35,6 +35,28 @@ haven't set up.
 - **Gateway layer** (LiteLLM) handles provider fan-out with per-tier
   fallback chains and cross-tier failover.
 
+## Strict priority implementation
+
+LiteLLM's router **shuffles** multiple deployments under one `model_name`
+(default `simple-shuffle`), which breaks cost ordering — a request could
+hit a paid API before trying local. So each cost tier is a **separate
+model_name**, chained by `router_settings.fallbacks`:
+
+```
+macf-cheap (local $0)
+  -> macf-smart (local $0, strict first)
+    -> macf-smart-free (OpenRouter free $0)
+      -> macf-best (OpenRouter paid, then free)
+        -> macf-best-direct (Meta -> Gemini -> Claude, last resort)
+          -> macf-cheap (final fallback)
+macf-muse (Meta direct) -> macf-best
+```
+
+Within a tier, deployments are shuffled — but every deployment in a tier
+costs the same, so shuffle order never affects cost. A tier is only tried
+after every cheaper tier has failed. Verified 2026-09-29: 4/4 `macf-smart`
+requests served locally, never shuffled to paid tiers.
+
 ## Zero-budget install
 
 1. Install Ollama, pull `qwen2.5:3b-instruct-q4_K_M`.

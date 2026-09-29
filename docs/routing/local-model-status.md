@@ -2,46 +2,65 @@
 **Date:** 2026-09-29
 **Host:** DESKTOP-4U63DES (GTX 980, 4GB VRAM)
 
-## Current status: DEGRADED
+## Current status: OPERATIONAL
 
-Ollama's GPU discovery times out on the GTX 980, forcing CPU fallback.
-CPU inference on 3B models is too slow (>120s) for gateway use.
+Ollama 0.5.7 with the `cuda_v11_avx` runner serves `qwen2.5:3b-instruct-q4_K_M`
+on the GTX 980 with partial GPU offload. Warm inference is 0.6–5s for short
+prompts through the LiteLLM gateway.
 
-### Evidence
+### What fixed it
 
-- `ollama ps` shows 0 models loaded; generation requests hang.
-- Server log: `failure during llama-server GPU discovery`,
-  `llama-server GPU discovery watchdog timed out` (tried `cuda_v12`,
-  `cuda_v13`, `vulkan` — all timed out).
-- `nvidia-smi`: GPU healthy (35C idle, 2.1GB free VRAM, driver 537.58,
-  CUDA 12.2). The GPU works; Ollama's bundled llama-server fails to
-  initialize it.
-- Direct `qwen2.5:3b-instruct-q4_K_M` generation timed out at 60s and 120s.
-- `qwen3.5:4b` also timed out on trivial prompts (earlier finding).
+Ollama's GPU auto-discovery timed out on the GTX 980 (Maxwell, compute
+capability 5.2) — it tried `cuda_v12`, `cuda_v13`, and `vulkan` runners and
+all failed, forcing unusable CPU fallback (>120s per request).
+
+The fix: pin the runner explicitly.
+
+- Set environment variable `OLLAMA_LLM_LIBRARY=cuda_v11_avx` (Machine scope
+  on Windows, so the Ollama service inherits it), then restart Ollama.
+- CUDA 11 is the last toolkit with Maxwell (CC 5.x) support; the v12/v13
+  runners cannot initialize this GPU.
+
+### Verified performance (2026-09-29, via LiteLLM gateway :4000)
+
+| Test | Result |
+|------|--------|
+| `macf-cheap` cold (first request after gateway restart) | 150s — one-time model load into VRAM |
+| `macf-cheap` warm (5 consecutive) | 0.6–1.3s, all correct |
+| `macf-smart` (strict local-first, 4 consecutive) | 1.1–1.7s, all served by local tier |
+| `ollama ps` during load | `qwen2.5:3b-instruct-q4_K_M`, 3.2GB, 39%/61% CPU/GPU |
+| Correctness spot-check | 7+8=15, repeated small arithmetic — all correct |
 
 ### Impact on the gateway
 
-Local deployments are **commented out** in `proxies/litellm_config.yaml`
-for `macf-smart` and `macf-best` until this is resolved. `macf-cheap`
-remains defined as local-only (for when Ollama is fixed) but will
-timeout until then.
+Local deployments are **active** in `proxies/litellm_config.yaml`:
 
-The budget-first chain still holds: OpenRouter free-tier models fill the
-$0-cost slot while local is degraded.
+- `macf-cheap`: local-only ($0 always)
+- `macf-smart`: strict local-first via fallbacks
+  (`macf-smart` → `macf-smart-free` → `macf-best` → `macf-best-direct`);
+  verified 4/4 requests served locally, never shuffled to paid tiers
+- `macf-best`: OpenRouter paid → free → direct APIs (local intentionally
+  excluded — best-tier work wants frontier models, not the 3B)
 
-### Models available (when GPU works)
+### Models available
 
 | Model | Size | Status |
 |-------|------|--------|
-| `qwen2.5:3b-instruct-q4_K_M` | 1.8GB | Default (pending GPU fix + latency/stability tests) |
-| `qwen3.5:4b` | 3.16GB | NOT default — timed out on trivial prompts |
-| `llama3.2:3b` | 1.88GB | Fallback candidate |
-| `nomic-embed-text` | 0.26GB | Embeddings only |
+| `qwen2.5:3b-instruct-q4_K_M` | 1.9GB | **Default local model.** Verified working. |
+| `qwen3.5:4b` | 3.4GB | Downloaded, NOT default — not yet tested for latency/stability/quality |
+| `llama3.2:3b` | 2.0GB | Fallback candidate, untested |
+| `nomic-embed-text` | 274MB | Embeddings only (memory/RAG pipeline) |
 
-### Next steps
+### Known limitations
 
-1. Try `OLLAMA_LLM_LIBRARY` overrides or an older Ollama version with
-   better Maxwell (compute 5.2) support.
-2. Check for NVIDIA driver updates supporting the GTX 980.
-3. Re-enable local deployments in the gateway config once a trivial
-   generation completes in <30s consistently.
+- **Cold start:** first request after Ollama/gateway restart takes ~2.5 min
+  while the model loads into VRAM. Warm requests are sub-second to a few
+  seconds. The gateway's startup probe should allow for this.
+- **Partial offload:** only ~61% of layers fit in the 4GB VRAM; the rest
+  runs on CPU. Still fast enough for the cheap/smart tiers.
+- **Model quality:** the 3B model is weak at reasoning, math beyond trivial
+  arithmetic, and long-context work. It is the $0 tier, not the smart tier —
+  the fallback chain exists precisely so harder work escalates.
+- **3B knowledge cutoff and tool use:** not yet evaluated for function
+  calling; the Slack runtime should prefer `macf-smart-free` or higher
+  for tool-heavy persona work until local tool-use is proven.
