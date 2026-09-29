@@ -141,6 +141,23 @@ async function runHealthCheck() {
   console.log('[execPM] Health check complete.');
 }
 
+// ─── Task Board Triage (weekdays 8:30am MT = 14:30 UTC) ───────────────────────
+// Exec PM owns the Vikunja board: overdue work escalated, unassigned work gets
+// an owner, everything prioritized by revenue impact. Summary posts to #management.
+async function triageBoard() {
+  const tasks = require('../utils/tasks');
+  if (!tasks.isEnabled()) {
+    console.log('[execPM] Triage skipped — Vikunja not configured (see SETUP.md Part 5)');
+    return;
+  }
+  console.log('[execPM] Running task board triage...');
+  const summary = await tasks.triageBoard().catch(err => {
+    console.error('[execPM] Triage error:', err.message);
+    return null;
+  });
+  if (summary) await postToChannel(CHANNELS.management, summary);
+}
+
 // ─── Handle @mention ──────────────────────────────────────────────────────────
 async function handleMention({ event, say, client }) {
   const text = (event.text || '').replace(/<@[A-Z0-9]+>/g, '').trim();
@@ -222,10 +239,16 @@ function init(app) {
     runHealthCheck().catch(err => console.error('[execPM] Health check error:', err))
   );
 
+  // Task board triage: weekdays 8:30am MT = 14:30 UTC (winter) / 13:30 UTC (summer/MDT)
+  // — same seasonal caveat as the morning briefing; close enough for triage.
+  cron.schedule('30 14 * * 1-5', () =>
+    triageBoard().catch(err => console.error('[execPM] Triage error:', err))
+  );
+
   // Startup health check (30s delay for Slack to connect)
   setTimeout(() => {
     runHealthCheck().catch(err => console.error('[execPM] Startup health check error:', err));
   }, 30_000);
 }
 
-module.exports = { init, handleMention, handleDelegation, runMorningBriefing, runHealthCheck };
+module.exports = { init, handleMention, handleDelegation, runMorningBriefing, runHealthCheck, triageBoard };

@@ -27,3 +27,23 @@ scripts/
 .cursorignore.json
 .cursorignore.json.lock
 src/
+
+# macf runtime: secrets, databases, logs, state — never commit
+**/.admin-password
+**/.member-credentials
+**/.token
+*.pem
+*.key
+vikunja/data/
+vikunja/logs/
+vikunja/bin/vikunja
+vikunja/*.zip
+vikunja/*.sha256
+*.log
+__pycache__/
+*.pyc
+node_modules/
+**/state.json
+hidden_files/
+engine-standalone.log
+hatchet-sidecar/

@@ -1,0 +1,140 @@
+# litellm_config.yaml -- MACF unified gateway (rebuilt 2026-09-29)
+# =============================================================================
+# Self-hosted LiteLLM (OpenAI-compatible) gateway on :4000.
+#
+# DEFAULT ROUTING -- BUDGET-FIRST, STRICT PRIORITY (Jesse's directive, 2026-09-29):
+# This is the DEFAULT out-of-the-box routing for MACF. Zero API budget required:
+# a fresh install with only Ollama works. Tiers are tried in strict order via
+# the fallbacks chain below; the first success wins. Premium/paid paths are
+# the exception, not the rule.
+#
+# Full default chain (runtime layer + gateway layer):
+#   1. LOCAL -- Ollama qwen2.5:3b-instruct-q4_K_M (GTX 980, 4GB VRAM). Free.
+#      STATUS 2026-09-29: OPERATIONAL. Ollama 0.5.7 + cuda_v11_avx runner;
+#      GTX 980 (Maxwell CC 5.2) on CUDA 11. 17/37 layers GPU-offloaded.
+#      Warm inference 1-5s for short prompts. macf-cheap (local-only) and
+#      macf-smart (local, strict first) both active.
+#   2. DESKTOP-APP SUBSCRIPTIONS -- handled UPSTREAM in the Slack runtime
+#      (utils/litellm-gateway.js: routeViaClaudeSubscription), riding Jesse's
+#      Claude subscription via Claude Code OAuth at $0 marginal cost.
+#      NOT in this file -- the runtime tries it before calling the gateway.
+#      See docs/routing/desktop-subscription-bridge.md for feasibility notes.
+#   3. OPENROUTER -- 3rd-party aggregator. Free-tier models first; paid models
+#      are overflow for when credits are added. Configured ready below.
+#   4. DIRECT PAID APIs (last resort) -- Meta Muse (api.meta.ai), Gemini,
+#      Claude. Per-token costs; only when everything above fails.
+#      NOTE: the Anthropic PAYG key is $0 -- those deployments fail fast and
+#      fall through; kept in chain so they work if the key is ever funded.
+#
+# STRICT ORDERING: LiteLLM shuffles multiple deployments under one model_name
+# (default simple-shuffle), which breaks cost priority. So each cost tier is a
+# SEPARATE model_name, chained by router_settings.fallbacks below. Within a
+# tier all deployments cost the same, so shuffle order inside a tier is fine.
+#
+# AUTH: no general_settings.master_key. The gateway is localhost-only and
+# LiteLLM's key auth requires Prisma -- with a master key set, EVERY request
+# 500s with "No module named 'prisma'". No auth = no breakage.
+# Provider keys come from macf_gateway.env via deploy_model_router.ps1.
+# NO SECRETS IN THIS FILE (all via os.environ/...).
+# =============================================================================
+
+model_list:
+  # ---- Runtime-compat aliases (router-policy.js expects these names). --------
+  #      macf-mid: mid-tier, budget-first = local Ollama. $0.
+  #      (OpenRouter free model deepseek-chat-v3-0324:free went paid-only Sep 29.)
+  - model_name: macf-mid
+    litellm_params:
+      model: ollama/qwen2.5:3b-instruct-q4_K_M
+      api_base: os.environ/OLLAMA_URL
+  # ---- macf-classify: tiny classifier, local only. $0. ----------------------
+  - model_name: macf-classify
+    litellm_params:
+      model: ollama/qwen2.5:3b-instruct-q4_K_M
+      api_base: os.environ/OLLAMA_URL
+  # ---- macf-smart-or: runtime legacy name -> same as macf-smart. ------------
+  - model_name: macf-smart-or
+    litellm_params:
+      model: ollama/qwen2.5:3b-instruct-q4_K_M
+      api_base: os.environ/OLLAMA_URL
+  # ---- macf-frontier-or: runtime legacy name -> local (OpenRouter free tier
+  #      is dead as of Sep 29; budget-first = local). -------------------------
+  - model_name: macf-frontier-or
+    litellm_params:
+      model: ollama/qwen2.5:3b-instruct-q4_K_M
+      api_base: os.environ/OLLAMA_URL
+  # ---- macf-cheap: local Qwen only. Routine/fast work. $0. -----------------
+  - model_name: macf-cheap
+    litellm_params:
+      model: ollama/qwen2.5:3b-instruct-q4_K_M
+      api_base: os.environ/OLLAMA_URL
+
+  # ---- macf-smart: STRICT local-first. Single local deployment; on failure
+  #      falls through to macf-smart-free (OpenRouter free), never directly
+  #      to paid. -----------------------------------------------------------
+  - model_name: macf-smart
+    litellm_params:
+      model: ollama/qwen2.5:3b-instruct-q4_K_M
+      api_base: os.environ/OLLAMA_URL
+
+  # ---- macf-smart-free: OpenRouter free tier. $0 overflow when local is down.
+  - model_name: macf-smart-free
+    litellm_params:
+      model: openrouter/deepseek/deepseek-chat-v3-0324:free
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: macf-smart-free
+    litellm_params:
+      model: openrouter/meta-llama/llama-3.3-70b-instruct:free
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  # ---- macf-best: hardest work. OpenRouter paid first, then free. -----------
+  - model_name: macf-best
+    litellm_params:
+      model: openrouter/openai/gpt-4o-mini
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: macf-best
+    litellm_params:
+      model: openrouter/deepseek/deepseek-chat
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: macf-best
+    litellm_params:
+      model: openrouter/deepseek/deepseek-chat-v3-0324:free
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  # ---- macf-best-direct: direct paid APIs. Absolute last resort. ------------
+  - model_name: macf-best-direct
+    litellm_params:
+      model: openai/muse-spark-1.3
+      api_base: https://api.meta.ai/v1
+      api_key: os.environ/META_API_KEY
+  - model_name: macf-best-direct
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY
+  - model_name: macf-best-direct
+    litellm_params:
+      model: anthropic/claude-sonnet-4-6
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  # ---- macf-muse: Meta Muse direct (explicit hardest-task routing) ---------
+  - model_name: macf-muse
+    litellm_params:
+      model: openai/muse-spark-1.3
+      api_base: https://api.meta.ai/v1
+      api_key: os.environ/META_API_KEY
+
+# ---- Strict budget-first fallback chain ------------------------------------
+# $0 local -> $0 OpenRouter free -> OpenRouter paid -> direct paid APIs.
+# A tier is only tried after every cheaper tier has failed.
+router_settings:
+  fallbacks:
+    - {"macf-cheap": ["macf-smart"]}
+    - {"macf-smart": ["macf-smart-free"]}
+    - {"macf-smart-free": ["macf-best"]}
+    - {"macf-best": ["macf-best-direct"]}
+    - {"macf-best-direct": ["macf-cheap"]}
+    - {"macf-muse": ["macf-best"]}
+  allowed_fails: 2
+  cooldown_time: 30
+
+litellm_settings:
+  drop_params: true
