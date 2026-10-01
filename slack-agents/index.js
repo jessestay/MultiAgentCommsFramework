@@ -184,9 +184,16 @@ app.event('app_mention', async ({ event, say, client }) => {
 });
 
 // ─── Message handler (inter-agent delegation + @handle routing) ───────────────
+// CEO bot allowlist: the Jarvis Jr. CEO bot (U0C2QE4PGFR) posts delegation
+// directives like [from: CEO → CFO]. These MUST be processed — they are the
+// primary command channel. Infinite-loop protection is handled by the
+// visitedAgents set in each agent's handleDelegation, not by blanket bot filtering.
+const CEO_BOT_USER_ID = 'U0C2QE4PGFR';
 app.event('message', async ({ event, say, client }) => {
-  // Ignore bot messages to prevent infinite loops
-  if (event.bot_id || event.subtype === 'bot_message') return;
+  // Ignore bot messages to prevent infinite loops — EXCEPT the CEO bot's,
+  // which carries delegation directives that must be routed.
+  const isCeoBot = event.user === CEO_BOT_USER_ID || event.bot_id === 'B0C39F2CNHJ';
+  if (!isCeoBot && (event.bot_id || event.subtype === 'bot_message')) return;
 
   const channelName = await resolveChannelName(event.channel, client);
   state.updateChannelActivity(channelName);

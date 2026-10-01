@@ -181,7 +181,24 @@ async function handleDelegation(messageText, visitedAgents = new Set(), channelI
   console.log(`[execPM] Delegation from ${fromAgent} (channel: ${channelId || 'unknown'}): ${request.slice(0, 80)}`);
 
   const context = `Delegation request from ${fromAgent}:\n${request}`;
-  const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
+  let response;
+  try {
+    response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
+  } catch (err) {
+    // Never go silent on a CEO delegation — post the failure visibly
+    console.error(`[${AGENT_ID}] Delegation LLM failed:`, err.message);
+    const failureNote = `[execPM] Delegation received from ${fromAgent}, but my response generation failed (${err.message}). The directive is logged; I will retry on the next tick.`;
+    try {
+      if (channelId) {
+        await slackClient.chat.postMessage({ channel: channelId, text: failureNote });
+      } else {
+        await postToChannel(AGENT.primaryChannel, failureNote);
+      }
+    } catch (postErr) {
+      console.error(`[${AGENT_ID}] Failed to post failure note:`, postErr.message);
+    }
+    return true; // delegation was received and logged, even though generation failed
+  }
   await relay(response, AGENT_ID, visitedAgents, channelId);
 
   const cleanResponse = stripDelegations(response);
