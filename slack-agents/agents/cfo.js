@@ -6,11 +6,55 @@ const cron = require('node-cron');
 const { AGENTS, CHANNELS } = require('../config');
 const state = require('../utils/state');
 const { generateReport } = require('../utils/anthropic');
+const { chatTurn, isConfigured: gatewayConfigured } = require('../utils/litellm');
+const { runToolLoop, withModelFallback } = require('../mcp-client');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
 const { relay, stripDelegations } = require('../utils/delegation');
 
 const AGENT = AGENTS.cfo;
 const AGENT_ID = AGENT.id; // 'cfo'
+
+// ─── Hands: verified finance via MCP tools ────────────────────────────────────
+// When the CFO needs ground truth (revenue, PayPal, balances, transactions),
+// it calls the real tools instead of inventing numbers. The tool loop is
+// budgeted (grants.json); on budget exhaustion it returns verified-so-far.
+const HANDS_TRIGGERS = /\b(revenue|paypal|balance|transaction|payout|cash position|dashboard|how much (did|have|do) (we|i)|money (in|came))\b/i;
+
+function needsHands(text) {
+  return HANDS_TRIGGERS.test(text || '');
+}
+
+async function answerWithHands({ systemPrompt, request }) {
+  const started = Date.now();
+  // Budget tier first; fall back to the capable tier when the budget model
+  // garbles a tool call (verified behavior Oct 1, 2026).
+  const handsTurn = withModelFallback(
+    ({ messages, tools, model }) => chatTurn({ messages, tools, model, maxTokens: 800 }),
+  );
+  const result = await runToolLoop({
+    role: 'cfo',
+    systemPrompt: `${systemPrompt}
+
+You have READ-ONLY finance tools (PayPal transactions and balances). Use them whenever the question is about actual money — revenue, payouts, balances, cash position. Report only numbers the tools returned; if a tool fails or the budget runs out, say exactly what is verified and what is UNVERIFIED. Never invent a figure. Keep the final answer under 250 words, plain sentences, no emoji.`,
+    userMessage: request,
+    llmTurn: handsTurn,
+    onProgress: ({ tool, n }) => console.log(`[cfo:hands] tool #${n}: ${tool}`),
+  });
+  console.log(`[cfo:hands] done in ${Date.now() - started}ms, ${result.toolCallsUsed} tool calls`);
+  const evidence = result.toolSummaries.length
+    ? `\n\n(Verified via tools: ${result.toolSummaries.join(' | ')})`
+    : '';
+  if (result.budgetExhausted && !result.text) {
+    return `I started checking the real numbers but hit my tool budget before finishing. Verified so far: ${result.toolSummaries.join(' | ') || 'nothing yet'}. The rest is UNVERIFIED — I will not guess.`;
+  }
+  return (result.text || 'No answer produced.') + evidence;
+}
+
+// Fail-closed: when the hands path throws, NEVER fall back to a plain LLM
+// for money questions — an unguided model can fabricate figures. Say so.
+function handsFailureMessage(err) {
+  return `I could not verify the real numbers just now (tool system error: ${String(err.message || err).slice(0, 120)}). I will not guess at balances or revenue — please try again in a few minutes.`;
+}
 
 let slackClient = null;
 
@@ -86,7 +130,18 @@ Known metrics: ${JSON.stringify(state.get(AGENT_ID, 'trackedMetrics') || {}, nul
 Respond as CFO. Use specific numbers. Flag any tax deadlines. For actual tax filing or investment decisions, remind Jesse to consult a CPA.
   `.trim();
 
-  const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
+  // Hands path: money questions get verified tool data, not LLM guesses.
+  let response;
+  if (needsHands(text) && gatewayConfigured()) {
+    try {
+      response = await answerWithHands({ systemPrompt: AGENT.systemPrompt, request: context });
+    } catch (err) {
+      console.error('[cfo] hands failed (fail-closed, no LLM fallback):', err.message);
+      response = handsFailureMessage(err);
+    }
+  } else {
+    response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
+  }
   await relay(response, AGENT_ID);
   await say(stripDelegations(response));
   state.updateChannelActivity(AGENT.primaryChannel);
@@ -106,7 +161,18 @@ async function handleDelegation(messageText, visitedAgents = new Set(), channelI
   });
 
   const context = `Financial request from ${fromAgent}: "${request}"\nProvide specific financial analysis: Current | Target | Action | Impact.`;
-  const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1200 });
+  // Hands path: money questions get verified tool data, not LLM guesses.
+  let response;
+  if (needsHands(request) && gatewayConfigured()) {
+    try {
+      response = await answerWithHands({ systemPrompt: AGENT.systemPrompt, request: context });
+    } catch (err) {
+      console.error('[cfo] hands failed (fail-closed, no LLM fallback):', err.message);
+      response = handsFailureMessage(err);
+    }
+  } else {
+    response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1200 });
+  }
   await relay(response, AGENT_ID, visitedAgents, channelId);
   // Post the clean response to #management — Jesse doesn't need the routing prefix
   await postToChannel(AGENT.primaryChannel, stripDelegations(response));
