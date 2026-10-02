@@ -10,7 +10,13 @@
 const fs = require('fs');
 const path = require('path');
 
-const STATE_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || '/tmp';
+// FIX (Oct 2, 2026): Use persistent workspace path for VM-local engine.
+// /tmp is ephemeral and gets cleared on restart, which resets all cooldown
+// state and causes tasks to be re-worked every cycle. The VM engine needs
+// persistence across restarts.
+const STATE_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH ||
+  process.env.MACF_STATE_DIR ||
+  path.join(process.env.HOME || '/home/hatch', 'workspace', 'macf', 'slack-agents', '.state');
 
 // ─── Per-agent default state shapes ──────────────────────────────────────────
 const DEFAULT_STATE = {
