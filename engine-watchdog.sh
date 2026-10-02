@@ -16,28 +16,24 @@ curl -sf --max-time 10 -o /dev/null "https://staynalive.com/wp-cron.php?doing_wp
 # n8n supervision: the outreach-machine's watch.sh was written but never wired
 # into any schedule, so n8n died unwatched. Probe-first, idempotent.
 bash "$HOME/workspace/outreach-machine/watch.sh" || echo "watchdog: n8n watch FAILED"
-# LiteLLM gateway SSH tunnel: the desktop's Windows Firewall only allows :4000
-# from 172.16.0.0/12 (WSL2), not the tailnet, so the VM reaches the gateway via
-# an SSH tunnel (localhost:4000 -> desktop localhost:4000). If the tunnel dies,
-# every engine LLM call fails. Probe-first, idempotent. (Added Oct 1, 2026.)
-if ! curl -sf --max-time 5 -o /dev/null http://127.0.0.1:4000/health/liveliness; then
-  echo "watchdog: litellm tunnel down, restarting"
-  pkill -f "ssh.*-L 4000:127.0.0.1:4000" 2>/dev/null || true
-  sleep 1
-  hp="${HTTPS_PROXY}"; hp="${hp#*://}"; hp="${hp##*@}"; tp="${hp%:*}:3130"
-  nohup ssh -o BatchMode=yes -o ConnectTimeout=20 \
-    -o UserKnownHostsFile=/home/hatch/.ssh/known_hosts \
-    -o ProxyCommand="nc -X connect -x $tp %h %p" \
-    -i /home/hatch/.ssh/desktop_jesse_ed25519 \
-    -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes \
-    -N -L 4000:127.0.0.1:4000 stay@100.92.127.117 \
-    >> "$HOME/workspace/macf/ssh-tunnel-4000.log" 2>&1 &
-  ok=0
-  for i in 1 2 3 4; do
+# VM-local Meta gateway: the engine now uses http://127.0.0.1:4001 (meta-gateway.py)
+# instead of the desktop SSH tunnel (:4000). Check the gateway is responding.
+# If down, restart it. (Updated Oct 2, 2026 — desktop tunnel retired.)
+if ! curl -sf --max-time 5 -o /dev/null http://127.0.0.1:4001/v1/chat/completions -X POST -H "Content-Type: application/json" -d '{"model":"test","messages":[]}' 2>/dev/null; then
+  # The gateway might be down — try a simple TCP check first (the POST above
+  # may fail for other reasons). If the port isn't listening, restart.
+  if ! (echo > /dev/tcp/127.0.0.1/4001) 2>/dev/null; then
+    echo "watchdog: meta gateway down, restarting"
+    pkill -f "meta-gateway.py" 2>/dev/null || true
+    sleep 1
+    setsid nohup python3 "$ENGINE_DIR/meta-gateway.py" >> "$ENGINE_DIR/meta-gateway.log" 2>&1 < /dev/null &
     sleep 3
-    if curl -sf --max-time 5 -o /dev/null http://127.0.0.1:4000/health/liveliness; then ok=1; break; fi
-  done
-  [ "$ok" = 1 ] || echo "watchdog: litellm tunnel restart FAILED"
+    if (echo > /dev/tcp/127.0.0.1/4001) 2>/dev/null; then
+      echo "watchdog: meta gateway restarted"
+    else
+      echo "watchdog: meta gateway restart FAILED"
+    fi
+  fi
 fi
 # Vikunja liveness: the task board must be up or the engine fail-closes every
 # cycle. The VM reboots with no boot service for Vikunja (systemd unit is gone,
@@ -88,16 +84,25 @@ if [ "${HATCHET_ENABLED:-0}" = "1" ]; then
   # FIX (Oct 2, 2026): Pass LITELLM vars through to the engine. Previously the
   # engine was not receiving the updated LITELLM_BASE_URL (pointing to the
   # VM-local Meta gateway), causing it to use the stale desktop tunnel URL.
-  runuser -u macf -- env HOME=/home/macf HATCHET_ENABLED=1 \
+  # setsid is REQUIRED (not just nohup): the runtime kills the whole process
+  # GROUP of a finished exec session, and nohup cannot escape that. Observed
+  # Oct 2, 2026: 13 engine kills with "Session terminated, killing shell..."
+  # in the log (Sep 29, Oct 1, Oct 2) — every engine the watchdog started
+  # via plain `nohup ... &` died when the launching exec session was torn
+  # down, looping the engine through restart-kill-restart. setsid puts the
+  # engine in a new session/PGID, so no session teardown can reach it.
+  setsid runuser -u macf -- env HOME=/home/macf HATCHET_ENABLED=1 \
     LITELLM_BASE_URL="$LITELLM_BASE_URL" LITELLM_MASTER_KEY="$LITELLM_MASTER_KEY" \
-    nohup node engine/runStandalone.js >> "$ENGINE_LOG" 2>&1 &
+    nohup node engine/runStandalone.js >> "$ENGINE_LOG" 2>&1 < /dev/null &
     # NOTE: nohup is REQUIRED. Without it, the engine dies when the invoking
     # exec session ends (observed live: "Session terminated, killing shell..."
     # took the embedded Postgres down). Never launch the engine from a
     # `background: true` exec — the runtime kills the whole process tree on
     # session completion. Use a normal foreground exec; the & backgrounds it
-    # and it reparents to init.
+    # and it reparents to init. (Oct 2, 2026: nohup alone is NO LONGER
+    # sufficient — the runtime now kills by process group; the setsid above
+    # is what actually protects the engine.)
 else
-  nohup node engine/runStandalone.js >> "$ENGINE_LOG" 2>&1 &
+  setsid nohup node engine/runStandalone.js >> "$ENGINE_LOG" 2>&1 < /dev/null &
 fi
 echo "watchdog: engine was down, restarted pid $!"
