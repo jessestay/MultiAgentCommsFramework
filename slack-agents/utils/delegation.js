@@ -2,10 +2,14 @@
 // Agents call relay() after generating a response. If the response contains
 // [from: X → Y] patterns, this module calls Y's handleDelegation directly —
 // no Slack round-trip, no bot-message filtering issues.
+// Every dispatch is also tracked as a Vikunja task owned by the receiving
+// agent (utils/tasks.js) — silent no-op when Vikunja isn't configured.
 //
 // Loop prevention: tracks which agents have already been invoked in this chain.
-// Each agent can appear at most once per chain (naturally caps at 8 hops for 8 agents).
+// Each agent can appear at most once per chain (naturally caps at 11 hops for 11 agents).
 // No arbitrary depth limit — it runs as long as the chain has new agents to visit.
+
+const tasks = require('./tasks');
 
 let _agentModules = {};
 let _delegationTargets = {};
@@ -75,6 +79,11 @@ async function relay(responseText, fromAgentId, visitedAgents = new Set(), chann
     await _agentModules[toAgentId]
       .handleDelegation(fullMsg, new Set(newVisited), channelId)
       .catch(err => console.error(`[delegation] Error invoking ${toAgentId}:`, err));
+
+    // Track the delegation as a Vikunja task owned by the receiving agent.
+    // Silent no-op when Vikunja isn't configured; never breaks the chain.
+    tasks.trackDelegation(fromAgentId, toAgentId, msgBody).catch(err =>
+      console.error('[delegation] Task tracking failed:', err.message));
   }
 }
 
@@ -86,12 +95,35 @@ async function relay(responseText, fromAgentId, visitedAgents = new Set(), chann
  */
 function stripDelegations(text) {
   if (!text) return '';
-  return text
+  let clean = text
     .split('\n')
     .filter(line => !/^\s*\[from:\s*[^→\]]+→[^\]]+\]/i.test(line.trim()))
     .join('\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+  // FIX (Oct 2, 2026): Also strip tool-call artifacts here so all existing
+  // callers get the sanitization automatically.
+  clean = clean.replace(/<\|tool_call_start\|>.*?<\|tool_call_end\|>/gs, '');
+  clean = clean.replace(/<\|.*?\|>/g, '');
+  return clean.trim();
 }
 
-module.exports = { init, relay, stripDelegations };
+/**
+ * Sanitize LLM output before posting to Slack. Removes tool-call artifacts,
+ * system markers, and other non-user-facing content.
+ * FIX (Oct 2, 2026): Prevents raw <|tool_call_start|> etc. from leaking into channels.
+ * @param {string} text
+ * @returns {string}
+ */
+function sanitizeForSlack(text) {
+  if (!text) return '';
+  let clean = stripDelegations(text);
+  // Remove tool-call artifacts
+  clean = clean.replace(/<\|tool_call_start\|>.*?<\|tool_call_end\|>/gs, '');
+  clean = clean.replace(/<\|.*?\|>/g, '');
+  // Remove common LLM artifacts
+  clean = clean.replace(/^\s*(Assistant|AI|Bot):\s*/im, '');
+  return clean.trim();
+}
+
+module.exports = { init, relay, stripDelegations, sanitizeForSlack };
