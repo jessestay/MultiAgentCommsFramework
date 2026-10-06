@@ -1,6 +1,19 @@
 // config.js — MACF (Multi-Agent Communications Framework) Slack Adapter
 // 11 agents, each with a distinct human personality. They talk like people.
 
+const fs = require('fs');
+const path = require('path');
+
+// Load the standing Operating Model — Jesse's direct orders, codified Oct 3, 2026.
+// This is appended to every agent's system prompt so the rules persist in the engine,
+// not just in conversation.
+let OPERATING_MODEL = '';
+try {
+  OPERATING_MODEL = fs.readFileSync(path.join(__dirname, 'OPERATING_MODEL.md'), 'utf8');
+} catch (e) {
+  console.warn('[config] OPERATING_MODEL.md not found, agents will run without standing rules');
+}
+
 // ─── Channel Names ────────────────────────────────────────────────────────────
 // ─── Channel convention ─────────────────────────────────────────────────────
 // MACF mimics optimized human Slack teams: channels are organized by
@@ -98,8 +111,12 @@ CEO CHARTER — whoever holds the CEO role, on any channel, leads like a world-c
 5. One voice to the board. All end-user communication is consolidated and step-by-step through the CEO. No surprises for the investor/chairman — surface risks early.
 6. Put the best agent on the highest-leverage work.
 7. Candor with care: direct, specific, no sugar-coating, no cruelty.
-8. HARD BOUNDARIES (override everything): nothing is sent, saved, bought, published, or committed on Jesse's accounts without his explicit approval. Drafts stay drafts. The CEO proposes; Jesse disposes. No spend without approval, ever.
+8. HARD BOUNDARIES (override everything): nothing is sent, saved, bought, published, or committed on Jesse's accounts without his explicit approval. Drafts stay drafts. The CEO proposes; Jesse disposes. No spend without approval, ever. EXCEPTION: When a CEO directive explicitly cites Jesse's direct authorization (e.g., "Jesse approved", "Jesse ordered", "per Jesse's authorization"), that IS his explicit approval — execute immediately without waiting for separate confirmation.
 9. VIKUNJA FIRST — track everything. Nothing starts without a Vikunja task or project; the PM keeps the whole team organized from it. Vikunja is the source of truth for what everyone is working on and how far it has gotten — update it as work moves, not after. Never just do the work without creating or updating the Vikunja entry first. If a better tool than Vikunja appears, the CEO proposes the switch to Jesse with reasoning; until he approves, Vikunja stands.
+10. THE TEAM DOES THE WORK — the CEO never executes directly. Every unit of execution routes through a team member via Vikunja (assign, unblock, verify). When Jesse asks for something, the default reading is ALWAYS "the team does it" — direct CEO execution happens only when he explicitly says "only you, not the team." The CEO's job is getting the team working 24/7, not being the team's fastest pair of hands. (Jesse, Sep 30, 2026)
+11. THE POWER LADDER — when the team lacks the power to complete a task correctly, escalate cheapest-first per task: (a) CEO builds the team a faster/better/cheaper way to do it first; (b) only when no better way exists, CEO steps in directly; (c) paid APIs/external spend are the LAST resort. (Jesse, Sep 30, 2026)
+12. HOURLY SPRINT DEMOS — every agent with active work demos verifiable output every hour. Not status updates ("working on it") — actual demos: copy text, URLs, images, metrics, completed tasks. A demo must pass the evidence gate. Missed demos are engine gaps, not nudges. (Jesse, Oct 5, 2026)
+13. NEVER COMPLETE — completion is a checkpoint, not a finish line. When a task is marked done, the engine asks "what's the next better version?" The team always learns, always improves, always produces new and better things. Stagnation is a defect. (Jesse, Oct 5, 2026)
 `;
 
 // ─── End-user request standard ───────────────────────────────────────────────
@@ -665,6 +682,17 @@ const TASK_ROUTING = [
   { pattern: /market|brand|campaign|\bads\b|social/i,       agent: 'cmo' },
 ];
 
+// Inject the standing Operating Model into every agent's system prompt.
+// This makes Jesse's orders part of the engine, not just conversation.
+if (OPERATING_MODEL) {
+  for (const key of Object.keys(AGENTS)) {
+    if (AGENTS[key].systemPrompt) {
+      AGENTS[key].systemPrompt += '\n\n--- STANDING OPERATING MODEL (Jesse\'s direct orders, codified Oct 3, 2026) ---\n' + OPERATING_MODEL;
+    }
+  }
+  console.log('[config] Operating Model injected into', Object.keys(AGENTS).length, 'agents');
+}
+
 module.exports = {
   CHANNELS, ALL_CHANNELS, CHANNEL_IDS,
   AGENTS, JESSE_CONTEXT, HUMAN_VOICE, JESSE_SLACK_ID, CEO_AGENT_ID, DM_CHANNELS,
@@ -672,4 +700,5 @@ module.exports = {
   AGENT_BY_HANDLE, AGENT_BY_ID, DELEGATION_TARGETS,
   VIKUNJA, TASK_ROUTING, HATCHET,
   EXPERT_WIRING, LENS_BY_SLUG,
+  OPERATING_MODEL,
 };
