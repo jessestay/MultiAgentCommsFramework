@@ -710,7 +710,7 @@ async function main() {
       // If a directive asks to review/analyze/check specific artifacts
       // (PDFs, documents, templates, files) but provides no URLs or paths,
       // it's unactionable. Dead-letter immediately instead of wasting 3 retries.
-      const artifactKeywords = /\b(pdf|document|template|file|spreadsheet|image|video|design|mockup|wireframe)\b/i;
+      const artifactKeywords = /\b(pdfs?|documents?|templates?|files?|spreadsheets?|images?|videos?|designs?|mockups?|wireframes?)\b/i;
       const reviewKeywords = /\b(review|analyze|check|verify|audit|inspect|examine|look at)\b/i;
       const hasUrl = /https?:\/\/[^\s]+/i.test(text);
       const hasPath = /(?:\/[\w.-]+)+\.\w+/.test(text) || /\b[\w-]+\.(pdf|docx?|xlsx?|png|jpe?g)\b/i.test(text);
