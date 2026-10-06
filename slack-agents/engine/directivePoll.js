@@ -673,6 +673,19 @@ async function main() {
   // Run all queued agent delegations concurrently (cap 4), then finalize
   // each in original order (validation, posting, state updates stay serial
   // so watermark/retry/dead-letter semantics are unchanged).
+  //
+  // BATCH CAP (Oct 5, 2026): With 180s timeouts, a large batch exceeds the
+  // 5-min cron window. Cap at 8 per run (highest priority first); the rest
+  // wait for the next cycle. Watermarks only advance for processed items,
+  // so unprocessed directives are safely retried.
+  const MAX_BATCH = 8;
+  if (pendingDelegations.length > MAX_BATCH) {
+    // Sort by priority (same logic as mapWithConcurrency) so the cap keeps
+    // the highest-priority work
+    pendingDelegations.sort((a, b) => getDirectivePriority(a) - getDirectivePriority(b));
+    console.log(`[directivePoll] batch capped: ${pendingDelegations.length} → ${MAX_BATCH} (highest priority first, rest next cycle)`);
+    pendingDelegations.length = MAX_BATCH;
+  }
   if (pendingDelegations.length > 0) {
     console.log(`[directivePoll] running ${pendingDelegations.length} delegation(s) concurrently (cap ${DELEGATION_CONCURRENCY})`);
     const batchStart = Date.now();
