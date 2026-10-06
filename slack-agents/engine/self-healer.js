@@ -617,10 +617,15 @@ async function repair(issue) {
       // Same issue re-fired every cycle, always reported "initiated", always
       // silent. Per the ENGINE GAP PRINCIPLE above, chronic low delivery is an
       // engine gap: log it (deduped) for CEO fix and report needs_ceo honestly.
-      logEngineGap('delivery',
+      // ROOT FIX (Oct 6, 2026 — healer cycle): logEngineGap dedupes and returns
+      // false when the gap is already open. Report honestly instead of
+      // claiming "logged" every cycle, so the console output matches reality.
+      const gapLogged = logEngineGap('delivery',
         `${issue.agentId}: ${issue.detail}`,
         `Investigate why ${issue.agentId} completes directives at this rate — check directivePoll delegation, LLM errors, evidence rejection, task blocking. Reset consecutiveFailures as a stopgap only.`);
-      repairAction = `Engine gap logged (delivery): ${issue.agentId} — ${issue.detail}`;
+      repairAction = gapLogged
+        ? `Engine gap logged (delivery): ${issue.agentId} — ${issue.detail}`
+        : `Engine gap already open (delivery): ${issue.agentId} — ${issue.detail} — no duplicate`;
       console.log(`[healer] ${repairAction}`);
       // Reset the consecutive failure count as a stopgap only — the underlying
       // issue must be fixed in engine code separately (see gap log).
