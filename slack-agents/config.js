@@ -227,6 +227,9 @@ Community is applied social science, measured in years. Seed with 10–20 commit
 const LENS_VOICE = `JESSE STAY VOICE lens (all content you write) — full guide: ~/workspace/macf/team-skills/jesse-voice.md
 Write like Jesse: scene-opens not theses, one-sentence punch paragraphs, fragments, self-owning asides, exact numbers never "many," fair-then-fatal with the anti-hype caveat, aphoristic closer. Strip chatbot tells (hedging, "it's worth noting," parallel-bullet rhythm, generic inspiration). No emojis, no exclamation marks. Imperfections stay.`;
 
+const LENS_TJROBERTSON = `TJ ROBERTSON lens (blog posts that rank) — full playbook: ~/workspace/macf/team-skills/tj-robertson.md
+Never write from a cold prompt: build the brand ambassador first (voice samples, transcripts, past content, writing guidance). Knowledge base for company facts, skills for task structure — fix the system, not the prompt. Three non-negotiables: validate search demand, put the search term in the title, optimize for Google AND AI search. Iterate the system with every post.`;
+
 // ─── Lens registry ───
 const LENS_BY_SLUG = {
   'ryan-holiday':       LENS_HOLIDAY,
@@ -243,13 +246,14 @@ const LENS_BY_SLUG = {
   'sam-parr':           LENS_NEWSLETTER,
   'richard-millington': LENS_COMMUNITY,
   'jesse-voice':        LENS_VOICE,
+  'tj-robertson':       LENS_TJROBERTSON,
 };
 
 // Persona → expert-skill wiring. Single source of truth: prompts interpolate
 // from this map via lensBlock(), so the map and the prompts can't drift.
 const EXPERT_WIRING = {
-  cmo:      ['jesse-voice', 'ryan-holiday', 'derral-eves', 'eli-schwartz', 'lily-ray', 'neil-patel', 'nick-saraev', 'richard-millington'],
-  cco:      ['jesse-voice', 'ryan-holiday', 'derral-eves', 'eugene-schwartz', 'brendan-kane', 'sam-parr', 'justin-welsh', 'neil-patel'],
+  cmo:      ['jesse-voice', 'ryan-holiday', 'derral-eves', 'eli-schwartz', 'lily-ray', 'neil-patel', 'nick-saraev', 'richard-millington', 'tj-robertson'],
+  cco:      ['jesse-voice', 'ryan-holiday', 'derral-eves', 'eugene-schwartz', 'brendan-kane', 'sam-parr', 'justin-welsh', 'neil-patel', 'tj-robertson'],
   facebook: ['jesse-voice', 'ryan-holiday', 'derral-eves', 'mari-smith', 'brock-johnson', 'nick-saraev'],
   cuxo:     ['ryan-holiday', 'derral-eves', 'brock-johnson'],
   cro:      ['eli-schwartz', 'lily-ray', 'neil-patel'],
