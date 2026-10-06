@@ -28,15 +28,22 @@ try {
   else if (out.includes('DESKTOP-DOWN') || out.includes('DEGRADED')) tunnelProbe = 'DESKTOP-DOWN';
 } catch(e) { tunnelProbe = 'PROBE-FAILED'; }
 
-// Quick SSH check (5s timeout)
+// Quick SSH check via tunnel proxy (5s timeout)
+// Raw TCP to port 22 is blocked by egress; must use ProxyCommand via :3130
 try {
-  execSync('timeout 5 ssh -o ConnectTimeout=5 -o BatchMode=yes -o StrictHostKeyChecking=no stay@100.92.127.117 \"echo ok\" 2>/dev/null', { timeout: 8000 });
+  const proxy = (process.env.HTTPS_PROXY || '').replace(/:\d+@/, ':3130@');
+  const proxyHost = proxy.replace(/^https?:\/\//, '').split('@').pop().split(':')[0] || 'proxy';
+  // Extract host:port from proxy URL for nc
+  const m = proxy.match(/@([^:]+):(\d+)/);
+  const proxyAddr = m ? m[1] + ':' + m[2] : null;
+  const proxyCmd = proxyAddr ? `nc -X connect -x ${proxyAddr} %h %p` : 'nc %h %p';
+  execSync(`timeout 8 ssh -o ProxyCommand="${proxyCmd}" -o ConnectTimeout=5 -o BatchMode=yes -o StrictHostKeyChecking=no stay@100.92.127.117 "echo ok" 2>/dev/null`, { timeout: 12000 });
   sshReachable = true;
 } catch(e) {}
 
-// Quick HTTP agent check (5s timeout)
+// Quick HTTP agent check via proxy (5s timeout)
 try {
-  execSync('curl -sf --max-time 5 -o /dev/null http://100.92.127.117:8099/health 2>/dev/null', { timeout: 8000 });
+  execSync('curl -sf --max-time 8 -o /dev/null --proxy "$HTTPS_PROXY" http://100.92.127.117:8099/health 2>/dev/null || curl -sf --max-time 8 -o /dev/null http://100.92.127.117:8099/health 2>/dev/null', { timeout: 12000, shell: '/bin/bash' });
   httpAgentReachable = true;
 } catch(e) {}
 
