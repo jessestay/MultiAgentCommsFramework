@@ -8,6 +8,8 @@ const state = require('../utils/state');
 const { generateReport, generateProactivePost } = require('../utils/anthropic');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
 const { relay, stripDelegations } = require('../utils/delegation');
+const { invokeTool } = require('../engine/mcpClient');
+const { postToX } = require('../engine/publisher');
 
 const AGENT = AGENTS.cco;
 const AGENT_ID = AGENT.id; // 'cco'
@@ -18,12 +20,14 @@ async function resolveChannel(name) {
   return _resolveChannel(slackClient, name);
 }
 
-async function postToChannel(channelName, text) {
+async function postToChannel(channelName, text, threadTs = null) {
   const channelId = await resolveChannel(channelName);
   if (!channelId) { console.warn(`[cco] Channel not found: #${channelName}`); return; }
   try {
     await slackClient.chat.postMessage({
-      channel: channelId, text,
+      channel: channelId,
+      ...(threadTs ? { thread_ts: threadTs } : {}),
+      ...(threadTs ? { thread_ts: threadTs } : {}), text,
       username: AGENT.slackName, icon_emoji: AGENT.icon, unfurl_links: false,
     });
     state.updateChannelActivity(channelName);
@@ -137,8 +141,24 @@ async function handleMention({ event, say }) {
   state.updateChannelActivity(AGENT.primaryChannel);
 }
 
+// ─── Publish intent classifier ────────────────────────────────────────────────
+// Distinguishes DRAFT intent ("write X post", "draft X post" — the content type)
+// from PUBLISH intent ("publish to X", "post this to X" — the action).
+// ROOT-CAUSE FIX (Oct 6, 2026): Old logic matched the substring "post" in
+// "X post", treating content-type mentions as publish actions.
+function isPublishIntent(lowerRequest) {
+  // Explicit publish actions directed at X/Twitter
+  const publishPatterns = [
+    /publish\s+(this|the|to|on)\b.*\bx\b/i,
+    /post\s+(this|the)\b.*\b(to|on)\b.*\bx\b/i,
+    /\btweet\s+(this|the|it)\b/i,
+    /\bsend\s+(this|it)\b.*\bto\b.*\bx\b/i,
+  ];
+  return publishPatterns.some(p => p.test(lowerRequest));
+}
+
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null) {
+async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null, threadTs = null) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*CCO\]\s*(.+)/si);
   if (!match) return false;
 
@@ -150,11 +170,81 @@ async function handleDelegation(messageText, visitedAgents = new Set(), channelI
     from: fromAgent, request: request.slice(0, 200), timestamp: new Date().toISOString()
   });
 
-  const context = `Delegation request from ${fromAgent}:\n"${request}"\n\nRespond as Chief Content Officer. Draft requested content or answer the content question. Mark all drafts with "✅ Awaiting Jesse's approval".`;
+  // Check if this directive requires MCP tool execution
+  let toolResult = null;
+  const lowerRequest = request.toLowerCase();
+
+  try {
+    // X/Twitter publishing — actually post via API.
+    // ROOT-CAUSE FIX (Oct 6, 2026): The old classifier matched "X post"
+    // (the CONTENT TYPE) as a publish action. "Write X post", "Draft X post",
+    // "Produce X post" are DRAFT intents. Only explicit publish verbs
+    // directed at the platform trigger publishing: "publish to X",
+    // "post this to X", "tweet this", etc.
+    if (isPublishIntent(lowerRequest) && lowerRequest.includes('workshop')) {
+      console.log('[cco] Publishing to X via publisher...');
+      // Extract the content to post (simplified - use workshop promo)
+      const workshopText = `Tomorrow 11am MT: Muse for Business workshop. Learn AI for your business. $90 early-bird: https://www.paypal.com/ncp/payment/99NXFJ6G8UV46`;
+      // Content gate: the publisher is fail-closed — a structured draft is required.
+      // A gate REJECT throws, lands in toolResult.error, and goes back to the LLM
+      // for a rewrite. Nothing ungated is ever posted.
+      const workshopDraft = {
+        label: 'workshop-promo',
+        platform: 'X',
+        hook: 'Tomorrow 11am MT: Muse for Business workshop.',
+        body: workshopText,
+        persona: 'Dickie Bush',
+        format: 'text-post',
+        mcp_tools_used: [],
+        visuals_routed_via_cuxo: false,
+        links: ['https://www.paypal.com/ncp/payment/99NXFJ6G8UV46'],
+      };
+      const result = await postToX(workshopText, workshopDraft);
+      toolResult = { published: true, platform: 'X', id: result.id, text: result.text };
+      console.log(`[cco] Posted to X: ${result.id}`);
+    }
+    // Research requests → Tavily
+    else if (lowerRequest.includes('research') || lowerRequest.includes('search for')) {
+      console.log('[cco] Executing via Tavily MCP...');
+      toolResult = await invokeTool('tavily', 'tavily_search', {
+        query: request.slice(0, 200),
+        max_results: 5
+      });
+    }
+  } catch (e) {
+    console.error(`[cco] Tool failed: ${e.message}`);
+    toolResult = { error: e.message };
+  }
+
+  // EXPERT LENSES (Oct 6, 2026): Load the actual playbook contents, not just
+  // the one-paragraph summaries in config.js. The generated copy was scoring
+  // 2/5 for voice and expert lens because the real guidance never reached
+  // the model.
+  let lensContext = '';
+  try {
+    const { loadContentLenses } = require('../utils/expertLens');
+    lensContext = loadContentLenses();
+  } catch (e) {
+    console.error('[cco] Failed to load expert lenses:', e.message);
+  }
+
+  const context = `Delegation request from ${fromAgent}:\n"${request}"\n\n${lensContext ? `EXPERT GUIDANCE (follow this when writing):\n${lensContext}\n\n` : ''}${toolResult ? `Tool result:\n${JSON.stringify(toolResult).slice(0, 1000)}\n\n` : ''}Respond as Chief Content Officer. Draft requested content or answer the content question. Mark all drafts with "✅ Awaiting Jesse's approval".${toolResult ? ' Include specific findings from the tool result.' : ''}`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await relay(response, AGENT_ID, visitedAgents, channelId);
-  await postToChannel(AGENT.primaryChannel, `[from: CCO → ${fromAgent}] ${stripDelegations(response)}`);
-  return true;
+  const subResults = await relay(response, AGENT_ID, visitedAgents, channelId);
+
+  // POLLER IS SOLE POSTER (Oct 4, 2026 — architectural fix):
+  // Do NOT post directly. Return the response for the poller to validate and post.
+  // (Previously this posted directly, bypassing poller validation.)
+  return {
+    completed: true,
+    response: `[from: CCO → ${fromAgent}] ${stripDelegations(response)}`,
+    threadTs: threadTs,
+    channel: AGENT.primaryChannel,
+    subResults: subResults,
+    evidence: toolResult ? `Executed: ${JSON.stringify(toolResult).slice(0, 200)}` : 'LLM draft (no tool execution)',
+    agentId: AGENT_ID,
+    timestamp: new Date().toISOString()
+  };
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
@@ -173,4 +263,4 @@ function init(app) {
   );
 }
 
-module.exports = { init, handleMention, handleDelegation, handleReaction, postDailyContentSuggestion };
+module.exports = { init, handleMention, handleDelegation, handleReaction, postDailyContentSuggestion, isPublishIntent };

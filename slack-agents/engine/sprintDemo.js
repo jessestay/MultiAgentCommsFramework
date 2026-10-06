@@ -73,8 +73,11 @@ async function getActiveTasksByAgent() {
   }
 
   const tasksByAgent = {};
-  // Check MACF project (2) and Revenue Sprint for active tasks
-  for (const projectId of [2]) {
+  // Check MACF project (2) and Revenue Sprint (16) for active tasks.
+  // ROOT-CAUSE FIX (Oct 6, 2026): Was only [2], making project-16 tasks
+  // (e.g. CFO's revenue dashboard #86) invisible to the demo monitor.
+  const PROJECT_IDS = [2, 16];
+  for (const projectId of PROJECT_IDS) {
     try {
       const res = await fetch(
         `http://127.0.0.1:3456/api/v1/projects/${projectId}/tasks`,
@@ -111,7 +114,10 @@ async function checkRecentDemos() {
     if (!h.lastActivity) continue;
     const lastActivity = new Date(h.lastActivity).getTime();
     if (lastActivity > oneHourAgo && h.directivesCompleted > 0) {
-      demosByAgent[agentId] = {
+      // Vikunja assignee usernames are lowercased in getActiveTasksByAgent();
+      // health keys use original casing (e.g. execPM). Normalize to lowercase
+      // so the demo lookup matches (was logging false misses, Oct 5 2026).
+      demosByAgent[agentId.toLowerCase()] = {
         lastDemo: h.lastActivity,
         completions: h.directivesCompleted,
       };
@@ -141,6 +147,8 @@ async function main() {
     if (demo) {
       console.log(`[sprintDemo] ✅ ${agent}: demo found (${demo.completions} completions, last: ${demo.lastDemo})`);
       state.lastDemo[agent] = demo.lastDemo;
+      // A real demo resets the consecutive-miss streak (was never cleared, Oct 5 2026)
+      if (state._misses) state._misses[agent] = 0;
       demosFound++;
     } else {
       console.log(`[sprintDemo] ⚠️  ${agent}: NO demo in last hour (${tasks.length} active tasks)`);

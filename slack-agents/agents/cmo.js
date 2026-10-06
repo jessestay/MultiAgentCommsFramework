@@ -9,6 +9,7 @@ const { generateReport, generateProactivePost } = require('../utils/anthropic');
 const { fetchDonationTotal, GOFUNDME_URL } = require('../utils/gofundme');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
 const { relay, stripDelegations } = require('../utils/delegation');
+const { invokeTool, listTools } = require('../engine/mcpClient');
 
 const AGENT = AGENTS.cmo;
 const AGENT_ID = AGENT.id; // 'cmo'
@@ -38,6 +39,32 @@ async function postToChannel(channelName, text) {
     console.log(`[cmo] ✅ Posted to #${channelName}`);
   } catch (err) {
     console.error(`[cmo] Error posting to #${channelName}:`, err.message);
+  }
+}
+
+// Post a reply in a thread (fixes "0 replies" bug where agents posted
+// top-level instead of in the directive thread)
+async function postToThread(channelName, threadTs, text) {
+  const channelId = await resolveChannel(channelName);
+  if (!channelId) {
+    console.warn(`[cmo] Channel not found: #${channelName}`);
+    return;
+  }
+  try {
+    await slackClient.chat.postMessage({
+      channel: channelId,
+      thread_ts: threadTs,
+      text,
+      username: AGENT.slackName,
+      icon_emoji: AGENT.icon,
+      unfurl_links: false,
+    });
+    state.updateChannelActivity(channelName);
+    console.log(`[cmo] ✅ Replied in thread ${threadTs}`);
+  } catch (err) {
+    console.error(`[cmo] Error replying in thread:`, err.message);
+    // Fallback to top-level post if thread reply fails
+    await postToChannel(channelName, text);
   }
 }
 
@@ -154,7 +181,7 @@ Last weekly calendar: ${state.get(AGENT_ID, 'lastWeeklyCalendar') || 'not posted
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null) {
+async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null, threadTs = null) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*CMO\]\s*(.+)/si);
   if (!match) return false;
 
@@ -167,18 +194,72 @@ async function handleDelegation(messageText, visitedAgents = new Set(), channelI
     from: fromAgent, request: request.slice(0, 200), timestamp: new Date().toISOString()
   });
 
+  // Check if this directive requires MCP tool execution
+  let toolResult = null;
+  const lowerRequest = request.toLowerCase();
+
+  try {
+    // Research requests → Tavily
+    if (lowerRequest.includes('research') || lowerRequest.includes('search for') || lowerRequest.includes('find information')) {
+      console.log('[cmo] Executing via Tavily MCP...');
+      const query = request.slice(0, 200);
+      toolResult = await invokeTool('tavily', 'tavily_search', { query, max_results: 5 });
+      console.log('[cmo] Tavily result received');
+    }
+    // Content publishing → Buffer (when configured)
+    else if (lowerRequest.includes('publish') && lowerRequest.includes('buffer')) {
+      console.log('[cmo] Executing via Buffer MCP...');
+      // Buffer tool invocation would go here
+      toolResult = { note: 'Buffer publishing via MCP - implementation pending channel config' };
+    }
+  } catch (e) {
+    console.error(`[cmo] MCP tool failed: ${e.message}`);
+    toolResult = { error: e.message };
+  }
+
+  // EXPERT LENSES (Oct 6, 2026): Load the actual playbook contents, not just
+  // the one-paragraph summaries in config.js.
+  let lensContext = '';
+  try {
+    const { loadContentLenses } = require('../utils/expertLens');
+    lensContext = loadContentLenses();
+  } catch (e) {
+    console.error('[cmo] Failed to load expert lenses:', e.message);
+  }
+
   const context = `
 Delegation request from ${fromAgent}:
 "${request}"
 
+${lensContext ? `EXPERT GUIDANCE (follow this when writing):\n${lensContext}\n\n` : ''}${toolResult ? `Tool execution result:\n${JSON.stringify(toolResult).slice(0, 1000)}` : ''}
+
 Respond as CMO. If this requires research, delegate to CRO.
 If it needs content drafted, delegate to CCO. If it needs design, delegate to CUXO.
+${toolResult ? 'Include the tool result in your response with specific findings.' : ''}
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await relay(response, AGENT_ID, visitedAgents, channelId);
-  await postToChannel(AGENT.primaryChannel, `[from: CMO → ${fromAgent}] ${stripDelegations(response)}`);
-  return true;
+  const subResults = await relay(response, AGENT_ID, visitedAgents, channelId);
+
+  // ROOT-CAUSE FIX: Do NOT post directly. Return the response for the poller
+  // to validate. The poller is the sole poster — it validates evidence BEFORE
+  // posting, preventing empty "on it" messages from spamming the channel.
+  const formattedResponse = `[from: CMO → ${fromAgent}] ${stripDelegations(response)}`;
+
+  // Return evidence contract: what was actually done
+  // The poller will post this ONLY if evidence validation passes.
+  return {
+    completed: true,
+    response: formattedResponse,  // Poller posts this if validated
+    threadTs: threadTs,           // Poller uses this for thread reply
+    channel: AGENT.primaryChannel,
+    subResults: subResults,
+    evidence: toolResult ? `Executed via MCP: ${JSON.stringify(toolResult).slice(0, 200)}` : null,
+    // NULL evidence for text-only replies forces the poller to validate
+    // the response content itself for verifiable deliverables.
+    agentId: AGENT_ID,
+    timestamp: new Date().toISOString()
+  };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

@@ -42,6 +42,33 @@ async function resolveChannelId(client, nameOrId) {
   }
 }
 
+// Verify a Slack post actually landed (read-after-write).
+// ROOT-CAUSE FIX (Oct 6, 2026): The poller logged "Posted validated reply"
+// without checking. In the CCO workshop test the thread had 0 replies despite
+// the success log. This reads back the thread (or channel) and confirms a
+// message with the posted ts exists before the directive is marked complete.
+async function verifyPostLanded(client, channelId, threadTs, postedTs) {
+  if (!postedTs) return false;
+  try {
+    let messages = [];
+    if (threadTs) {
+      const res = await client.conversations.replies({
+        channel: channelId, ts: threadTs, limit: 10,
+      });
+      messages = res.messages || [];
+    } else {
+      const res = await client.conversations.history({
+        channel: channelId, limit: 10,
+      });
+      messages = res.messages || [];
+    }
+    return messages.some(m => m.ts === postedTs);
+  } catch (e) {
+    console.error(`[directivePoll] post verification readback failed:`, e.message);
+    return false;
+  }
+}
+
 // Map directive patterns to verifiers. When a directive matches, it's added
 // to the verification queue so directiveVerify.js can check the outcome.
 function matchVerifier(text) {
@@ -455,10 +482,24 @@ async function finalizeDelegation(client, state, item, result) {
       if (agentCfg?.slackName) postParams.username = agentCfg.slackName;
       if (agentCfg?.icon) postParams.icon_emoji = agentCfg.icon;
 
-      await client.chat.postMessage(postParams);
-      console.log(`[directivePoll] ✅ Posted validated reply for ${agentId} in ${result.threadTs ? 'thread' : 'channel'}`);
+      const postRes = await client.chat.postMessage(postParams);
+      const postedTs = postRes && postRes.ts;
+
+      // VERIFY (Oct 6, 2026): Read back the thread/channel and confirm the
+      // post landed. Fail closed — do not mark complete on unverified posts.
+      const landed = await verifyPostLanded(client, channelId, result.threadTs, postedTs);
+      if (!landed) {
+        console.error(`[directivePoll] ❌ Post verification FAILED for ${agentId} — ` +
+          `posted ts ${postedTs || '(none)'} not found in ${result.threadTs ? 'thread' : 'channel'}. ` +
+          `Directive NOT marked complete (will retry).`);
+        updateAgentHealth(agentId, 'failed');
+        return processed;
+      }
+      console.log(`[directivePoll] ✅ Posted validated reply for ${agentId} in ${result.threadTs ? 'thread' : 'channel'} (verified ts ${postedTs})`);
     } catch (postErr) {
       console.error(`[directivePoll] Failed to post validated reply:`, postErr.message);
+      updateAgentHealth(agentId, 'failed');
+      return processed;
     }
   }
 
