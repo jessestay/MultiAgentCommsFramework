@@ -242,7 +242,7 @@ async function linkDirectiveToTask(agentId, directiveText, responseText) {
 // Delegations now run concurrently with a cap; parsing, validation, posting,
 // and state updates stay serial in message order so watermark/retry/
 // dead-letter semantics are unchanged.
-const DELEGATION_CONCURRENCY = 4;
+const DELEGATION_CONCURRENCY = 2;
 
 // PRIORITY TIERS (Oct 5, 2026 — Jesse: "should certain agents get priority?"):
 // Not all work is equal. Revenue work outranks internal work. Jesse's direct
@@ -678,7 +678,7 @@ async function main() {
   // 5-min cron window. Cap at 8 per run (highest priority first); the rest
   // wait for the next cycle. Watermarks only advance for processed items,
   // so unprocessed directives are safely retried.
-  const MAX_BATCH = 8;
+  const MAX_BATCH = 6;
   if (pendingDelegations.length > MAX_BATCH) {
     // Sort by priority (same logic as mapWithConcurrency) so the cap keeps
     // the highest-priority work
