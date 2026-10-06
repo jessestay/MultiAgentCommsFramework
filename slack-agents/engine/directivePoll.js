@@ -465,8 +465,11 @@ async function finalizeDelegation(client, state, item, result) {
   // This is the only place directive replies are posted.
   if (result?.response) {
     try {
-      const postChannel = result.channel || channel;
-      const channelId = await resolveChannelId(client, postChannel).catch(() => null) || channel;
+      // ROOT-CAUSE FIX (Oct 6, 2026): ALWAYS post directive replies in the
+      // directive's channel. The agent's primaryChannel (e.g. CCO's "content")
+      // is for proactive posts, not directive replies. Using it here posted
+      // to the wrong channel, where the thread_ts didn't exist.
+      const channelId = channel;
       const postParams = {
         channel: channelId,
         text: result.response,
