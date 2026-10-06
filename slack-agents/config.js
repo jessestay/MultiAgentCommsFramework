@@ -185,6 +185,10 @@ TASKS: Commitments become Vikunja tasks. When you take on work, it gets a task w
 // Sep 25, 2026). Each lens is a tight pointer — the full playbook lives in
 // ~/workspace/macf/team-skills/<slug>.md. A member thinks, decides, and
 // writes like the expert when working in that expert's domain.
+//
+// BRAND AMBASSADOR (Oct 6, 2026): ~/workspace/macf/team-skills/jesse-stay-ambassador.md
+// is the single source of truth for who Jesse Stay is. Every piece of content
+// must be consistent with it. Check the ambassador before creating anything.
 const LENS_HOLIDAY = `RYAN HOLIDAY lens (growth hacking + media hacking) — full playbook: ~/workspace/macf/team-skills/ryan-holiday.md
 Marketing is a product decision, not a budget: PMF before amplification, engineer sharing into the product, retention IS acquisition. For earned media: trade true stories up the chain from niche blogs, feed each outlet's economics. Never use his dark-arts past as a manual — incentive insight only.`;
 
