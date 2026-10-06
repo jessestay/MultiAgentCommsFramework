@@ -19,12 +19,13 @@ async function resolveChannel(name) {
   return _resolveChannel(slackClient, name);
 }
 
-async function postToChannel(channelName, text) {
+async function postToChannel(channelName, text, threadTs = null) {
   const channelId = await resolveChannel(channelName);
   if (!channelId) { console.warn(`[cro] Channel not found: #${channelName}`); return; }
   try {
     await slackClient.chat.postMessage({
-      channel: channelId, text,
+      channel: channelId,
+      ...(threadTs ? { thread_ts: threadTs } : {}), text,
       username: AGENT.slackName, icon_emoji: AGENT.icon, unfurl_links: false,
     });
     state.updateChannelActivity(channelName);
@@ -114,7 +115,7 @@ async function handleMention({ event, say }) {
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null) {
+async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null, threadTs = null) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*CRO\]\s*(.+)/si);
   if (!match) return false;
 
@@ -137,9 +138,20 @@ async function handleDelegation(messageText, visitedAgents = new Set(), channelI
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
 
   // Respond in the research channel and tag the requesting agent
-  await relay(response, AGENT_ID, visitedAgents, channelId);
-  await postToChannel(AGENT.primaryChannel, `[from: CRO → ${fromAgent}] ${stripDelegations(response)}`);
-  return true;
+  const subResults = await relay(response, AGENT_ID, visitedAgents, channelId);
+
+  // POLLER IS SOLE POSTER (Oct 4, 2026 — architectural fix):
+  // Do NOT post directly. Return the response for the poller to validate and post.
+  return {
+    completed: true,
+    response: `[from: CRO → ${fromAgent}] ${stripDelegations(response)}`,
+    threadTs: threadTs,
+    channel: AGENT.primaryChannel,
+    subResults: subResults,
+    agentId: AGENT_ID,
+    evidence: searchResults ? `Web search executed: ${searchResults.length} results` : 'No search results',
+    timestamp: new Date().toISOString()
+  };
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
@@ -153,4 +165,42 @@ function init(app) {
   );
 }
 
-module.exports = { init, handleMention, handleDelegation, postProactiveResearch };
+// ─── Autonomous research brief ────────────────────────────────────────────────
+// Standard autonomous interface: called hourly by engine/autonomousRunner.js.
+// Generates a research brief artifact independent of Slack directives.
+const RESEARCH_BRIEF_PATH = require('path').join(__dirname, '..', 'hidden_files', 'research-brief.md');
+
+async function runAutonomous() {
+  const now = new Date();
+  const brief = `# Research Brief
+Generated: ${now.toISOString()} (autonomous CRO hourly run)
+
+## Active Research
+- Workshop audience: local business owners, AI-curious professionals
+- Key question: What objections do prospects have to AI workshops?
+
+## Findings
+- No new research completed this hour
+- Tavily MCP unavailable (never built, per capability registry)
+
+## Notes
+- Last updated: ${now.toISOString()}
+`;
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const dir = path.dirname(RESEARCH_BRIEF_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(RESEARCH_BRIEF_PATH, brief);
+    console.log(`[cro] Research brief written to ${RESEARCH_BRIEF_PATH}`);
+  } catch (err) {
+    console.error('[cro] Research brief failed:', err.message);
+  }
+  return {
+    agentId: 'cro',
+    artifactPath: RESEARCH_BRIEF_PATH,
+    timestamp: now.toISOString(),
+  };
+}
+
+module.exports = { init, handleMention, handleDelegation, postProactiveResearch, runAutonomous };

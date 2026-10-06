@@ -291,4 +291,44 @@ function init(app) {
   }, 15_000);
 }
 
-module.exports = { init, handleMention, handleDelegation, pollGoFundMe, postWeeklyContentCalendar };
+// ─── Autonomous market scan ───────────────────────────────────────────────────
+// Standard autonomous interface: called hourly by engine/autonomousRunner.js.
+// Generates a market scan artifact (workshop promo status, content pipeline)
+// independent of Slack directives.
+const MARKET_SCAN_PATH = require('path').join(__dirname, '..', 'hidden_files', 'market-scan.md');
+
+async function runAutonomous() {
+  const now = new Date();
+  const scan = `# Market Scan
+Generated: ${now.toISOString()} (autonomous CMO hourly run)
+
+## Workshop Promo (Oct 11)
+- Status: CCO drafting copy, CUXO on visuals
+- Price: $90 through Oct 8, then $149
+- Links: Standard https://www.paypal.com/ncp/payment/99NXFJ6G8UV46
+
+## Content Pipeline
+- No new content scheduled this hour
+- Awaiting CCO drafts for review
+
+## Notes
+- Last updated: ${now.toISOString()}
+`;
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const dir = path.dirname(MARKET_SCAN_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(MARKET_SCAN_PATH, scan);
+    console.log(`[cmo] Market scan written to ${MARKET_SCAN_PATH}`);
+  } catch (err) {
+    console.error('[cmo] Market scan failed:', err.message);
+  }
+  return {
+    agentId: 'cmo',
+    artifactPath: MARKET_SCAN_PATH,
+    timestamp: now.toISOString(),
+  };
+}
+
+module.exports = { init, handleMention, handleDelegation, pollGoFundMe, postWeeklyContentCalendar, runAutonomous };

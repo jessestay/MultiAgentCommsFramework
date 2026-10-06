@@ -245,6 +245,17 @@ Generated: ${now.toISOString()} (autonomous CFO hourly run)
   }
 }
 
+// Standard autonomous interface: called hourly by engine/autonomousRunner.js.
+// Generates the revenue dashboard artifact independent of Slack directives.
+async function runAutonomous() {
+  const artifactPath = await generateRevenueDashboard();
+  return {
+    agentId: 'cfo',
+    artifactPath,
+    timestamp: new Date().toISOString(),
+  };
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 function init(app) {
   slackClient = app.client;
@@ -263,4 +274,4 @@ function init(app) {
   );
 }
 
-module.exports = { init, handleMention, handleDelegation, postMonthlyFinancialBrief, generateRevenueDashboard };
+module.exports = { init, handleMention, handleDelegation, postMonthlyFinancialBrief, generateRevenueDashboard, runAutonomous };
