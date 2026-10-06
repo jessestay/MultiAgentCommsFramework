@@ -193,9 +193,20 @@ app.event('app_mention', async ({ event, say, client }) => {
 });
 
 // ─── Message handler (inter-agent delegation + @handle routing) ───────────────
+// CEO bot allowlist: the Jarvis Jr. CEO bot (U0C2QE4PGFR) posts delegation
+// directives like [from: CEO → CFO]. These MUST be processed — they are the
+// primary command channel. Infinite-loop protection is handled by the
+// visitedAgents set in each agent's handleDelegation, not by blanket bot filtering.
+const CEO_BOT_USER_ID = 'U0C2QE4PGFR';
+// FIX (Oct 2, 2026): Allow n8n-inbox bot (B0AUJU69KK8) to post delegations.
+// It was being filtered as a generic bot message, causing its [from: n8n-inbox → X]
+// messages to appear in channels but never get processed by agents.
+const ALLOWED_BOT_IDS = ['B0C39F2CNHJ', 'B0AUJU69KK8'];
 app.event('message', async ({ event, say, client }) => {
-  // Ignore bot messages to prevent infinite loops
-  if (event.bot_id || event.subtype === 'bot_message') return;
+  // Ignore bot messages to prevent infinite loops — EXCEPT the CEO bot's and
+  // n8n-inbox's, which carry delegation directives that must be routed.
+  const isAllowedBot = event.user === CEO_BOT_USER_ID || ALLOWED_BOT_IDS.includes(event.bot_id);
+  if (!isAllowedBot && (event.bot_id || event.subtype === 'bot_message')) return;
 
   const channelName = await resolveChannelName(event.channel, client);
   state.updateChannelActivity(channelName);
@@ -209,6 +220,14 @@ app.event('message', async ({ event, say, client }) => {
   // 1. Check for delegation pattern first — route to target agent
   const delegMatch = text.match(/\[from:\s*(.+?)\s*→\s*(.+?)\]/i);
   if (delegMatch) {
+    // SINGLE PROCESSOR (Oct 6, 2026): CEO directives are the VM poller's job.
+    // The Railway bot must SKIP them to avoid split-brain duplicates.
+    // (Oct 4 architecture: "poller is sole poster, VM handles directives.")
+    const fromName = delegMatch[1].trim().toLowerCase();
+    if (fromName === 'ceo') {
+      console.log(`[index] Skipping CEO directive (VM poller handles): "${text.slice(0, 80)}"`);
+      return;
+    }
     const toName = delegMatch[2].trim().toLowerCase().replace(/[\s-]+/g, '');
     const toAgentId = DELEGATION_TARGETS[toName];
     if (toAgentId && AGENT_MODULES[toAgentId]?.handleDelegation) {
