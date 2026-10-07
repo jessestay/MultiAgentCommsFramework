@@ -85,26 +85,73 @@ async function listProjects(agentId = 'execPM') {
 
 // ─── Tasks ───────────────────────────────────────────────────────────────────
 // Create a task in a project: PUT /projects/{id}/tasks
-async function createTask(agentId, projectId, { title, description = '', priority = PRIORITY.NORMAL, dueDate = null } = {}) {
+async function createTask(agentId, projectId, { title, description = '', priority = PRIORITY.NORMAL, dueDate = null, assignees = null } = {}) {
   if (!title) throw new Error('createTask requires a title');
+
+  // ROOT-CAUSE FIX: Tasks MUST have an owner. Unassigned tasks are a
+  // systemic failure — they sit stale because no one owns them.
+  // If no assignee specified, default to the creating agent.
   const body = { title, description, priority };
   if (dueDate) body.due_date = dueDate; // ISO 8601
-  return request(agentId, `/projects/${projectId}/tasks`, { method: 'PUT', body });
+  if (assignees) body.assignees = assignees;
+
+  const task = await request(agentId, `/projects/${projectId}/tasks`, { method: 'PUT', body });
+
+  // If no assignees were specified, assign to the creating agent
+  // (prevents the "unassigned task" failure mode at the source)
+  if (!assignees && task?.id) {
+    try {
+      // Get the agent's user ID from Vikunja
+      const user = await request(agentId, '/user', { method: 'GET' });
+      if (user?.id) {
+        await request(agentId, `/tasks/${task.id}`, {
+          method: 'POST',
+          body: { assignees: [{ id: user.id }] }
+        });
+        console.log(`[vikunja] Auto-assigned task #${task.id} to ${agentId} (prevents unassigned)`);
+      }
+    } catch (assignErr) {
+      console.log(`[vikunja] Auto-assign failed for task #${task.id}:`, assignErr.message);
+    }
+  }
+
+  return task;
 }
 
 // Partial update: GET the task, merge fields over its current writable state,
 // then POST the merged object. (Vikunja's POST /tasks/{id} REPLACES the whole
 // task — a bare partial POST silently wipes fields like description.
 // Incident 2026-09-25: two task descriptions were wiped this way; restored.)
+//
+// RETRY (Oct 7, 2026): Vikunja 500s under concurrent SQLite writers — the
+// server log shows err="database is locked" (8 occurrences Oct 6-7, 2026; the
+// API body only says "Internal Server Error", so the client retries any 5xx
+// here). The failed statement never commits, and this read-modify-write is
+// idempotent (fresh GET each attempt), so retry the whole thing with backoff
+// instead of failing the engine's completion path on a transient lock.
+const UPDATE_RETRY_DELAYS_MS = [400, 1200, 2500];
 async function updateTask(agentId, taskId, fields) {
-  const current = await getTask(agentId, taskId);
-  const keep = {};
-  for (const k of ['title', 'description', 'done', 'due_date', 'priority',
-                   'start_date', 'end_date', 'hex_color', 'is_favorite',
-                   'bucket_id', 'repeat_after', 'repeat_mode']) {
-    if (current[k] !== undefined && current[k] !== null) keep[k] = current[k];
+  let lastErr;
+  for (let attempt = 0; attempt <= UPDATE_RETRY_DELAYS_MS.length; attempt++) {
+    try {
+      const current = await getTask(agentId, taskId);
+      const keep = {};
+      for (const k of ['title', 'description', 'done', 'due_date', 'priority',
+                       'start_date', 'end_date', 'hex_color', 'is_favorite',
+                       'bucket_id', 'repeat_after', 'repeat_mode']) {
+        if (current[k] !== undefined && current[k] !== null) keep[k] = current[k];
+      }
+      return await request(agentId, `/tasks/${taskId}`, { method: 'POST', body: { ...keep, ...fields } });
+    } catch (err) {
+      lastErr = err;
+      const transient = /HTTP 5\d\d/.test(err.message);
+      if (!transient || attempt === UPDATE_RETRY_DELAYS_MS.length) throw err;
+      const wait = UPDATE_RETRY_DELAYS_MS[attempt];
+      console.log(`[vikunja] updateTask #${taskId} transient 5xx (attempt ${attempt + 1}), retrying in ${wait}ms`);
+      await new Promise(r => setTimeout(r, wait));
+    }
   }
-  return request(agentId, `/tasks/${taskId}`, { method: 'POST', body: { ...keep, ...fields } });
+  throw lastErr; // unreachable — keeps the control flow explicit
 }
 
 async function getTask(agentId, taskId) {

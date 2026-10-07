@@ -122,6 +122,26 @@ async function workTask(task) {
   const ownerId = tasks.routeAgent(haystack);
   const owner = AGENTS[ownerId] || AGENTS.execPM;
 
+  // BACKOFF (Oct 5, 2026): If a LOOP task has failed with the same tool error
+  // 3+ times in the last 4 hours, skip it instead of spamming the failure.
+  // The tool is down; re-running every cycle just generates noise.
+  const isLoopTask = /^LOOP:/i.test(task.title || '');
+  if (isLoopTask) {
+    const failKey = `toolFail.${task.id}`;
+    const failures = state.get(ENGINE_ID, failKey) || [];
+    const fourHoursAgo = Date.now() - 4 * 3600 * 1000;
+    const recentFails = failures.filter(f => new Date(f.ts).getTime() > fourHoursAgo);
+    if (recentFails.length >= 3) {
+      // Check if they're all the same tool error
+      const errors = recentFails.map(f => f.error);
+      const sameError = errors.every(e => e === errors[0]);
+      if (sameError) {
+        log(`backing off task #${task.id}: same tool error 3x in 4h (${errors[0].slice(0, 60)})`);
+        return; // Skip this cycle
+      }
+    }
+  }
+
   log(`working task #${task.id} "${task.title}" as ${ownerId}`);
 
   const boundaries = `
@@ -155,27 +175,56 @@ TASK-DONE: NO — <one line: what still needs Jesse or what remains>
 `.trim();
 
   let output;
+  const startChannel = await resolveChannelId(owner.primaryChannel).catch(() => null);
   try {
-    // Narrate the start FIRST: Jesse's acceptance criterion is a visibly
-    // working team — channels alive = company alive. The deliverable lands
-    // after, so the channel sees the doing, not just the done.
-    const startChannel = await resolveChannelId(owner.primaryChannel).catch(() => null);
-    if (startChannel) {
-      await postAs(ownerId, startChannel,
-        `On it: ${task.title} — digging in now, reporting back here as I go.`
-      ).catch(err => log('start narration failed:', err.message));
-    }
     output = await generateReport({ systemPrompt: owner.systemPrompt, context, maxTokens: 2000 });
   } catch (err) {
     log(`LLM error on task #${task.id}:`, err.message);
+    // FIX (Oct 2, 2026): Never post "On it" without a follow-up. If the LLM
+    // fails, report the failure instead of going silent.
+    if (startChannel) {
+      await postAs(ownerId, startChannel,
+        `[work engine → ${owner.slackName}] Task #${task.id}: ${task.title}\n\n` +
+        `Hit an error while working this: ${err.message}. Will retry next cycle.`
+      ).catch(e => log('failure post failed:', e.message));
+    }
     return;
   }
-  if (!output) return;
+  if (!output) {
+    if (startChannel) {
+      await postAs(ownerId, startChannel,
+        `[work engine → ${owner.slackName}] Task #${task.id}: ${task.title}\n\n` +
+        `No output generated. Will retry next cycle.`
+      ).catch(e => log('empty post failed:', e.message));
+    }
+    return;
+  }
+  // REMOVED (Oct 5, 2026): The "On it — digging in now" narration was pure noise.
+  // Every task already gets a "[work engine → Agent] Task #X" post with the
+  // actual deliverable below. The separate "On it" message added nothing but
+  // ack-style clutter that the delivery learner correctly penalizes.
 
   const doneMatch = output.match(/TASK-DONE:\s*(YES|NO)\s*[—-]\s*(.+)/i);
   const deliverable = output.replace(/TASK-DONE:.*$/gim, '').trim();
   const doneYes = doneMatch && doneMatch[1].toUpperCase() === 'YES';
   const doneWhy = doneMatch ? doneMatch[2].trim() : '';
+
+  // BACKOFF tracking (Oct 5, 2026): Record tool failures for LOOP tasks so
+  // the backoff check at the top of workTask can suppress repeat spam.
+  const isLoop = /^LOOP:/i.test(task.title || '');
+  if (isLoop) {
+    const toolErr = output.match(/tool (?:system )?error[:\s]+([^\n]{1,120})/i);
+    if (toolErr) {
+      const failKey = `toolFail.${task.id}`;
+      const failures = state.get(ENGINE_ID, failKey) || [];
+      failures.push({ ts: new Date().toISOString(), error: toolErr[1].trim() });
+      // Keep only last 10
+      state.set(ENGINE_ID, failKey, failures.slice(-10));
+    } else {
+      // Tool worked this time — clear the failure history
+      state.set(ENGINE_ID, `toolFail.${task.id}`, []);
+    }
+  }
 
   // Post the deliverable to the owner's channel.
   const channelId = await resolveChannelId(owner.primaryChannel).catch(() => null);
@@ -196,11 +245,19 @@ TASK-DONE: NO — <one line: what still needs Jesse or what remains>
   // Standing LOOP tasks are never auto-completed: the loop must survive every
   // cycle. (The task text also instructs the model to end TASK-DONE: NO;
   // this guard makes it structural, not prompt-dependent.)
-  const isLoopTask = /^LOOP:/i.test(task.title || '');
+  // (isLoopTask already declared at top of workTask for backoff check)
   if (doneYes && !isLoopTask) {
-    await vikunja.completeTask('execPM', task.id).catch(err =>
-      log(`complete failed on #${task.id}:`, err.message));
-    log(`task #${task.id} completed`);
+    // FAIL-CLOSED (Oct 7, 2026): the old .catch + unconditional log reported
+    // "task #N completed" even when completeTask threw — e.g. Vikunja 500
+    // "database is locked" on #631 — leaving the task open in Vikunja while
+    // the engine's own books said done. Only log success; a failed complete
+    // leaves the task open so the next cycle retries it.
+    try {
+      await vikunja.completeTask('execPM', task.id);
+      log(`task #${task.id} completed`);
+    } catch (err) {
+      log(`complete failed on #${task.id}:`, err.message);
+    }
   }
 
   state.set(ENGINE_ID, `lastWorked.${task.id}`, new Date().toISOString());
@@ -290,18 +347,29 @@ async function runCycle() {
     return;
   }
 
-  let raw;
+  // Scan BOTH the MACF board (VIKUNJA_PROJECT_ID) and the Revenue Sprint
+  // board (16). FIX (Oct 3, 2026): the cycle only ever scanned project 2,
+  // so every Revenue Sprint task (#80, #81, #85, #87, #150, …) went 100h+
+  // without a substantive update — the team monitor flagged them
+  // critical-stale while the engine insisted it was healthy. Task ids are
+  // unique across projects, so downstream state keys are unaffected.
+  const PROJECT_IDS = [...new Set([VIKUNJA.projectId, 16].filter(Boolean))];
+  let rawLists;
   try {
-    raw = await vikunja.listTasks('execPM', VIKUNJA.projectId, {
-      filter: 'done = false', sortBy: 'priority', orderBy: 'desc', perPage: 50,
-    });
+    rawLists = [];
+    for (const pid of PROJECT_IDS) {
+      const r = await vikunja.listTasks('execPM', pid, {
+        filter: 'done = false', sortBy: 'priority', orderBy: 'desc', perPage: 50,
+      });
+      rawLists.push(Array.isArray(r) ? r : (r && r.tasks) || []);
+    }
   } catch (err) {
     log('could not list tasks:', err.message);
     return;
   }
-  const open = (Array.isArray(raw) ? raw : (raw && raw.tasks) || [])
+  const open = rawLists.flat()
     .filter(t => !t.done && !isLockTask(t));
-  log(`cycle: ${open.length} open tasks`);
+  log(`cycle: ${open.length} open tasks across projects [${PROJECT_IDS.join(',')}]`);
 
   // 1. Jesse-gated items → immediate ping (one DM per cycle, first sighting;
   // re-ping only when time-critical and last ping was 24h+ ago).
@@ -329,7 +397,17 @@ async function runCycle() {
   }
 
   // 2. Work the top actionable task (dormant and Jesse-gated excluded).
+  // PRIORITIZATION (Oct 5, 2026): Sort stale-first. The old code used
+  // .find() which grabbed the first unworked task in Vikunja's return order —
+  // tasks at the end of the list (#85, #87) were starved indefinitely.
+  // Now: oldest-updated first, so stale tasks get priority.
   const actionable = open.filter(t => !isJesseGated(t));
+  actionable.sort((a, b) => {
+    // Vikunja API uses 'updated', not 'updated_at'
+    const aUpdated = new Date(a.updated || a.updated_at || 0).getTime();
+    const bUpdated = new Date(b.updated || b.updated_at || 0).getTime();
+    return aUpdated - bUpdated; // Oldest first
+  });
   const candidate = actionable.find(t => {
     const last = state.get(ENGINE_ID, `lastWorked.${t.id}`);
     if (!last) return true;
