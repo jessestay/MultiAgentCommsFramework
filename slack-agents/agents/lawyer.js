@@ -18,12 +18,13 @@ async function resolveChannel(name) {
   return _resolveChannel(slackClient, name);
 }
 
-async function postToChannel(channelName, text) {
+async function postToChannel(channelName, text, threadTs = null) {
   const channelId = await resolveChannel(channelName);
   if (!channelId) { console.warn(`[lawyer] Channel not found: #${channelName}`); return; }
   try {
     await slackClient.chat.postMessage({
-      channel: channelId, text,
+      channel: channelId,
+      ...(threadTs ? { thread_ts: threadTs } : {}), text,
       username: AGENT.slackName, icon_emoji: AGENT.icon, unfurl_links: false,
     });
     state.updateChannelActivity(channelName);
@@ -101,7 +102,7 @@ Respond as a business lawyer. Be direct about risk and what to do about it. For 
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null) {
+async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null, threadTs = null) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*Lawyer\]\s*(.+)/si);
   if (!match) return false;
 
@@ -120,10 +121,24 @@ Flag HIGH RISK items with "🔴". Note this is guidance, not representation.
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await relay(response, AGENT_ID, visitedAgents, channelId);
-  // Post the clean response to #management — Jesse doesn't need the routing prefix
-  await postToChannel(AGENT.primaryChannel, stripDelegations(response));
-  return true;
+  const subResults = await relay(response, AGENT_ID, visitedAgents, channelId);
+
+  // POLLER IS SOLE POSTER (Oct 4, 2026 — architectural fix):
+  // Do NOT post directly. Return the response for the poller to validate and post.
+  return {
+    completed: true,
+    response: `[from: Lawyer → ${fromAgent}] ${stripDelegations(response)}`,
+    threadTs: threadTs,
+    channel: AGENT.primaryChannel,
+    subResults: subResults,
+    // EVIDENCE FIX (Oct 6, 2026 — self-healer root-cause): the poller's evidence
+    // contract dead-lettered Lawyer directives (11% delivery, 1/9) because the
+    // written legal guidance carried no evidence marker. The guidance IS the
+    // deliverable — same marker pattern as CFO/CCO/execPM.
+    evidence: 'Legal guidance generated (LLM report, no tool execution)',
+    agentId: AGENT_ID,
+    timestamp: new Date().toISOString()
+  };
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────

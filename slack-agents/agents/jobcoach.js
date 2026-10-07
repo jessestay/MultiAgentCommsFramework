@@ -18,12 +18,13 @@ async function resolveChannel(name) {
   return _resolveChannel(slackClient, name);
 }
 
-async function postToChannel(channelName, text) {
+async function postToChannel(channelName, text, threadTs = null) {
   const channelId = await resolveChannel(channelName);
   if (!channelId) { console.warn(`[jobcoach] Channel not found: #${channelName}`); return; }
   try {
     await slackClient.chat.postMessage({
-      channel: channelId, text,
+      channel: channelId,
+      ...(threadTs ? { thread_ts: threadTs } : {}), text,
       username: AGENT.slackName, icon_emoji: AGENT.icon, unfurl_links: false,
     });
     state.updateChannelActivity(channelName);
@@ -105,7 +106,7 @@ async function handleMention({ event, say }) {
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null) {
+async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null, threadTs = null) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*Job\s*Coach\]\s*(.+)/si);
   if (!match) return false;
 
@@ -115,9 +116,23 @@ async function handleDelegation(messageText, visitedAgents = new Set(), channelI
 
   const context = `Delegation from ${fromAgent}:\n"${request}"\nRespond as Job Coach with career strategy advice.`;
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
-  await relay(response, AGENT_ID, visitedAgents, channelId);
-  await postToChannel(AGENT.primaryChannel, `[from: Job Coach → ${fromAgent}] ${stripDelegations(response)}`);
-  return true;
+  const subResults = await relay(response, AGENT_ID, visitedAgents, channelId);
+
+  // POLLER IS SOLE POSTER (Oct 4, 2026 — architectural fix):
+  // Do NOT post directly. Return the response for the poller to validate and post.
+  return {
+    completed: true,
+    response: `[from: Job Coach → ${fromAgent}] ${stripDelegations(response)}`,
+    threadTs: threadTs,
+    channel: AGENT.primaryChannel,
+    subResults: subResults,
+    // EVIDENCE FIX (Oct 6, 2026 — self-healer root-cause): same dead-letter
+    // mechanism as CTO/Lawyer — the written career advice carried no evidence
+    // marker. The advice IS the deliverable for non-action directives.
+    evidence: 'Career strategy advice generated (LLM report, no tool execution)',
+    agentId: AGENT_ID,
+    timestamp: new Date().toISOString()
+  };
 }
 
 function getISOWeek() {

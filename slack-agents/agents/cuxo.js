@@ -18,12 +18,13 @@ async function resolveChannel(name) {
   return _resolveChannel(slackClient, name);
 }
 
-async function postToChannel(channelName, text) {
+async function postToChannel(channelName, text, threadTs = null) {
   const channelId = await resolveChannel(channelName);
   if (!channelId) { console.warn(`[cuxo] Channel not found: #${channelName}`); return; }
   try {
     await slackClient.chat.postMessage({
-      channel: channelId, text,
+      channel: channelId,
+      ...(threadTs ? { thread_ts: threadTs } : {}), text,
       username: AGENT.slackName, icon_emoji: AGENT.icon, unfurl_links: false,
     });
     state.updateChannelActivity(channelName);
@@ -83,7 +84,7 @@ Respond as Chief UX Officer. When accessibility is relevant, cite WCAG 2.1 AA (4
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null) {
+async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null, threadTs = null) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*CUXO\]\s*(.+)/si);
   if (!match) return false;
 
@@ -102,9 +103,23 @@ When giving visual specs, use format: Element | Color (#hex) | Size | Spacing | 
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await relay(response, AGENT_ID, visitedAgents, channelId);
-  await postToChannel(AGENT.primaryChannel, `[from: CUXO → ${fromAgent}] ${stripDelegations(response)}`);
-  return true;
+  const subResults = await relay(response, AGENT_ID, visitedAgents, channelId);
+
+  // POLLER IS SOLE POSTER (Oct 4, 2026 — architectural fix):
+  // Do NOT post directly. Return the response for the poller to validate and post.
+  return {
+    completed: true,
+    response: `[from: CUXO → ${fromAgent}] ${stripDelegations(response)}`,
+    threadTs: threadTs,
+    channel: AGENT.primaryChannel,
+    subResults: subResults,
+    // EVIDENCE FIX (Oct 6, 2026 — self-healer root-cause): same dead-letter
+    // mechanism as CTO/Lawyer — the written UX assessment carried no evidence
+    // marker. The assessment IS the deliverable for non-action directives.
+    evidence: 'UX assessment generated (LLM report, no tool execution)',
+    agentId: AGENT_ID,
+    timestamp: new Date().toISOString()
+  };
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────

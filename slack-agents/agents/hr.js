@@ -20,12 +20,13 @@ async function resolveChannel(name) {
   return _resolveChannel(slackClient, name);
 }
 
-async function postToChannel(channelName, text) {
+async function postToChannel(channelName, text, threadTs = null) {
   const channelId = await resolveChannel(channelName);
   if (!channelId) { console.warn(`[hr] Channel not found: #${channelName}`); return; }
   try {
     await slackClient.chat.postMessage({
-      channel: channelId, text,
+      channel: channelId,
+      ...(threadTs ? { thread_ts: threadTs } : {}), text,
       username: AGENT.slackName, icon_emoji: AGENT.icon, unfurl_links: false,
     });
     state.updateChannelActivity(channelName);
@@ -95,7 +96,7 @@ Respond as the Head of HR and skill creator. If they're describing a repeated st
 }
 
 // ─── Handle delegation ────────────────────────────────────────────────────────
-async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null) {
+async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null, threadTs = null) {
   const match = messageText.match(/\[from:\s*(.+?)\s*→\s*(?:Head of HR|HR)\]\s*(.+)/si);
   if (!match) return false;
 
@@ -113,10 +114,23 @@ Respond as the Head of HR and skill creator. Apply the meta-skill rules: propose
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
-  await relay(response, AGENT_ID, visitedAgents, channelId);
-  // Post the clean response to #management
-  await postToChannel(AGENT.primaryChannel, stripDelegations(response));
-  return true;
+  const subResults = await relay(response, AGENT_ID, visitedAgents, channelId);
+
+  // POLLER IS SOLE POSTER (Oct 4, 2026 — architectural fix):
+  // Do NOT post directly. Return the response for the poller to validate and post.
+  return {
+    completed: true,
+    response: `[from: HR → ${fromAgent}] ${stripDelegations(response)}`,
+    threadTs: threadTs,
+    channel: AGENT.primaryChannel,
+    subResults: subResults,
+    // EVIDENCE FIX (Oct 6, 2026 — self-healer root-cause): same dead-letter
+    // mechanism as CTO/Lawyer — the written HR assessment carried no evidence
+    // marker. The assessment IS the deliverable for non-action directives.
+    evidence: 'HR assessment generated (LLM report, no tool execution)',
+    agentId: AGENT_ID,
+    timestamp: new Date().toISOString()
+  };
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
