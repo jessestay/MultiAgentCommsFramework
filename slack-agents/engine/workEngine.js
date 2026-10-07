@@ -30,6 +30,40 @@ const WORK_COOLDOWN_HOURS = parseInt(process.env.WORK_ENGINE_COOLDOWN_H || '6', 
 const IDLE_PROPOSAL_HOURS = parseInt(process.env.WORK_ENGINE_IDLE_PROPOSAL_H || '12', 10);
 const ENABLED = (process.env.WORK_ENGINE_ENABLED || '1') === '1';
 
+// AGENT HEALTH SYNC (Oct 7, 2026 — root-cause fix for the blind demo gate):
+// sprintDemo.js's checkRecentDemos() reads .agent-health.json, but only
+// directivePoll.js ever updated it. The work engine completed tasks every
+// 30 min yet the gate reported "0 demos" because the engine never recorded
+// its work. Now every completed task updates the owner's health entry, so
+// the measurement sees reality.
+const AGENT_HEALTH_PATH = require('path').join(__dirname, '.agent-health.json');
+function updateAgentHealth(agentId, completed) {
+  try {
+    const fs = require('fs');
+    let health = {};
+    try { health = JSON.parse(fs.readFileSync(AGENT_HEALTH_PATH, 'utf8')); } catch {}
+    if (!health[agentId]) {
+      health[agentId] = {
+        agentId, directivesReceived: 0, directivesCompleted: 0,
+        directivesFailed: 0, lastActivity: null, consecutiveFailures: 0,
+        status: 'unknown',
+      };
+    }
+    const h = health[agentId];
+    const now = new Date().toISOString();
+    h.lastActivity = now;
+    h.lastChecked = now;
+    if (completed) {
+      h.directivesCompleted++;
+      h.consecutiveFailures = 0;
+      h.status = 'healthy';
+    }
+    fs.writeFileSync(AGENT_HEALTH_PATH, JSON.stringify(health, null, 2));
+  } catch (e) {
+    log(`health update failed for ${agentId}:`, e.message);
+  }
+}
+
 let slackClient = null;
 let timer = null;
 
@@ -162,6 +196,8 @@ ${boundaries}
 Do the work now. Produce the concrete deliverable: research findings, a draft, analysis, code, a plan — whatever the task calls for, within the boundaries above.
 Write it in the team's voice: direct, no fluff, no headers unless the deliverable needs them.
 
+EVIDENCE (required): your deliverable must contain at least one piece of verifiable evidence — a URL, a file path, a metric with a number, a task reference like "task #123 done", or an explicit [DEMO] marker on the key output. Narration without evidence does not count as a deliverable.
+
 NARRATION (standing CEO directive — the team must be SEEN working): narrate
 your work the way a real teammate talks in the channel while they work — what
 you're doing, what you're deciding, what you just found, what's next. First
@@ -255,9 +291,15 @@ TASK-DONE: NO — <one line: what still needs Jesse or what remains>
     try {
       await vikunja.completeTask('execPM', task.id);
       log(`task #${task.id} completed`);
+      updateAgentHealth(ownerId, true);
     } catch (err) {
       log(`complete failed on #${task.id}:`, err.message);
+      updateAgentHealth(ownerId, false);
     }
+  } else {
+    // Task worked but left open (or a standing LOOP task): still record the
+    // activity so the demo gate sees the work happening.
+    updateAgentHealth(ownerId, false);
   }
 
   state.set(ENGINE_ID, `lastWorked.${task.id}`, new Date().toISOString());
@@ -455,4 +497,4 @@ function stop() {
   log('stopped');
 }
 
-module.exports = { init, stop, runCycle, isJesseGated, isDormant, isTimeCritical };
+module.exports = { init, stop, runCycle, isJesseGated, isDormant, isTimeCritical, updateAgentHealth };
