@@ -373,7 +373,12 @@ async function checkTaskStaleness() {
     const criticalLines = out.split('\n').filter(l => l.includes('🔴'));
     const staleTasks = criticalLines.map(line => {
       const m = line.match(/#(\d+)\s+\[(\w+)\]/);
-      return m ? { id: parseInt(m[1]), owner: m[2] } : null;
+      if (!m) return null;
+      // Jesse-gated detection (Oct 7, 2026): tasks with "Jesse" + "approval"
+      // in the title are waiting on Jesse, not on engine auto-link.
+      const title = line.slice(m.index + m[0].length);
+      const jesseGated = /jesse/i.test(title) && /approv/i.test(title);
+      return { id: parseInt(m[1]), owner: m[2], title: title.trim().slice(0, 80), jesseGated };
     }).filter(Boolean);
 
     return { criticalStale: criticalLines.length, staleTasks };
@@ -560,34 +565,54 @@ async function repair(issue) {
   // ENGINE GAP PRINCIPLE (Jesse, Oct 4):
   // Every issue is an engine gap, not an agent failure.
   // Log the gap for CEO to fix the engine.
+  const GAP_FILE = path.join(ENGINE_DIR, 'engine/.engine-gaps.json');
+  const readGaps = () => {
+    try { return JSON.parse(fs.readFileSync(GAP_FILE, 'utf8')); }
+    catch { return []; }
+  };
+  const writeGaps = (gaps) =>
+    fs.writeFileSync(GAP_FILE, JSON.stringify(gaps, null, 2));
+  // Terminal outcomes (completed+failed) are the basis the diagnosis uses for
+  // the delivery rate (Oct 6 root fix). A needs_ceo re-alert is only honest
+  // when this count MOVED since the gap was opened.
+  const terminalOutcomes = (agentId) => {
+    const h = loadAgentHealth()[agentId] || {};
+    return (h.directivesCompleted || 0) + (h.directivesFailed || 0);
+  };
+  const findOpenGap = (gaps) => gaps.find(g =>
+    g && g.issueType === issue.type && g.status === 'open' &&
+    g.description && issue.agentId && g.description.includes(issue.agentId));
   const logEngineGap = (gapType, description, suggestedFix) => {
-    const gapFile = require('path').join(ENGINE_DIR, 'engine/.engine-gaps.json');
-    let gaps = [];
-    try {
-      gaps = JSON.parse(require('fs').readFileSync(gapFile, 'utf8'));
-    } catch {}
+    let gaps = readGaps();
     // ENGINE FIX (Oct 6, 2026): dedup — don't open a new gap every cycle for the
     // same chronic issue; the open gap stays open until the CEO closes it.
-    const alreadyOpen = gaps.some(g =>
-      g && g.issueType === issue.type && g.status === 'open' &&
-      g.description && issue.agentId && g.description.includes(issue.agentId)
-    );
-    if (alreadyOpen) {
+    const openGap = findOpenGap(gaps);
+    const terminalNow = terminalOutcomes(issue.agentId);
+    if (openGap) {
+      // ALERT-FATIGUE FIX (Oct 7, 2026): backfill records opened before
+      // terminalAtOpen existed — all outcomes to date are accounted for.
+      if (openGap.terminalAtOpen == null) {
+        openGap.terminalAtOpen = terminalNow;
+        writeGaps(gaps);
+        console.log(`[healer] Backfilled terminalAtOpen=${terminalNow} on open gap for ${issue.agentId}`);
+      }
       console.log(`[healer] Engine gap already open for ${issue.agentId} — skipping duplicate`);
-      return false;
+      return { logged: false, gap: openGap, terminalNow };
     }
-    gaps.push({
+    const newGap = {
       timestamp: new Date().toISOString(),
       issueType: issue.type,
       gapType,
       description,
       suggestedFix,
       status: 'open',
-    });
+      terminalAtOpen: terminalNow,
+    };
+    gaps.push(newGap);
     if (gaps.length > 100) gaps = gaps.slice(-100);
-    require('fs').writeFileSync(gapFile, JSON.stringify(gaps, null, 2));
+    writeGaps(gaps);
     console.log(`[healer] Engine gap logged: ${gapType} — ${description.slice(0, 80)}`);
-    return true;
+    return { logged: true, gap: newGap, terminalNow };
   };
 
   switch (issue.type) {
@@ -620,21 +645,51 @@ async function repair(issue) {
       // ROOT FIX (Oct 6, 2026 — healer cycle): logEngineGap dedupes and returns
       // false when the gap is already open. Report honestly instead of
       // claiming "logged" every cycle, so the console output matches reality.
-      const gapLogged = logEngineGap('delivery',
+      // ALERT-FATIGUE FIX (Oct 7, 2026 — healer root-cause): the delivery rate
+      // is a LIFETIME counter, so a gap opened for a chronic issue re-fired
+      // "needs_ceo" every 10-min cycle with zero new information (150+ identical
+      // alerts for cto/lawyer after the Oct 6 evidence-marker fix had already
+      // landed and closed the actual defect). Per Jesse's standing rule
+      // ("report verified numbers only"), a re-alert is only honest when NEW
+      // terminal outcomes (completed/failed) happened since the gap opened.
+      // Otherwise the stale alert is suppressed, not re-reported.
+      const gapResult = logEngineGap('delivery',
         `${issue.agentId}: ${issue.detail}`,
         `Investigate why ${issue.agentId} completes directives at this rate — check directivePoll delegation, LLM errors, evidence rejection, task blocking. Reset consecutiveFailures as a stopgap only.`);
-      repairAction = gapLogged
-        ? `Engine gap logged (delivery): ${issue.agentId} — ${issue.detail}`
-        : `Engine gap already open (delivery): ${issue.agentId} — ${issue.detail} — no duplicate`;
-      console.log(`[healer] ${repairAction}`);
+      if (gapResult.logged) {
+        repairAction = `Engine gap logged (delivery): ${issue.agentId} — ${issue.detail}`;
+        console.log(`[healer] ${repairAction}`);
+        verificationPassed = 'needs_ceo';
+      } else {
+        const newOutcomes = gapResult.terminalNow - (gapResult.gap.terminalAtOpen || 0);
+        if (newOutcomes > 0) {
+          // The situation changed since the gap opened — refresh and re-alert.
+          const gaps = readGaps();
+          const g = findOpenGap(gaps);
+          if (g) {
+            g.terminalAtOpen = gapResult.terminalNow;
+            g.description = `${issue.agentId}: ${issue.detail}`;
+            g.lastReAlertAt = new Date().toISOString();
+            writeGaps(gaps);
+          }
+          repairAction = `Engine gap re-alerted (delivery): ${issue.agentId} — ${issue.detail} — ${newOutcomes} new terminal outcome(s) since gap opened`;
+          console.log(`[healer] ${repairAction}`);
+          verificationPassed = 'needs_ceo';
+        } else {
+          repairAction = `Stale alert suppressed (delivery): ${issue.agentId} gap already open, no new terminal outcomes since ${gapResult.gap.timestamp}`;
+          console.log(`[healer] ${repairAction}`);
+          verificationPassed = 'suppressed';
+        }
+      }
       // Reset the consecutive failure count as a stopgap only — the underlying
       // issue must be fixed in engine code separately (see gap log).
+      // Runs for all three outcomes above; does NOT change the reported
+      // verification status (logged / re-alerted / suppressed).
       const health = loadAgentHealth();
       if (health[issue.agentId]) {
         health[issue.agentId].consecutiveFailures = 0;
         saveAgentHealth(health);
       }
-      verificationPassed = 'needs_ceo';
       break;
 
     case 'AGENT_SILENCE':
@@ -695,10 +750,24 @@ async function repair(issue) {
       // CEO FIX (Oct 4, 2026): No nudging. The engine auto-links directives
       // to tasks (directivePoll.js), so staleness is structurally prevented.
       // The healer no longer posts nudge messages to Slack.
-      repairAction = `Stale tasks handled by engine auto-link (no Slack nudge)`;
-      console.log(`[healer] ${repairAction} — ${issue.count} tasks will be auto-updated on next directive`);
-      // Verification: the auto-link mechanism handles this, not the healer
-      verificationPassed = 'initiated';
+      //
+      // HONESTY FIX (Oct 7, 2026): Jesse-gated tasks (title contains "Jesse" +
+      // "approval") can NEVER be completed by engine auto-link — they wait on
+      // Jesse himself. Claiming "initiated" for these was dishonest (5 false
+      // claims in 40 min on #82). Report needs_ceo honestly instead.
+      const jesseGatedTasks = (issue.tasks || []).filter(t => t.jesseGated);
+      const allJesseGated = jesseGatedTasks.length > 0 &&
+        jesseGatedTasks.length === (issue.tasks || []).length;
+      if (allJesseGated) {
+        repairAction = `Stale tasks are Jesse-gated (waiting on Jesse's approval, not engine work): ${jesseGatedTasks.map(t => '#' + t.id).join(', ')}`;
+        console.log(`[healer] ${repairAction} — honest needs_ceo, not false initiated`);
+        verificationPassed = 'needs_ceo';
+      } else {
+        repairAction = `Stale tasks handled by engine auto-link (no Slack nudge)`;
+        console.log(`[healer] ${repairAction} — ${issue.count} tasks will be auto-updated on next directive`);
+        // Verification: the auto-link mechanism handles this, not the healer
+        verificationPassed = 'initiated';
+      }
       break;
 
     case 'LOW_QUALITY':
@@ -750,6 +819,7 @@ async function repair(issue) {
   const statusLabel = verificationPassed === true ? 'VERIFIED'
     : verificationPassed === 'initiated' ? 'INITIATED'
     : verificationPassed === 'needs_ceo' ? 'NEEDS_CEO'
+    : verificationPassed === 'suppressed' ? 'SUPPRESSED (no new info)'
     : 'FAILED';
   console.log(`[healer] Repair ${statusLabel}: ${repairAction}`);
   return repair;
@@ -798,8 +868,9 @@ async function main() {
   const initiated = results.filter(r => r.verification === 'initiated').length;
   const failed = results.filter(r => r.verification === false).length;
   const needsCeo = results.filter(r => r.verification === 'needs_ceo').length;
+  const suppressed = results.filter(r => r.verification === 'suppressed').length;
 
-  console.log(`[healer] Cycle complete: ${verified} verified, ${initiated} initiated, ${failed} failed, ${needsCeo} needs_ceo`);
+  console.log(`[healer] Cycle complete: ${verified} verified, ${initiated} initiated, ${failed} failed, ${needsCeo} needs_ceo, ${suppressed} suppressed`);
 
   // Learn: store what worked
   const learnings = loadLearnings();
