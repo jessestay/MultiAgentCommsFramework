@@ -82,7 +82,6 @@ async function postWeeklyContentCalendar() {
   }
 
   console.log('[cmo] Generating weekly content calendar...');
-  const gofundme = await fetchDonationTotal().catch(() => null);
   const weekStart = new Date();
   weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
 
@@ -91,16 +90,15 @@ Weekly content calendar for Jesse Stay.
 Week of: ${weekStart.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
 
 Active campaigns:
-1. Active campaign — $${gofundme?.amount || '?'} raised of $${gofundme?.goal || '?'}
-2. transkrybe.com music transcription SaaS — awareness and growth
-3. Jesse's personal brand — tech founder, dad, accessibility advocate
+1. transkrybe.com music transcription SaaS — awareness and growth
+2. Jesse's personal brand — tech founder, dad, accessibility advocate
 
 Jesse's channels: Facebook, Twitter/X, LinkedIn, TikTok, YouTube (load current stats from project context JSON)
 
 Create a Mon–Sun calendar:
 - 1 content piece per day
 - Rotate platforms (FB, X, LinkedIn, TikTok)
-- Mix: GoFundMe (2x), transkrybe (2x), personal brand (2x), engagement (1x)
+- Mix: transkrybe (3x), personal brand (2x), engagement (2x)
 - Each marked: "🔴 Needs Jesse's ✅"
 
 Format: *Day* — Platform — Content type — Topic — Rationale (1 line)
@@ -130,8 +128,9 @@ async function handleMention({ event, say }) {
 
   const context = `
 Jesse asked (in #marketing or via @mention): "${text}"${threadCtx}
-My current state: GoFundMe last known: $${state.get(AGENT_ID, 'knownDonationAmount')} raised.
 Last weekly calendar: ${state.get(AGENT_ID, 'lastWeeklyCalendar') || 'not posted yet'}
+
+EVIDENCE REQUIREMENT: Your response MUST include verifiable demo evidence — at least one of: a URL, a file path, a metric (number + likes/views/clicks/signups), a task completion (task #N complete/done), or the [DEMO] marker. Conversational replies without evidence do not count as work.
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
@@ -196,6 +195,8 @@ ${lensContext ? `EXPERT GUIDANCE (follow this when writing):\n${lensContext}\n\n
 Respond as CMO. If this requires research, delegate to CRO.
 If it needs content drafted, delegate to CCO. If it needs design, delegate to CUXO.
 ${toolResult ? 'Include the tool result in your response with specific findings.' : ''}
+
+EVIDENCE REQUIREMENT: Your response MUST include verifiable demo evidence — at least one of: a URL, a file path, a metric (number + likes/views/clicks/signups), a task completion (task #N complete/done), or the [DEMO] marker. A conversational reply without evidence is not a deliverable and will be rejected.
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
