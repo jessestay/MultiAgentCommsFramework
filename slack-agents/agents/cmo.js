@@ -1,12 +1,17 @@
 // agents/cmo.js — CMO (@cmo) | MACF Role: Marketing Director (MD)
-// Leads the Branding Team. GoFundMe monitor. Weekly content calendar. Campaign strategy.
+// Leads the Branding Team. Weekly content calendar. Campaign strategy.
 // Memory: isolated to cmo namespace.
+//
+// HALLUCINATION FIX (Oct 7, 2026): GoFundMe monitoring REMOVED. The GOFUNDME_URL
+// was never configured, yet the code kept the CMO referencing a dead $0 campaign
+// in its outputs. Dead code referencing dead initiatives causes hallucination.
+// Also: the CMO must NEVER address Jesse directly — all communication routes
+// through the CEO. The system prompt now enforces this.
 
 const cron = require('node-cron');
 const { AGENTS, CHANNELS } = require('../config');
 const state = require('../utils/state');
 const { generateReport, generateProactivePost } = require('../utils/anthropic');
-const { fetchDonationTotal, GOFUNDME_URL } = require('../utils/gofundme');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
 const { relay, stripDelegations } = require('../utils/delegation');
 const { invokeTool, listTools } = require('../engine/mcpClient');
@@ -65,51 +70,6 @@ async function postToThread(channelName, threadTs, text) {
     console.error(`[cmo] Error replying in thread:`, err.message);
     // Fallback to top-level post if thread reply fails
     await postToChannel(channelName, text);
-  }
-}
-
-// ─── GoFundMe polling (every 30min) ─────────────────────────────────────────
-async function pollGoFundMe() {
-  console.log('[cmo] Polling GoFundMe...');
-  const current = await fetchDonationTotal().catch(() => null);
-  if (!current) return;
-
-  const lastAmount = state.get(AGENT_ID, 'knownDonationAmount') || 0;
-  state.set(AGENT_ID, 'lastGoFundMeCheck', new Date().toISOString());
-
-  if (lastAmount === 0) {
-    // First run — set baseline silently
-    state.set(AGENT_ID, 'knownDonationAmount', current.amount);
-    console.log(`[cmo] GoFundMe baseline set: $${current.amount}`);
-    return;
-  }
-
-  if (current.amount !== lastAmount) {
-    const delta = current.amount - lastAmount;
-    const isIncrease = delta > 0;
-    const deltaText = isIncrease ? `+$${delta.toFixed(2)}` : `-$${Math.abs(delta).toFixed(2)}`;
-
-    const context = `
-Active campaign just changed:
-- Previous total: $${lastAmount}
-- New total: $${current.amount} raised of $${current.goal || '?'} goal
-- Change: ${deltaText}
-- Progress: ${current.percentFunded}%
-- URL: ${GOFUNDME_URL}
-
-Write a brief, energetic marketing update about this change.
-Include specific numbers. ${isIncrease ? 'Be celebratory.' : 'Be supportive and encouraging.'}
-Suggest 1-2 specific social media angles Jesse could use to amplify this.
-All suggestions must note: "🔴 Needs Jesse's ✅ before posting"
-    `.trim();
-
-    const text = await generateProactivePost({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 600 });
-    await postToChannel(AGENT.primaryChannel, text);
-
-    state.set(AGENT_ID, 'knownDonationAmount', current.amount);
-    console.log(`[cmo] GoFundMe change: $${lastAmount} → $${current.amount}`);
-  } else {
-    console.log(`[cmo] GoFundMe unchanged: $${current.amount}`);
   }
 }
 
@@ -275,20 +235,14 @@ function init(app) {
   slackClient = app.client;
   console.log('[cmo] 📊 Chief Marketing Officer initialized');
 
-  // GoFundMe poll every 30 minutes
-  cron.schedule('*/30 * * * *', () =>
-    pollGoFundMe().catch(err => console.error('[cmo] GoFundMe poll error:', err))
-  );
+  // REMOVED (Oct 7, 2026): GoFundMe polling — GOFUNDME_URL was never configured,
+  // yet the dead code kept the CMO hallucinating about a $0 campaign. Dead
+  // initiatives must not live in agent code.
 
   // Weekly content calendar — Mondays at 9am MT (15:00 UTC)
   cron.schedule('0 15 * * 1', () =>
     postWeeklyContentCalendar().catch(err => console.error('[cmo] Calendar error:', err))
   );
-
-  // Initial GoFundMe poll on startup
-  setTimeout(() => {
-    pollGoFundMe().catch(err => console.error('[cmo] Initial poll error:', err));
-  }, 15_000);
 }
 
 // ─── Autonomous market scan ───────────────────────────────────────────────────
@@ -331,4 +285,4 @@ Generated: ${now.toISOString()} (autonomous CMO hourly run)
   };
 }
 
-module.exports = { init, handleMention, handleDelegation, pollGoFundMe, postWeeklyContentCalendar, runAutonomous };
+module.exports = { init, handleMention, handleDelegation, postWeeklyContentCalendar, runAutonomous };
