@@ -129,8 +129,6 @@ async function handleMention({ event, say }) {
   const context = `
 Jesse asked (in #marketing or via @mention): "${text}"${threadCtx}
 Last weekly calendar: ${state.get(AGENT_ID, 'lastWeeklyCalendar') || 'not posted yet'}
-
-EVIDENCE REQUIREMENT: Your response MUST include verifiable demo evidence — at least one of: a URL, a file path, a metric (number + likes/views/clicks/signups), a task completion (task #N complete/done), or the [DEMO] marker. Conversational replies without evidence do not count as work.
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });
@@ -195,8 +193,6 @@ ${lensContext ? `EXPERT GUIDANCE (follow this when writing):\n${lensContext}\n\n
 Respond as CMO. If this requires research, delegate to CRO.
 If it needs content drafted, delegate to CCO. If it needs design, delegate to CUXO.
 ${toolResult ? 'Include the tool result in your response with specific findings.' : ''}
-
-EVIDENCE REQUIREMENT: Your response MUST include verifiable demo evidence — at least one of: a URL, a file path, a metric (number + likes/views/clicks/signups), a task completion (task #N complete/done), or the [DEMO] marker. A conversational reply without evidence is not a deliverable and will be rejected.
   `.trim();
 
   const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context });

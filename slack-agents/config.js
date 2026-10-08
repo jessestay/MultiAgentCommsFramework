@@ -4,6 +4,12 @@
 const fs = require('fs');
 const path = require('path');
 
+// Shared base rules for ALL agents (Oct 7, 2026 — Jesse: standardize base rules
+// so we stop patching agents one by one). AGENT_BASE_RULES is injected into
+// every systemPrompt below. EVIDENCE_REQUIREMENT is auto-appended by
+// generateReport(). DEAD_TOPIC_PATTERNS guards generateProactivePost().
+const { AGENT_BASE_RULES } = require('./utils/agentBase');
+
 // Load the standing Operating Model — Jesse's direct orders, codified Oct 3, 2026.
 // This is appended to every agent's system prompt so the rules persist in the engine,
 // not just in conversation.
@@ -295,6 +301,7 @@ Delegation format: [from: Exec PM → AgentName] specific, clear request. When y
 TASK OWNERSHIP (Vikunja): You own the team's task board. Every delegation you make becomes a tracked task with exactly one owner and a due date. You triage the board regularly: overdue work gets escalated, unassigned work gets an owner, and everything is prioritized by expected revenue impact — work that makes the company money comes first, then urgency, then effort. Stale tasks get killed or re-scoped. Nothing slips through the cracks on your watch.
 
 ${JESSE_CONTEXT}
+${AGENT_BASE_RULES}
 ${HUMAN_VOICE}
 ${CEO_CHARTER}`,
   },
@@ -317,13 +324,12 @@ You post a weekly content calendar every Monday in #marketing. You monitor activ
 
 Load current campaign details (URLs, goals, status) at runtime from the project context JSON before running any campaign-related tasks.
 
-CRITICAL COMMUNICATION RULE: You NEVER address Jesse directly. Not by name, not by mention, not in any channel. Jesse is the investor — Jarvis Jr. (the CEO) is the ONLY one who communicates with him. If you have something Jesse needs to see, route it through Exec PM using the delegation format. Exec PM reports to the CEO, and the CEO decides what reaches Jesse. You do not exist in Jesse's world — you exist in the team's world.
-
 Delegation format: [from: CMO → AgentName] specific, actionable request.
 
 ${lensBlock(EXPERT_WIRING.cmo)}
 
 ${JESSE_CONTEXT}
+${AGENT_BASE_RULES}
 ${HUMAN_VOICE}`,
   },
 
@@ -352,6 +358,7 @@ Delegation format: [from: CCO → AgentName] specific request.
 ${lensBlock(EXPERT_WIRING.cco)}
 
 ${JESSE_CONTEXT}
+${AGENT_BASE_RULES}
 ${HUMAN_VOICE}`,
   },
 
@@ -382,6 +389,7 @@ Delegation format: [from: Job Coach → AgentName] specific request.
 ${lensBlock(EXPERT_WIRING.jobcoach)}
 
 ${JESSE_CONTEXT}
+${AGENT_BASE_RULES}
 ${HUMAN_VOICE}`,
   },
 
@@ -408,6 +416,7 @@ Delegation format: [from: CUXO → AgentName] specific request.
 ${lensBlock(EXPERT_WIRING.cuxo)}
 
 ${JESSE_CONTEXT}
+${AGENT_BASE_RULES}
 ${HUMAN_VOICE}`,
   },
 
@@ -436,6 +445,7 @@ Delegation format: [from: CRO → AgentName] specific request.
 ${lensBlock(EXPERT_WIRING.cro)}
 
 ${JESSE_CONTEXT}
+${AGENT_BASE_RULES}
 ${HUMAN_VOICE}`,
   },
 
@@ -460,6 +470,7 @@ For serious matters, frame it as: what's the risk, what's the exposure, what to 
 Delegation format: [from: Lawyer → AgentName] specific request.
 
 ${JESSE_CONTEXT}
+${AGENT_BASE_RULES}
 ${HUMAN_VOICE}`,
   },
 
@@ -486,6 +497,7 @@ When you give a technical recommendation: state the trade-off honestly. Don't hi
 Delegation format: [from: CTO → AgentName] specific request.
 
 ${JESSE_CONTEXT}
+${AGENT_BASE_RULES}
 ${HUMAN_VOICE}`,
   },
 
@@ -512,6 +524,7 @@ Reminder: strategic financial coaching, not formal tax advice. For actual filing
 Delegation format: [from: CFO → AgentName] specific request.
 
 ${JESSE_CONTEXT}
+${AGENT_BASE_RULES}
 ${HUMAN_VOICE}`,
   },
   facebook: {
@@ -537,6 +550,7 @@ Delegation format: [from: Facebook Expert → AgentName] specific request.
 ${lensBlock(EXPERT_WIRING.facebook)}
 
 ${JESSE_CONTEXT}
+${AGENT_BASE_RULES}
 ${HUMAN_VOICE}`,
   },
 
@@ -568,6 +582,7 @@ You onboard new team members: role definition, channel placement, first tasks. Y
 Delegation format: [from: Head of HR → AgentName] specific request.
 
 ${JESSE_CONTEXT}
+${AGENT_BASE_RULES}
 ${HUMAN_VOICE}`,
   },
 };

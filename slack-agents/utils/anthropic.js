@@ -76,7 +76,8 @@ async function chat({ systemPrompt, userMessage, model = DEFAULT_MODEL, maxToken
  * Used for cron-triggered channel updates, alerts, summaries.
  */
 async function generateProactivePost({ systemPrompt, context, maxTokens = 400 }) {
-  return chat({
+  const { DEAD_TOPIC_PATTERNS } = require('./agentBase');
+  const text = await chat({
     systemPrompt,
     userMessage: `Write a short, natural Slack message based on this context. Sound like a real person talking to their CEO — plain text, conversational, no bold headers, no bullet walls. Brief and direct.
 
@@ -84,6 +85,15 @@ Context: ${context}`,
     model: 'quick',
     maxTokens,
   });
+  // DEAD-TOPIC GUARD (Oct 7, 2026): block proactive posts that reference
+  // dead initiatives or hallucinated names. Returns null = do not post.
+  for (const { pattern, topic } of DEAD_TOPIC_PATTERNS) {
+    if (pattern.test(text)) {
+      console.log(`[anthropic] Proactive post blocked: references dead topic "${topic}". Not posting.`);
+      return null;
+    }
+  }
+  return text;
 }
 
 /**
@@ -91,12 +101,17 @@ Context: ${context}`,
  * Used for handleMention, handleDelegation, analysis tasks.
  * maxTokens capped at 1200 to keep costs predictable; agents should be concise.
  */
-async function generateReport({ systemPrompt, context, maxTokens = 1200, model = 'smart' }) {
+async function generateReport({ systemPrompt, context, maxTokens = 1200, model = 'smart', skipEvidence = false }) {
+  const { EVIDENCE_REQUIREMENT } = require('./agentBase');
+  // EVIDENCE GATE (Oct 7, 2026): every deliverable must carry verifiable
+  // evidence. Appended automatically — no per-agent prompt patching needed.
+  // Pass skipEvidence: true only for internal reasoning never posted.
+  const evidenceBlock = skipEvidence ? '' : `\n\n${EVIDENCE_REQUIREMENT}`;
   return chat({
     systemPrompt,
     userMessage: `Respond based on this context. Write like a person talking to their CEO — short paragraphs, plain sentences, no bold headers everywhere, no bullet-point lists unless you're genuinely listing 5+ discrete items that need separation. No emoji in the message body. Sound like yourself, not a report generator. Be direct and specific. Keep it under 300 words unless the task genuinely requires more detail.
 
-Context: ${context}`,
+Context: ${context}${evidenceBlock}`,
     model,
     maxTokens,
   });
