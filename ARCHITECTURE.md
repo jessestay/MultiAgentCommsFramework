@@ -308,3 +308,201 @@ npm test
 ## Contributing
 
 This is an open-source project. The core layer is intentionally dependency-free (only Node built-ins) so it can be bundled into any runtime. Each adapter declares its own `package.json` with only the deps it needs. PRs that keep this layering clean are warmly welcomed.
+
+---
+
+## Product Architecture (Oct 2026)
+
+How everything fits together as one system — from single-server self-hosted to distributed enterprise.
+
+### Three Layers
+
+```mermaid
+flowchart TB
+    subgraph Chat["Chat Layer (Adapters)"]
+        Slack[Slack]
+        Discord[Discord]
+        WebUI[Web UI]
+    end
+
+    subgraph Engine["Orchestration Engine"]
+        DP[Directive Poller]
+        WE[Work Engine]
+        SD[Sprint Demo Check]
+        DR[Demo Relay]
+        State[(State Store)]
+    end
+
+    subgraph Runtime["Agent Runtime (Horizontally Scalable)"]
+        A1[Agent: CTO]
+        A2[Agent: CMO]
+        A3[Agent: CRO]
+        AN[Agent: N...]
+    end
+
+    subgraph Tools["Tool Gateway"]
+        LT[Local Tools<br/>urlCheck, fileWrite<br/>fileRead, fileList]
+        MCP[MCP Servers<br/>Canva, Figma, n8n<br/>GitHub, Social, etc.]
+    end
+
+    subgraph Models["Model Router (LiteLLM)"]
+        Local[Local Ollama]
+        Free[OpenRouter Free]
+        Paid[Paid APIs]
+    end
+
+    Chat <--> Engine
+    Engine --> Runtime
+    Runtime --> Tools
+    Runtime --> Models
+    Engine <--> State
+```
+
+**Layer responsibilities:**
+
+1. **Orchestration Engine** — directives, task routing, state, scheduling. The brain. One instance per organization. Coordinates; doesn't do the work.
+2. **Agent Runtime** — agents are *configurations*, not code. Shared runtime scales horizontally. Add agents via YAML config, no deploys.
+3. **Tool Gateway** — all capabilities in one place. Local tools + MCP servers. Per-role permissions enforced.
+
+### Directive Flow
+
+```mermaid
+flowchart LR
+    J[Jesse / CEO] -->|"[from: CEO → Role]"| S[Slack]
+    S --> DP[Directive Poller]
+    DP -->|Route to agent| R[Agent Runtime]
+    R -->|May invoke| T[Tool Gateway]
+    T -->|Results| R
+    R -->|LLM via| M[Model Router]
+    R -->|Response| DP
+    DP -->|Validate: garbled? demo format?| DP
+    DP -->|Post to thread| S
+    SD[Sprint Demo Check] -->|Hourly scan| S
+    SD -->|Qualifying demos| DR[Demo Relay]
+    DR -->|Relay to Jesse| J
+```
+
+### Scaling: Single Server
+
+Docker Compose. All layers on one machine. For individuals and small teams.
+
+```mermaid
+flowchart TB
+    subgraph Server["Single Server"]
+        E[Engine Container]
+        R[Agent Runtime Container]
+        T[Tool Gateway Container]
+        M[Model Router + Ollama]
+        DB[(Postgres)]
+    end
+    SA[Slack Adapter] --> E
+    E --> R
+    R --> T
+    R --> M
+    E <--> DB
+```
+
+### Scaling: Distributed
+
+Each layer scales independently.
+
+```mermaid
+flowchart TB
+    LB[Load Balancer]
+    subgraph Eng["Orchestration (1 per org)"]
+        E1[Engine Primary]
+    end
+    subgraph AR["Agent Runtime (Auto-scaling)"]
+        R1[Runtime 1]
+        R2[Runtime 2]
+        R3[Runtime N...]
+    end
+    subgraph TG["Tool Gateway (Cached)"]
+        T1[Gateway Primary]
+        T2[Gateway Replica]
+    end
+    CA[Chat Adapters] --> LB
+    LB --> Eng
+    Eng --> AR
+    AR --> TG
+```
+
+| Layer | Scaling | Notes |
+|-------|---------|-------|
+| Orchestration Engine | 1 per org | Coordinator, not worker. State in Postgres. |
+| Agent Runtime | Horizontal (N) | Agents are configs. Add without deploys. |
+| Tool Gateway | Horizontal + cache | MCP servers pooled. Rate limits per role. |
+| Model Router | Config change | Swap LiteLLM backends. No code change. |
+| Chat Adapters | 1 per platform | Thin, stateless translation. |
+
+### Agent Configuration Model
+
+```yaml
+# agents/cto.yaml — adding an agent = adding a file
+id: cto
+role: Chief Technology Officer
+system_prompt: "You are the CTO..."
+tools:
+  - urlCheck
+  - fileWrite
+  - mcp:github
+  - mcp:n8n-mcp
+model_tier: smart
+channels: ["#management"]
+demo_standard: true
+```
+
+---
+
+## Testing Contract (BDD/TDD)
+
+Every layer ships with tests. No exceptions.
+
+### Unit Tests (TDD — `engine/tests/`)
+
+| Module | What it proves |
+|--------|---------------|
+| `agentTools` | Path traversal blocked, timeouts enforced, sandbox isolation |
+| `demoRelay` | Only label+link+task demos relayed; everything else rejected |
+| `demoStandard` | Garbled output detected; clean output passes |
+| `sprintDemo` | Joint-task coverage, streak reset, escalation dedupe |
+
+Run: `cd slack-agents && npx jest engine/tests --forceExit`
+
+### Integration Tests
+
+- Directive → agent → tool → response → Slack post (end-to-end)
+- Demo relay: qualifying demo reaches Jesse within 1 hour; non-qualifying doesn't
+- Tool gateway: MCP server reachable through per-role grants
+
+### BDD Feature Tests
+
+```gherkin
+Feature: Agent demo delivery
+  As Jesse
+  I want clickable demos from my agents
+  So I can verify their work
+
+  Scenario: Agent produces qualifying demo
+    Given an agent completes a task
+    When the agent posts a demo with label, link, and task ref
+    Then the demo relay surfaces it to Jesse within 1 hour
+
+  Scenario: Agent produces non-qualifying output
+    Given an agent posts a status update without a link
+    When the demo relay scans Slack
+    Then the output is NOT relayed to Jesse
+
+  Scenario: Agent uses tools to build artifact
+    Given a CTO delegation requiring a real artifact
+    When the agent invokes fileWrite via the tool gateway
+    Then the artifact exists in the sandbox
+    And the demo references the artifact link
+```
+
+### Quality Gates
+
+- New tool: unit tests + sandbox escape tests before merge
+- New agent config: demo standard validation before activation
+- New MCP server: grant mapping + connectivity test before agents can use it
+- Every PR: `npx jest` must pass; BDD scenarios must pass
