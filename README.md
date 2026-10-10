@@ -104,6 +104,11 @@ See [SETUP.md](SETUP.md) for the full setup guide including shared memory, Railw
 
 ## Swappable Backends
 
+**AI models** — edit `slack-agents/config/models.yaml` (no code changes):
+- Free by default (local + free-tier cloud models, $0/month)
+- Upgrade to paid for ~$1-3/month for dramatically better reliability
+- See [MODELS.md](MODELS.md) for the plain-English guide
+
 **AI backend** — set `AI_BACKEND` in your `.env`:
 - `anthropic` (default) — Claude via Anthropic API
 - `perplexity` — Perplexity Sonar (drop-in, same interface)
