@@ -1,0 +1,51 @@
+# Model Configuration
+# Single source of truth for LLM routing. Edit this file to switch models —
+# no code changes needed. The engine reads this at startup.
+#
+# Tiers:
+#   quick — fast, cheap. Proactive posts, simple Q&A, health checks.
+#   smart — balanced. Delegations, complex reasoning, tool use.
+#   best  — maximum quality. Reserved for critical tasks.
+#
+# Each tier lists models in priority order. The engine tries them top-down,
+# falling back to the next if one fails or returns empty.
+
+tiers:
+  quick:
+    - id: macf-cheap
+      provider: litellm
+      description: "Local Ollama — free, fast, good for simple tasks"
+      cost_per_1m: 0
+    - id: openrouter/qwen/qwen-3-4b:free
+      provider: openrouter
+      description: "Free fallback if local is down"
+      cost_per_1m: 0
+
+  smart:
+    - id: openrouter/deepseek/deepseek-v4-flash
+      provider: openrouter
+      description: "Best budget tool-caller. ~$1/month. Ranked #1 in agentic benchmarks."
+      cost_per_1m: 0.10
+    - id: anthropic/claude-haiku-5-5
+      provider: anthropic
+      description: "Fallback: Anthropic-native, $0.10/$0.50 per 1M. Launched Oct 7, 2026."
+      cost_per_1m: 0.30
+    - id: macf-smart-free
+      provider: litellm
+      description: "Free fallback if paid models fail — flaky but $0"
+      cost_per_1m: 0
+
+  best:
+    - id: macf-best
+      provider: litellm
+      description: "OpenRouter paid via gateway — only when quality demands it"
+      cost_per_1m: 1.00
+
+# Global settings
+settings:
+  # How many times to retry a model that returns empty before falling back
+  empty_response_retries: 2
+  # Timeout per model attempt (ms)
+  model_timeout_ms: 60000
+  # If true, log every model selection and fallback to console
+  log_routing: true
