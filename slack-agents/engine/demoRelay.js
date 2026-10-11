@@ -2,14 +2,11 @@
 /**
  * Demo Relay — passes agent demos from Slack to Jesse.
  *
- * Jesse's law (Oct 8, 2026): "No link, not a demo."
- * Flow: agents demo in Slack → CEO verifies against DEMO_STANDARD → qualifying
- * demos get relayed to Jesse in the main chat.
+ * Jesse's law (Oct 10, 2026): ALL demos go to Jesse for final approval.
+ * Flow: agents demo in Slack → CEO relays EVERYTHING to Jesse in the main chat.
  *
- * Only demos meeting the standard are relayed:
- * - Must have an ACTION LABEL: [Needs Approval], [Needs Feedback], or [FYI]
- * - Must have an ARTIFACT LINK (living link, not a description)
- * - Must have a TASK REFERENCE
+ * No filtering — Jesse approves or rejects each demo himself.
+ * Demos not meeting the standard are flagged as [NEEDS-WORK] but still relayed.
  *
  * Tracks relayed demos in .demo-relay-state.json to avoid duplicates.
  */
@@ -166,6 +163,8 @@ function formatForJesse(demo) {
     task: demo.taskRef,
     timestamp: demo.ts,
     fullText: demo.text,
+    needsWork: demo.needsWork || false,
+    needsWorkReason: demo.needsWorkReason || null,
   };
 }
 
