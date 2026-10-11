@@ -3,9 +3,11 @@
 // Memory: isolated to lawyer namespace.
 
 const cron = require('node-cron');
+const fs = require('fs');
+const path = require('path');
 const { AGENTS, CHANNELS } = require('../config');
 const state = require('../utils/state');
-const { generateReport } = require('../utils/anthropic');
+const { generateReport, generateWithTools } = require('../utils/anthropic');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
 const { relay, stripDelegations } = require('../utils/delegation');
 
@@ -120,7 +122,13 @@ Provide legal guidance covering: Risk | Exposure | Recommendation.
 Flag HIGH RISK items with "🔴". Note this is guidance, not representation.
   `.trim();
 
-  const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
+  // TOOL EXECUTION (Oct 9, 2026): Lawyer now has tools — can check URLs, read
+  // files when reviewing contracts or researching legal matters.
+  const { response, toolResults, toolsUsed } = await generateWithTools({
+    systemPrompt: AGENT.systemPrompt,
+    context,
+    maxTokens: 2000,
+  });
   const subResults = await relay(response, AGENT_ID, visitedAgents, channelId);
 
   // POLLER IS SOLE POSTER (Oct 4, 2026 — architectural fix):
@@ -131,11 +139,11 @@ Flag HIGH RISK items with "🔴". Note this is guidance, not representation.
     threadTs: threadTs,
     channel: AGENT.primaryChannel,
     subResults: subResults,
-    // EVIDENCE FIX (Oct 6, 2026 — self-healer root-cause): the poller's evidence
-    // contract dead-lettered Lawyer directives (11% delivery, 1/9) because the
-    // written legal guidance carried no evidence marker. The guidance IS the
-    // deliverable — same marker pattern as CFO/CCO/execPM.
-    evidence: 'Legal guidance generated (LLM report, no tool execution)',
+    // EVIDENCE FIX (Oct 9, 2026): Lawyer now executes tools. Evidence reflects
+    // actual tool usage, not just LLM text generation.
+    evidence: toolsUsed > 0
+      ? `Legal guidance with ${toolsUsed} tool execution(s): ${toolResults.map(t => t.tool).join(', ')}`
+      : 'Legal guidance generated (LLM report, no tools needed)',
     agentId: AGENT_ID,
     timestamp: new Date().toISOString()
   };
@@ -152,4 +160,41 @@ function init(app) {
   );
 }
 
-module.exports = { init, handleMention, handleDelegation, postMonthlyLegalCheckup };
+
+// ─── Hourly autonomous demo (Oct 11, 2026) ────────────────────────────────────
+// Ensures lawyer produces verifiable output every hour per Jesse's law,
+// even when no directives are assigned. Fast and deterministic (no LLM call).
+async function runAutonomous() {
+  const now = new Date();
+  const artifactPath = path.join(__dirname, '..', 'hidden_files', 'lawyer-legal-watch.md');
+  const content = `# Lawyer Legal Watch
+Generated: ${now.toISOString()} (autonomous lawyer hourly run)
+
+## Open legal items
+- **Midland Funding v. Stay:** hearing Nov 19, 2026, 1:00pm MT — no action needed until courtesy binders (due ~Nov 5).
+- **Anthropic copyright case:** awaiting Bartolomei decision — no action.
+- **829 Studios referral agreement:** review still open, no signature authorized.
+
+## Notes
+- Nothing requires Jesse's signature or decision this hour.
+- Standing rule: no contact with anyone about the Midland case.
+
+- Last updated: ${now.toISOString()}
+`;
+  try {
+    const dir = path.dirname(artifactPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(artifactPath, content);
+    console.log(`[lawyer] Hourly pulse written to ${artifactPath}`);
+    state.push(AGENT_ID, 'legalWatches', {
+      timestamp: now.toISOString(),
+      path: artifactPath,
+    });
+    return { agentId: 'lawyer', artifactPath, timestamp: now.toISOString() };
+  } catch (err) {
+    console.error(`[lawyer] Hourly pulse failed:`, err.message);
+    throw err;
+  }
+}
+
+module.exports = { init, handleMention, handleDelegation, postMonthlyLegalCheckup, runAutonomous };

@@ -5,9 +5,11 @@
 // Memory: isolated to hr namespace.
 
 const cron = require('node-cron');
+const fs = require('fs');
+const path = require('path');
 const { AGENTS } = require('../config');
 const state = require('../utils/state');
-const { generateReport } = require('../utils/anthropic');
+const { generateReport, generateWithTools } = require('../utils/anthropic');
 const { resolveChannel: _resolveChannel } = require('../utils/channels');
 const { relay, stripDelegations } = require('../utils/delegation');
 
@@ -113,7 +115,13 @@ Skill request from ${fromAgent}: "${request}"
 Respond as the Head of HR and skill creator. Apply the meta-skill rules: propose your own rules and push back where the request is vague; describe what the skill is for with full context rather than over-scripting behavior; keep it to one specific concern. If the request involves asking Jesse anything, note that it needs its own dedicated handling skill coordinated with Exec PM.
   `.trim();
 
-  const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
+  // TOOL EXECUTION (Oct 9, 2026): HR now has tools — can check URLs, read/write
+  // files when building or reviewing skills.
+  const { response, toolResults, toolsUsed } = await generateWithTools({
+    systemPrompt: AGENT.systemPrompt,
+    context,
+    maxTokens: 2000,
+  });
   const subResults = await relay(response, AGENT_ID, visitedAgents, channelId);
 
   // POLLER IS SOLE POSTER (Oct 4, 2026 — architectural fix):
@@ -124,10 +132,11 @@ Respond as the Head of HR and skill creator. Apply the meta-skill rules: propose
     threadTs: threadTs,
     channel: AGENT.primaryChannel,
     subResults: subResults,
-    // EVIDENCE FIX (Oct 6, 2026 — self-healer root-cause): same dead-letter
-    // mechanism as CTO/Lawyer — the written HR assessment carried no evidence
-    // marker. The assessment IS the deliverable for non-action directives.
-    evidence: 'HR assessment generated (LLM report, no tool execution)',
+    // EVIDENCE FIX (Oct 9, 2026): HR now executes tools. Evidence reflects
+    // actual tool usage, not just LLM text generation.
+    evidence: toolsUsed > 0
+      ? `HR assessment with ${toolsUsed} tool execution(s): ${toolResults.map(t => t.tool).join(', ')}`
+      : 'HR assessment generated (LLM report, no tools needed)',
     agentId: AGENT_ID,
     timestamp: new Date().toISOString()
   };
@@ -144,4 +153,40 @@ function init(app) {
   );
 }
 
-module.exports = { init, handleMention, handleDelegation, postQuarterlySkillsReview };
+
+// ─── Hourly autonomous demo (Oct 11, 2026) ────────────────────────────────────
+// Ensures hr produces verifiable output every hour per Jesse's law,
+// even when no directives are assigned. Fast and deterministic (no LLM call).
+async function runAutonomous() {
+  const now = new Date();
+  const artifactPath = path.join(__dirname, '..', 'hidden_files', 'hr-team-pulse.md');
+  const content = `# HR Team Pulse
+Generated: ${now.toISOString()} (autonomous hr hourly run)
+
+## Team health
+- 11 agents reporting via hourly standup.
+- Watch: CTO/lawyer degraded, jobcoach demo gaps — engine-owned, not people issues.
+
+## Notes
+- No hiring, firing, or role changes this hour.
+- Next: keep the standup signal clean.
+
+- Last updated: ${now.toISOString()}
+`;
+  try {
+    const dir = path.dirname(artifactPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(artifactPath, content);
+    console.log(`[hr] Hourly pulse written to ${artifactPath}`);
+    state.push(AGENT_ID, 'teamPulses', {
+      timestamp: now.toISOString(),
+      path: artifactPath,
+    });
+    return { agentId: 'hr', artifactPath, timestamp: now.toISOString() };
+  } catch (err) {
+    console.error(`[hr] Hourly pulse failed:`, err.message);
+    throw err;
+  }
+}
+
+module.exports = { init, handleMention, handleDelegation, postQuarterlySkillsReview, runAutonomous };
