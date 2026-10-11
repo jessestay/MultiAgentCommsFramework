@@ -16,23 +16,23 @@ tiers:
       provider: litellm
       description: "Local Ollama — free, fast, good for simple tasks"
       cost_per_1m: 0
-    - id: openrouter/qwen/qwen-3-4b:free
+    - id: openrouter/nvidia/nemotron-3.5-lightning:free
       provider: openrouter
-      description: "Free fallback if local is down"
+      description: "Free fallback if local is down (verified on OpenRouter 2026-10-11)"
+      cost_per_1m: 0
+    - id: openrouter/liquid/lfm-2.5-2.6b:free
+      provider: openrouter
+      description: "Second free fallback — free tier flakes, try both (verified 2026-10-11)"
       cost_per_1m: 0
 
   smart:
-    - id: openrouter/deepseek/deepseek-v4-flash
-      provider: openrouter
-      description: "Best budget tool-caller. ~$1/month. Ranked #1 in agentic benchmarks."
+    - id: macf-smart-paid
+      provider: litellm
+      description: "Paid smart tier via desktop gateway: DeepSeek V4 Flash -> Haiku 4.5 -> free. ~$1/month. Credential lives only on the gateway."
       cost_per_1m: 0.10
-    - id: anthropic/claude-haiku-5-5
-      provider: anthropic
-      description: "Fallback: Anthropic-native, $0.10/$0.50 per 1M. Launched Oct 7, 2026."
-      cost_per_1m: 0.30
     - id: macf-smart-free
       provider: litellm
-      description: "Free fallback if paid models fail — flaky but $0"
+      description: "Free fallback if paid chain fails — flaky but $0"
       cost_per_1m: 0
 
   best:

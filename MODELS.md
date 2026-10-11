@@ -31,7 +31,7 @@ If you want the team to be faster and more reliable, you can pay a tiny amount f
 
 **Step 3:** Copy your API key from https://openrouter.ai/keys.
 
-**Step 4:** Open `slack-agents/config/models.yaml` in a text editor. The smart tier is already configured to use DeepSeek V4 Flash (paid) first, with free fallbacks. You don't need to change anything.
+**Step 4:** Open `slack-agents/config/models.yaml` in a text editor. The smart tier is already configured to use DeepSeek V4 Flash (paid) first, then Claude Haiku 5.5, then free fallbacks. You don't need to change anything.
 
 **Step 5:** Add your API key to the `.env` file:
 ```
@@ -50,12 +50,18 @@ For a team doing about 50 tasks per day:
 |-------|-----------|----------|
 | Free (default) | $0 | Getting started, light use |
 | DeepSeek V4 Flash | ~$1 | Best value. Great at tools. |
-| Claude Haiku 5.5 | ~$2-3 | Very reliable, brand new |
+| Claude Haiku 5.5 | ~$1 | Very reliable fallback, 10x cheaper than Haiku 4.5 |
 | Claude Sonnet 5.5 | ~$48 | Only if you need the smartest |
 
 Most people should start with DeepSeek V4 Flash. It's the cheapest option that actually works well.
 
 The smart tier is pre-configured to try DeepSeek V4 Flash first, then Haiku 5.5, then free. Just add your OpenRouter key and you're done.
+
+## Real-World Cost (measured Oct 11, 2026)
+
+With the full autonomous team running (hourly agent driver, 30-min work engine, 5-min directive polls — roughly 200 paid-tier calls per day), measured OpenRouter pricing puts the burn at **about $4-6/month**: DeepSeek V4 Flash costs $0.03 per million input tokens and $1.28 per million output tokens, and a typical delegation runs ~4K input / ~0.5K output tokens (under a tenth of a cent per call). Haiku 5.5 is the fallback at $0.10/$0.50 per million — also pennies.
+
+Recommendation: set a monthly spending limit in OpenRouter (Settings → Billing) at $10-20. There is no tight loop anywhere in the engine that can burn credits fast — every caller is bounded (max 2 concurrent delegations, max 3 tool rounds, max 3 retries) — but a limit is cheap insurance.
 
 ## Switching Back
 

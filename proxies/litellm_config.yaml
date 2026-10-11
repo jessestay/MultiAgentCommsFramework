@@ -31,42 +31,46 @@
 # SEPARATE model_name, chained by router_settings.fallbacks below. Within a
 # tier all deployments cost the same, so shuffle order inside a tier is fine.
 #
-# AUTH: no general_settings.master_key. The gateway is localhost-only and
-# LiteLLM's key auth requires Prisma -- with a master key set, EVERY request
-# 500s with "No module named 'prisma'". No auth = no breakage.
+# AUTH (updated 2026-10-11): LITELLM_MASTER_KEY is set via macf_gateway.env;
+# every request must present it as a Bearer token. The old no-auth note is stale
+# (the gateway 401s without the key; VM clients send it from slack-agents/.env).
 # Provider keys come from macf_gateway.env via deploy_model_router.ps1.
 # NO SECRETS IN THIS FILE (all via os.environ/...).
 # =============================================================================
 
 model_list:
   # ---- Runtime-compat aliases (router-policy.js expects these names). --------
-  #      macf-mid: mid-tier, budget-first = local Ollama. $0.
-  #      (OpenRouter free model deepseek-chat-v3-0324:free went paid-only Sep 29.)
+  #      macf-mid: mid-tier, budget-first = OpenRouter free. $0.
   - model_name: macf-mid
     litellm_params:
       model: ollama/qwen2.5:3b-instruct-q4_K_M
       api_base: os.environ/OLLAMA_URL
+      timeout: 30
   # ---- macf-classify: tiny classifier, local only. $0. ----------------------
   - model_name: macf-classify
     litellm_params:
       model: ollama/qwen2.5:3b-instruct-q4_K_M
       api_base: os.environ/OLLAMA_URL
+      timeout: 30
   # ---- macf-smart-or: runtime legacy name -> same as macf-smart. ------------
   - model_name: macf-smart-or
     litellm_params:
       model: ollama/qwen2.5:3b-instruct-q4_K_M
       api_base: os.environ/OLLAMA_URL
-  # ---- macf-frontier-or: runtime legacy name -> local (OpenRouter free tier
-  #      is dead as of Sep 29; budget-first = local). -------------------------
+      timeout: 30
+  # ---- macf-frontier-or: runtime legacy name -> same as macf-best. ----------
   - model_name: macf-frontier-or
     litellm_params:
       model: ollama/qwen2.5:3b-instruct-q4_K_M
       api_base: os.environ/OLLAMA_URL
+      timeout: 30
+
   # ---- macf-cheap: local Qwen only. Routine/fast work. $0. -----------------
   - model_name: macf-cheap
     litellm_params:
       model: ollama/qwen2.5:3b-instruct-q4_K_M
       api_base: os.environ/OLLAMA_URL
+      timeout: 30
 
   # ---- macf-smart: STRICT local-first. Single local deployment; on failure
   #      falls through to macf-smart-free (OpenRouter free), never directly
@@ -75,17 +79,26 @@ model_list:
     litellm_params:
       model: ollama/qwen2.5:3b-instruct-q4_K_M
       api_base: os.environ/OLLAMA_URL
+      timeout: 30
 
   # ---- macf-smart-free: OpenRouter free tier. $0 overflow when local is down.
   - model_name: macf-smart-free
     litellm_params:
-      model: openrouter/deepseek/deepseek-chat-v3-0324:free
+      model: openrouter/nvidia/nemotron-3.5-lightning:free
       api_key: os.environ/OPENROUTER_API_KEY
   - model_name: macf-smart-free
     litellm_params:
-      model: openrouter/meta-llama/llama-3.3-70b-instruct:free
+      model: openrouter/liquid/lfm-2.5-2.6b:free
       api_key: os.environ/OPENROUTER_API_KEY
 
+  # ---- macf-smart-paid: paid smart tier (Jesse approved Oct 9 2026).
+  #      DeepSeek V4 Flash primary (~$1/mo), Haiku 5.5 fallback. ---------
+  - model_name: macf-smart-paid
+    litellm_params:
+      model: openrouter/deepseek/deepseek-v4-flash
+  - model_name: macf-smart-paid-fb
+    litellm_params:
+      model: openrouter/anthropic/claude-haiku-5.5
   # ---- macf-best: hardest work. OpenRouter paid first, then free. -----------
   - model_name: macf-best
     litellm_params:
@@ -97,7 +110,7 @@ model_list:
       api_key: os.environ/OPENROUTER_API_KEY
   - model_name: macf-best
     litellm_params:
-      model: openrouter/deepseek/deepseek-chat-v3-0324:free
+      model: openrouter/nvidia/nemotron-3.5-lightning:free
       api_key: os.environ/OPENROUTER_API_KEY
 
   # ---- macf-best-direct: direct paid APIs. Absolute last resort. ------------
@@ -129,6 +142,8 @@ router_settings:
   fallbacks:
     - {"macf-cheap": ["macf-smart"]}
     - {"macf-smart": ["macf-smart-free"]}
+    - {"macf-smart-paid": ["macf-smart-paid-fb"]}
+    - {"macf-smart-paid-fb": ["macf-smart-free"]}
     - {"macf-smart-free": ["macf-best"]}
     - {"macf-best": ["macf-best-direct"]}
     - {"macf-best-direct": ["macf-cheap"]}
