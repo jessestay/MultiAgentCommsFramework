@@ -215,11 +215,48 @@ sys.stdout.write(entry['surrogate'])`;
         const text = m.text || '';
         // Skip directives (inputs), only look at agent outputs
         if (text.includes('[from: CEO')) continue;
-        if (!text.includes('[from:') && !text.includes('[work engine')) continue;
+        const isAgentPost = text.includes('[from:') || text.includes('[work engine');
+        const isAutonomousDemo = text.includes('[DEMO]');
+        if (!isAgentPost && !isAutonomousDemo) continue;
 
         // Skip already relayed
         const msgKey = `${channelId}:${m.ts}`;
         if (state.relayed[msgKey]) continue;
+
+        // Autonomous [DEMO] posts carry a local artifact path, not a URL.
+        // Read the file and relay its content directly — Jesse reads it in chat.
+        if (isAutonomousDemo && !isAgentPost) {
+          const pathMatch = text.match(/Artifact:\s*(\/home\/hatch\/workspace\/[^\s]+)/);
+          if (pathMatch) {
+            try {
+              const content = fs.readFileSync(pathMatch[1], 'utf8');
+              const agentMatch2 = text.match(/\[DEMO\]\s*(\w+)/);
+              const demo = {
+                label: '[FYI]',
+                title: `${agentMatch2 ? agentMatch2[1] : 'agent'} hourly autonomous demo`,
+                artifactLink: null,
+                localPath: pathMatch[1],
+                agent: agentMatch2 ? agentMatch2[1].toLowerCase() : 'unknown',
+                task: 'hourly',
+                timestamp: m.ts,
+                fullText: content.slice(0, 3000),
+                needsWork: false,
+                needsWorkReason: null,
+              };
+              demo.channelId = channelId;
+              demo.msgKey = msgKey;
+              newDemos.push(demo);
+              state.relayed[msgKey] = {
+                relayedAt: new Date().toISOString(),
+                agent: demo.agent,
+                title: demo.title,
+              };
+            } catch (e) {
+              console.log(`[demoRelay] Could not read artifact ${pathMatch[1]}: ${e.message}`);
+            }
+          }
+          continue;
+        }
 
         const check = qualifiesAsDemo(text);
         if (check.qualifies) {

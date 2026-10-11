@@ -44,6 +44,33 @@ function hasDemoEvidence(text) {
     /\[DEMO\]/i.test(text);                                   // Explicit demo marker
 }
 
+/**
+ * Validate Jesse's clickable demo format (Oct 9, 2026).
+ * Returns {valid: boolean, missing: string[]} — missing lists absent elements.
+ * Required: action label, artifact link, task reference.
+ */
+function validateDemoFormat(text) {
+  const missing = [];
+  if (!text) return { valid: false, missing: ['label', 'artifact-link', 'task-ref'] };
+
+  // Action label: [Needs Approval], [Needs Feedback], or [FYI] (case-insensitive)
+  if (!/\[(needs approval|needs feedback|fyi)\]/i.test(text)) {
+    missing.push('label');
+  }
+  // Artifact link: must contain a URL
+  if (!/https?:\/\/[^\s]+/.test(text)) {
+    missing.push('artifact-link');
+  }
+  // Task reference: task #N or similar
+  if (!/task\s*#\d+/i.test(text)) {
+    missing.push('task-ref');
+  }
+
+  return { valid: missing.length === 0, missing };
+}
+
+const DEMO_ACTION_LABELS = ['[Needs Approval]', '[Needs Feedback]', '[FYI]'];
+
 function loadState() {
   try { return JSON.parse(fs.readFileSync(STATE_PATH, 'utf8')); }
   catch { return { lastDemo: {}, lessons: [], improvements: [] }; }
@@ -157,6 +184,8 @@ module.exports = {
   checkRecentDemos,
   loadState,
   saveState,
+  validateDemoFormat,
+  DEMO_ACTION_LABELS,
 };
 
 async function main() {
@@ -249,6 +278,32 @@ async function main() {
   console.log(`[sprintDemo] ---`);
   console.log(`[sprintDemo] Demos found: ${demosFound}, missing: ${demosMissing}`);
 
+  // DEMO RELAY (Oct 9, 2026 — Jesse: "pass the demos they give in slack to me"):
+  // Scan Slack for agent demos meeting Jesse's standard and output them
+  // for relay. The cron worker picks these up and surfaces to Jesse.
+  try {
+    const { scanForDemos } = require('./demoRelay');
+    const relayDemos = await scanForDemos();
+    if (relayDemos.length > 0) {
+      console.log(`[sprintDemo] 📤 ${relayDemos.length} demo(s) qualifying for relay to Jesse:`);
+      for (const d of relayDemos) {
+        console.log(`[RELAY-DEMO] ${d.label} | ${d.agent} | ${d.task} | ${d.title}`);
+        if (d.artifactLink) {
+          console.log(`[RELAY-DEMO] Link: ${d.artifactLink}`);
+        }
+        if (d.fullText) {
+          console.log(`[RELAY-DEMO] Content:`);
+          console.log(d.fullText);
+          console.log(`[RELAY-DEMO] --- end content ---`);
+        }
+      }
+    } else {
+      console.log(`[sprintDemo] No demos qualifying for relay (standard: label + link + task ref)`);
+    }
+  } catch (e) {
+    console.log(`[sprintDemo] Demo relay scan failed: ${e.message}`);
+  }
+
   saveState(state);
   console.log('[sprintDemo] done');
 }
@@ -257,3 +312,4 @@ if (require.main === module) {
   main().then(() => process.exit(0))
     .catch(e => { console.error('[sprintDemo] fatal:', e.message); process.exit(1); });
 }
+
