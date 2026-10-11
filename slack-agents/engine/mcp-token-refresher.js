@@ -14,11 +14,14 @@ const REFRESH_BUFFER_MS = 15 * 60 * 1000; // Refresh if expiring within 15 min
 // Map server hash -> token endpoint(s). tokenUrls is a fallback list: each is tried in order.
 // (root-caused 2026-10-07: Buffer's hash was missing here, so its token expired 2026-10-05
 //  and never refreshed; scopes identify 80231cc2e2c48a2ad3af48bba960953f as Buffer.
-//  auth.buffer.com is the issuer from Buffer's own dynamic client registration;
-//  login.buffer.com is Buffer's documented OAuth token host.)
+//  auth.buffer.com is the issuer from Buffer's own dynamic client registration.
+//  ROOT-CAUSE 2026-10-11: the hardcoded paths /oauth2/token on auth.buffer.com (HTML 200)
+//  and login.buffer.com (404/403) were both wrong. Buffer's OIDC discovery document
+//  (https://auth.buffer.com/.well-known/oauth-authorization-server) declares the
+//  token_endpoint as https://auth.buffer.com/token. Use the discovery value.)
 const SERVERS = {
   '67a2071180bfcf76a3985779a9a38813': { name: 'canva', tokenUrls: ['https://mcp.canva.com/token'] },
-  '80231cc2e2c48a2ad3af48bba960953f': { name: 'buffer', tokenUrls: ['https://auth.buffer.com/oauth2/token', 'https://login.buffer.com/oauth2/token'] },
+  '80231cc2e2c48a2ad3af48bba960953f': { name: 'buffer', tokenUrls: ['https://auth.buffer.com/token'] },
 };
 
 async function refreshToken(serverHash, refreshToken, tokenUrls, clientId) {
