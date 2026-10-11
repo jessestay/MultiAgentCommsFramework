@@ -120,3 +120,16 @@ but tonally wrong, cut it.
 - "In the end, software still rules the world, and hardware just works for it."
   (2012–15 era)
 - "Now to get back to coding…" (2007–11 era closer)
+
+## Email voice (from Jesse's Oct 10, 2026 edit of Graham Schwab draft)
+
+When Jesse writes business emails himself, the pattern is:
+
+1. **Warm reciprocity.** Mirrors the other person's energy back. Graham said "great connecting" → Jesse opens "Great connecting with you this week too!"
+2. **Specific over vague.** Names exactly what he received and when: "I received both the deck and the referral partner agreement yesterday" — not "thanks for the materials."
+3. **Offers value back.** Never just takes. "I'll keep an eye out for brands with AI initiatives that might fit your team. Happy to send referrals your way too!"
+4. **Casual close.** "Let's stay in touch!" — friendly, not formal. Sign-off is "Best," + first name only ("Jesse", never "Jesse Stay").
+5. **Short paragraphs.** Each thought gets its own line break. Easy to scan on a phone.
+6. **Exclamation points for warmth, not hype.** Used sparingly to signal genuine enthusiasm, never for sales energy.
+7. **No jargon, no over-explaining.** Says what he's doing ("I'm reviewing them now") without justifying why or adding process detail.
+8. **Mirrors the correspondent's exact phrasing, with a small warm twist.** Lifts the other person's words and hands them back slightly warmer. Graham: "great connecting with you this week" → Jesse: "Great connecting with you this week too!"; Graham: "brands with AI initiatives" → Jesse: "brands with AI initiatives that might fit your team"; Graham: "Let's keep in touch" → Jesse: "Let's stay in touch!" (verbatim from sent email, Oct 10 2026). This is the mechanism behind rule 1 — match their words, then add one degree of warmth.
