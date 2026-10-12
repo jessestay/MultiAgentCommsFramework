@@ -44,30 +44,10 @@ function hasDemoEvidence(text) {
     /\[DEMO\]/i.test(text);                                   // Explicit demo marker
 }
 
-/**
- * Validate Jesse's clickable demo format (Oct 9, 2026).
- * Returns {valid: boolean, missing: string[]} — missing lists absent elements.
- * Required: action label, artifact link, task reference.
- */
-function validateDemoFormat(text) {
-  const missing = [];
-  if (!text) return { valid: false, missing: ['label', 'artifact-link', 'task-ref'] };
-
-  // Action label: [Needs Approval], [Needs Feedback], or [FYI] (case-insensitive)
-  if (!/\[(needs approval|needs feedback|fyi)\]/i.test(text)) {
-    missing.push('label');
-  }
-  // Artifact link: must contain a URL
-  if (!/https?:\/\/[^\s]+/.test(text)) {
-    missing.push('artifact-link');
-  }
-  // Task reference: task #N or similar
-  if (!/task\s*#\d+/i.test(text)) {
-    missing.push('task-ref');
-  }
-
-  return { valid: missing.length === 0, missing };
-}
+// validateDemoFormat DELETED (Oct 12, 2026 — #724, Phase 3): prose demo
+// validation is replaced by receipt-based qualification in demoRelay.js
+// (demoForTask). A demo is a ledger artifact that re-verifies live, not a
+// text shape.
 
 const DEMO_ACTION_LABELS = ['[Needs Approval]', '[Needs Feedback]', '[FYI]'];
 
@@ -186,7 +166,6 @@ module.exports = {
   checkRecentDemos,
   loadState,
   saveState,
-  validateDemoFormat,
   DEMO_ACTION_LABELS,
 };
 
@@ -272,24 +251,24 @@ async function main() {
   // P0.3 (Oct 12, 2026): drain the work engine's relay queue — REAL
   // task-linked deliverables, surfaced to Jesse with content inline.
   // (The Slack-scan relay below stays as the agent-direct path.)
-  // QUALITY FILTER (Oct 12, 2026): only relay items meeting Jesse's demo
-  // standard (label + artifact link + task ref + substance). Substandard
-  // items are dropped with a logged reason — they never reach Jesse.
-  // Previously the drain relayed everything, including narration-of-intent
-  // ("Let me check...") with no evidence.
+  // RECEIPT QUALIFICATION (Oct 12, 2026 — #724 Phase 3, US-108): an item
+  // relays iff its task holds an artifact receipt that re-verifies NOW
+  // (demoForTask). Prose quality filters are deleted — narration with no
+  // receipt cannot relay, and a verified artifact relays on the strength
+  // of the ledger, formatted from receipt fields with its receipt ID.
   try {
     const we = require('./workEngine');
-    const { qualifiesAsDemo } = require('./demoRelay');
+    const { demoForTask, formatRelayLine } = require('./demoRelay');
     const queued = we.drainRelayQueue();
     if (queued.length > 0) {
       console.log(`[sprintDemo] 📤 ${queued.length} work-engine deliverable(s) for relay to Jesse:`);
       for (const q of queued) {
-        const checkText = `[work engine → ${q.agent}] Task #${q.taskId} ${q.title}\n\n${q.deliverable || ''}`;
-        const verdict = qualifiesAsDemo(checkText);
-        if (!verdict.qualifies) {
-          console.log(`[sprintDemo] ⏭️ relay skipped (task #${q.taskId}): ${verdict.reason}`);
+        const demoCheck = demoForTask(q.taskId);
+        if (!demoCheck.qualifies) {
+          console.log(`[sprintDemo] ⏭️ relay skipped (task #${q.taskId}): ${demoCheck.reason}`);
           continue;
         }
+        console.log(formatRelayLine(demoCheck.demo));
         console.log(`[RELAY-DELIVERY] [${q.done ? 'Done' : 'FYI'}] | ${q.agent} | task #${q.taskId} ${q.title}`);
         console.log(`[RELAY-DELIVERY] Content:`);
         console.log((q.deliverable || '').slice(0, 2000));
@@ -309,7 +288,7 @@ async function main() {
     if (relayDemos.length > 0) {
       console.log(`[sprintDemo] 📤 ${relayDemos.length} demo(s) qualifying for relay to Jesse:`);
       for (const d of relayDemos) {
-        console.log(`[RELAY-DEMO] ${d.label} | ${d.agent} | ${d.task} | ${d.title}`);
+        console.log(`[RELAY-DEMO] ${d.label} | ${d.agent} | ${d.task} | ${d.title}${d.receiptId ? ` | receipt ${d.receiptId}` : ''}`);
         if (d.artifactLink) {
           console.log(`[RELAY-DEMO] Link: ${d.artifactLink}`);
         }
