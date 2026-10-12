@@ -146,13 +146,14 @@ const TOOLS = {
  */
 function executeTool(toolName, args = {}) {
   const tool = TOOLS[toolName];
-  if (!tool) {
-    return { ok: false, error: `Unknown tool: ${toolName}` };
-  }
-
   const start = Date.now();
   let result;
-  try {
+  if (!tool) {
+    // NOTE: no early return — this result must flow through the logging +
+    // auditor tail below, or hallucinated tool names would be invisible
+    // to the tool-usage auditor (caught by tests Oct 12, 2026).
+    result = { ok: false, error: `Unknown tool: ${toolName}` };
+  } else try {
     switch (toolName) {
       case 'urlCheck':
         result = tool.fn(args.url);
@@ -178,6 +179,15 @@ function executeTool(toolName, args = {}) {
 
   // Log every tool call
   console.log(`[agentTools] ${toolName}(${JSON.stringify(args).slice(0, 100)}) → ${result.ok ? 'ok' : 'fail'} (${result.durationMs}ms)`);
+
+  // TOOL AUDITOR (Oct 12, 2026 — Vikunja #722): a failed tool call is
+  // recorded, classified, and auto-fixed the second it happens. Lazy require
+  // + try/catch: the auditor must never break tool execution.
+  if (!result.ok) {
+    try {
+      require('../engine/toolUsageAuditor').recordToolEvent({ tool: toolName, args, result });
+    } catch { /* fail-open */ }
+  }
 
   return result;
 }
