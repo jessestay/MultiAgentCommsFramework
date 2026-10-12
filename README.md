@@ -43,6 +43,8 @@ Three layers, each independently swappable:
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full design.
 
+**How do you know an agent's work really happened?** Agents cannot mark their own tasks done. Every tool use writes a receipt, and code verifies the receipts against the real world before any task counts as complete. The plain-English explanation, with flow charts, is in [How Tool Enforcement Works](docs/how-tool-enforcement-works.md).
+
 ---
 
 ## Quick Start
