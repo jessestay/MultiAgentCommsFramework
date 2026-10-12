@@ -114,6 +114,10 @@ async function getActiveTasksByAgent() {
       const tasks = await res.json();
       for (const t of tasks) {
         if (t.done) continue;
+        // P1.6 (Oct 12, 2026): parked tasks (WIP cap) are not active work —
+        // same dormant rule as the work engine.
+        const haystack = `${t.title || ''} ${t.description || ''}`;
+        if (/hold-001|on hold|\bparked\b|guardrail/i.test(haystack)) continue;
         const assignees = (t.assignees || []).map(a => (a.username || '').toLowerCase());
         // Keep the full assignee list on each task record so joint coverage
         // (Oct 6, 2026) can see co-assignees, not just the owning key.
@@ -131,25 +135,23 @@ async function getActiveTasksByAgent() {
 }
 
 async function checkRecentDemos() {
-  // Check Slack for demo evidence in the last hour from each agent
-  // For now, we check the agent health file for recent completions
-  const HEALTH_PATH = path.join(__dirname, '.agent-health.json');
-  let health = {};
-  try { health = JSON.parse(fs.readFileSync(HEALTH_PATH, 'utf8')); } catch {}
-
-  const oneHourAgo = Date.now() - 3600000;
+  // P0.2 (Oct 12, 2026): a demo is TASK-LINKED OUTPUT with evidence — a
+  // deliverable the work engine posted for a real Vikunja task. The old code
+  // read .agent-health.json (lastActivity + lifetime completions), which the
+  // hourly autonomous pulse-runner bumps every hour — so every check reported
+  // "all agents demoed" while zero real work shipped. Health heartbeats no
+  // longer count as demo evidence.
+  const state = require('../utils/state');
+  const windowAgo = Date.now() - 2 * 3600 * 1000; // 2h window: engine does ~1 task/30min
   const demosByAgent = {};
 
-  for (const [agentId, h] of Object.entries(health)) {
-    if (!h.lastActivity) continue;
-    const lastActivity = new Date(h.lastActivity).getTime();
-    if (lastActivity > oneHourAgo && h.directivesCompleted > 0) {
-      // Vikunja assignee usernames are lowercased in getActiveTasksByAgent();
-      // health keys use original casing (e.g. execPM). Normalize to lowercase
-      // so the demo lookup matches (was logging false misses, Oct 5 2026).
-      demosByAgent[agentId.toLowerCase()] = {
-        lastDemo: h.lastActivity,
-        completions: h.directivesCompleted,
+  const agents = ['cfo', 'cmo', 'cro', 'execpm', 'facebook', 'cto', 'lawyer', 'jobcoach', 'cco', 'cuxo', 'hr'];
+  for (const agentId of agents) {
+    const lastDemo = state.get('workEngine', `lastDemo.${agentId}`);
+    if (lastDemo && new Date(lastDemo).getTime() > windowAgo) {
+      demosByAgent[agentId] = {
+        lastDemo,
+        taskId: state.get('workEngine', `lastDemoTask.${agentId}`) || null,
       };
     }
   }
@@ -209,7 +211,7 @@ async function main() {
     const demo = demosByAgent[agent];
 
     if (demo) {
-      console.log(`[sprintDemo] ✅ ${agent}: demo found (${demo.completions} completions, last: ${demo.lastDemo})`);
+      console.log(`[sprintDemo] ✅ ${agent}: demo found (task #${demo.taskId || '?'}, at: ${demo.lastDemo})`);
       state.lastDemo[agent] = demo.lastDemo;
       // A real demo resets the consecutive-miss streak (was never cleared, Oct 5 2026).
       state._misses[agent] = 0;
@@ -235,40 +237,14 @@ async function main() {
         continue;
       }
 
-      console.log(`[sprintDemo] ⚠️  ${agent}: NO demo in last hour (${tasks.length} active tasks)`);
+      console.log(`[sprintDemo] ⚠️  ${agent}: NO demo in last 2h (${tasks.length} active tasks)`);
       demosMissing++;
 
-      // Log as engine gap — the agent has work but showed no verifiable output
-      logGap({
-        type: 'missing_hourly_demo',
-        agent: agent,
-        taskCount: tasks.length,
-        tasks: tasks.map(t => `#${t.id} ${t.title.slice(0, 60)}`),
-        message: `${agent} has ${tasks.length} active tasks but produced no verifiable demo in the last hour`,
-      });
-
-      // Consecutive-miss streak. ROOT-CAUSE FIX (Oct 6, 2026): the old
-      // `if (!state.lastDemo[agent])` gate only counted agents that had NEVER
-      // demoed, so busy agents could go demo-silent indefinitely without
-      // escalation. The streak is now uniform: consecutive checks with active
-      // tasks and no demo.
+      // P0.2 (Oct 12, 2026): per-agent hourly gaps were noise (11 gaps/hour
+      // once demos meant real output). The signal is engine-wide drought —
+      // tracked below. Keep the streak for display; escalate only on drought.
       const prev = state._misses[agent] || 0;
       state._misses[agent] = prev + 1;
-
-      // ESCALATION-DEDUPE FIX (Oct 6, 2026): persist the demo_streak_broken
-      // gap only when the streak CROSSES 3 — not on every subsequent run
-      // (was re-logging every hour, 45 duplicate gaps).
-      if (crossesEscalationThreshold(prev, state._misses[agent])) {
-        console.log(`[sprintDemo] 🚨 ${agent}: 3+ consecutive hours without demo — escalation needed`);
-        logGap({
-          type: 'demo_streak_broken',
-          agent: agent,
-          consecutiveMisses: state._misses[agent],
-          message: `${agent} has not demoed in ${state._misses[agent]} hours despite active tasks`,
-        });
-      } else if (state._misses[agent] >= 3) {
-        console.log(`[sprintDemo] 🚨 ${agent}: still no demo (${state._misses[agent]} consecutive hours) — already escalated`);
-      }
     }
   }
 
@@ -277,6 +253,52 @@ async function main() {
   // will trigger improvement prompts when tasks are marked done)
   console.log(`[sprintDemo] ---`);
   console.log(`[sprintDemo] Demos found: ${demosFound}, missing: ${demosMissing}`);
+
+  // P0.2 (Oct 12, 2026): escalate on ENGINE-WIDE drought, not per-agent
+  // noise. Zero task-linked deliverables for 3 consecutive hourly checks
+  // means the work engine is stalled — that is the real gap.
+  state._engineDrought = demosFound > 0 ? 0 : (state._engineDrought || 0) + 1;
+  if (crossesEscalationThreshold(state._engineDrought - 1, state._engineDrought)) {
+    console.log(`[sprintDemo] 🚨 ENGINE DROUGHT: zero task-linked deliverables for ${state._engineDrought} consecutive hourly checks`);
+    logGap({
+      type: 'engine_demo_drought',
+      consecutiveChecks: state._engineDrought,
+      message: `Work engine produced zero task-linked deliverables for ${state._engineDrought} consecutive hourly checks`,
+    });
+  } else if (state._engineDrought > 3) {
+    console.log(`[sprintDemo] 🚨 ENGINE DROUGHT continues (${state._engineDrought} checks) — already escalated`);
+  }
+
+  // P0.3 (Oct 12, 2026): drain the work engine's relay queue — REAL
+  // task-linked deliverables, surfaced to Jesse with content inline.
+  // (The Slack-scan relay below stays as the agent-direct path.)
+  // QUALITY FILTER (Oct 12, 2026): only relay items meeting Jesse's demo
+  // standard (label + artifact link + task ref + substance). Substandard
+  // items are dropped with a logged reason — they never reach Jesse.
+  // Previously the drain relayed everything, including narration-of-intent
+  // ("Let me check...") with no evidence.
+  try {
+    const we = require('./workEngine');
+    const { qualifiesAsDemo } = require('./demoRelay');
+    const queued = we.drainRelayQueue();
+    if (queued.length > 0) {
+      console.log(`[sprintDemo] 📤 ${queued.length} work-engine deliverable(s) for relay to Jesse:`);
+      for (const q of queued) {
+        const checkText = `[work engine → ${q.agent}] Task #${q.taskId} ${q.title}\n\n${q.deliverable || ''}`;
+        const verdict = qualifiesAsDemo(checkText);
+        if (!verdict.qualifies) {
+          console.log(`[sprintDemo] ⏭️ relay skipped (task #${q.taskId}): ${verdict.reason}`);
+          continue;
+        }
+        console.log(`[RELAY-DELIVERY] [${q.done ? 'Done' : 'FYI'}] | ${q.agent} | task #${q.taskId} ${q.title}`);
+        console.log(`[RELAY-DELIVERY] Content:`);
+        console.log((q.deliverable || '').slice(0, 2000));
+        console.log(`[RELAY-DELIVERY] --- end (at ${q.ts}) ---`);
+      }
+    }
+  } catch (e) {
+    console.log(`[sprintDemo] Relay queue drain failed: ${e.message}`);
+  }
 
   // DEMO RELAY (Oct 9, 2026 — Jesse: "pass the demos they give in slack to me"):
   // Scan Slack for agent demos meeting Jesse's standard and output them
