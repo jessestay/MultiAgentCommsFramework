@@ -10,7 +10,25 @@
 const fs = require('fs');
 const path = require('path');
 
-const STATE_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || '/tmp';
+// FIX (Oct 2, 2026): Use persistent workspace path for VM-local engine.
+// /tmp is ephemeral and gets cleared on restart, which resets all cooldown
+// state and causes tasks to be re-worked every cycle. The VM engine needs
+// persistence across restarts.
+const MACF_HOME_STATE = '/home/macf/workspace/macf/slack-agents/.state';
+const STATE_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH ||
+  process.env.MACF_STATE_DIR ||
+  // ROOT-CAUSE FIX (Oct 12, 2026): the live engine runs as user macf
+  // (HOME=/home/macf), but root cron jobs (standup, sprint-demo-check,
+  // self-healer) resolve HOME=/home/hatch — producing a split-brain where
+  // cron scripts read an empty decoy state file while the engine wrote the
+  // real state elsewhere. Consequence: sprintDemo read zero lastDemo keys
+  // and escalated a false engine_demo_drought 3x, and the relay-queue drain
+  // read/drained the wrong queue (4 real deliverables never relayed).
+  // When the macf live-state dir exists, it is canonical for EVERY user —
+  // env overrides still win, HOME-based fallback only when macf's dir is
+  // absent (e.g. pure local dev without the engine installed).
+  (fs.existsSync(MACF_HOME_STATE) ? MACF_HOME_STATE :
+    path.join(process.env.HOME || '/home/hatch', 'workspace', 'macf', 'slack-agents', '.state'));
 
 // ─── Per-agent default state shapes ──────────────────────────────────────────
 const DEFAULT_STATE = {
@@ -107,6 +125,11 @@ function saveAgentState(agentId) {
   try {
     fs.mkdirSync(STATE_DIR, { recursive: true });
     fs.writeFileSync(stateFilePath(agentId), JSON.stringify(state, null, 2), 'utf8');
+    // PERMISSION FIX (Oct 12, 2026): root cron jobs and the macf-run engine
+    // share this dir. A root write defaults to 600/660, which macf cannot
+    // read — recreating the split-brain as a permission problem. Force
+    // world-readable so both users always see the same state.
+    try { fs.chmodSync(stateFilePath(agentId), 0o644); } catch {}
   } catch (err) {
     console.error(`[state] Failed to save memory for ${agentId}:`, err.message);
   }
