@@ -205,6 +205,9 @@ When done, write your answer directly. Be concise. No thinking process narration
       try {
         toolArgs = JSON.parse(fmt1[2]);
       } catch {
+        // TOOL AUDITOR (Oct 12, 2026 — #722): the model TRIED to call a tool
+        // and couldn't format it. Record it the second it happens.
+        try { require('../engine/toolUsageAuditor').recordMalformedCall({ tool: toolName, model }); } catch { /* fail-open */ }
         conversation += `\n\nTool call parse error for ${toolName} — invalid JSON. Try again with valid JSON or write your final response.`;
         continue;
       }
