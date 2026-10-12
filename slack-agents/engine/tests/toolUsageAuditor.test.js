@@ -8,6 +8,15 @@
  *
  * Isolation: MACF_STATE_DIR + MACF_TOOL_AUDIT_GAP_FILE point at a temp dir
  * BEFORE any module loads, so tests never touch production state or gaps.
+ *
+ * Phase 2 update (Oct 12, 2026 — #724): the prose detectors pinned here
+ * originally (detectToolCallAsText, hasNarration, taskImpliesTools, and the
+ * MISSED_OPPORTUNITY / TOOL_CALL_AS_TEXT / NO_TOOLS_PATH findings) were
+ * DELETED per the design's retire table. Enforcement lives in the
+ * generateWithTools loop (invalid_deliverable) and completion.js
+ * (receipt absence); this suite now pins that the auditor infers NOTHING
+ * from prose, while its event-based recording/classification/auto-fix and
+ * telemetry survive unchanged.
  */
 const fs = require('fs');
 const os = require('os');
@@ -68,51 +77,11 @@ describe('classifyToolError — the "why"', () => {
   });
 });
 
-describe('detectToolCallAsText — unexecuted calls in final output', () => {
-  test('catches the exact task #702 failure pattern', () => {
-    const out = "[fileRead(path='/home/sandbox/reports'), fileList(path='/home/sandbox/reports')]";
-    expect(auditor.detectToolCallAsText(out)).toBe('fileRead');
-  });
-  test('catches bare function-call syntax', () => {
-    expect(auditor.detectToolCallAsText('I saved it: fileWrite(path="a.txt") done')).toBe('fileWrite');
-  });
-  test('catches leaked control tokens', () => {
-    expect(auditor.detectToolCallAsText('result <|tool_call_start|> [fileList()] <|tool_call_end|>')).toBeTruthy();
-  });
-  test('catches an unexecuted [TOOL:] line in final text', () => {
-    expect(auditor.detectToolCallAsText('[TOOL: urlCheck] {"url": "https://x.com"}')).toBe('urlCheck');
-  });
-  test('clean deliverable text returns null', () => {
-    expect(auditor.detectToolCallAsText('Wrote the report — see sandbox file reports/status.txt and https://example.com [DEMO]')).toBeNull();
-    expect(auditor.detectToolCallAsText('')).toBeNull();
-    expect(auditor.detectToolCallAsText(null)).toBeNull();
-  });
-});
-
-describe('hasNarration — intent described instead of done', () => {
-  test('catches present-tense narration', () => {
-    expect(auditor.hasNarration('Let me check the project state first.')).toBe(true);
-    expect(auditor.hasNarration("I'm pulling the workshop details and drafting the post.")).toBe(true);
-    expect(auditor.hasNarration("I'll fetch the latest numbers.")).toBe(true);
-  });
-  test('past-tense completed reporting is not narration', () => {
-    expect(auditor.hasNarration('Checked the URL: 200 OK in 0.4s. Report written to reports/status.txt.')).toBe(false);
-    expect(auditor.hasNarration('Done. 3 signups today, draft saved.')).toBe(false);
-  });
-});
-
-describe('taskImpliesTools', () => {
-  test('URL and verification tasks imply tools', () => {
-    expect(auditor.taskImpliesTools('Verify the link https://example.com still works')).toBe(true);
-    expect(auditor.taskImpliesTools('Check the status page for the listing')).toBe(true);
-  });
-  test('file-producing tasks imply tools', () => {
-    expect(auditor.taskImpliesTools('Write the report file for Q3')).toBe(true);
-    expect(auditor.taskImpliesTools('Export the leads to a spreadsheet')).toBe(true);
-  });
-  test('pure composition tasks do not imply tools', () => {
-    expect(auditor.taskImpliesTools('Draft a birthday message for the team channel')).toBe(false);
-    expect(auditor.taskImpliesTools('Brainstorm names for the new feature')).toBe(false);
+describe('Phase 2: the prose detectors are gone', () => {
+  test('detector functions are no longer exported', () => {
+    expect(auditor.detectToolCallAsText).toBeUndefined();
+    expect(auditor.hasNarration).toBeUndefined();
+    expect(auditor.taskImpliesTools).toBeUndefined();
   });
 });
 
@@ -199,7 +168,7 @@ describe('auditGeneration — whole-generation detection', () => {
     expect(findings).toHaveLength(0);
   });
 
-  test('narration with zero tool calls = MISSED_OPPORTUNITY (real #266 pattern)', () => {
+  test('Phase 2: narration with zero tool calls produces NO finding (telemetry infers nothing from prose)', () => {
     const { findings } = auditor.auditGeneration({
       ...base,
       taskTitle: 'Draft the X post from the workshop details',
@@ -207,10 +176,10 @@ describe('auditGeneration — whole-generation detection', () => {
       rawOutput: "I'm pulling the Muse for Business workshop details and drafting the X post copy based on the current campaign state.",
       outputHasEvidence: false,
     });
-    expect(findings.map(f => f.type)).toContain('MISSED_OPPORTUNITY');
+    expect(findings).toHaveLength(0);
   });
 
-  test('tool-call-as-text final output = TOOL_CALL_AS_TEXT (real #702 pattern)', () => {
+  test('Phase 2: tool-call-as-text final output produces NO auditor finding (the loop rejects it instead)', () => {
     const { findings } = auditor.auditGeneration({
       ...base,
       taskTitle: 'Evaluate the PDFs',
@@ -218,7 +187,7 @@ describe('auditGeneration — whole-generation detection', () => {
       rawOutput: "[fileRead(path='/home/sandbox/reports'), fileList(path='/home/sandbox/reports')]",
       outputHasEvidence: false,
     });
-    expect(findings.map(f => f.type)).toContain('TOOL_CALL_AS_TEXT');
+    expect(findings).toHaveLength(0);
   });
 
   test('failed tool events surface as TOOL_FAILURE with classification', () => {
@@ -234,17 +203,6 @@ describe('auditGeneration — whole-generation detection', () => {
     expect(tf.errorClass).toBe('blocked_path');
   });
 
-  test('text-only path for a tool task = NO_TOOLS_PATH', () => {
-    const { findings } = auditor.auditGeneration({
-      ...base, via: 'generateReport',
-      taskTitle: 'Verify the URL https://example.com/pricing is live',
-      toolEvents: [],
-      rawOutput: 'The page looks fine.',
-      outputHasEvidence: false,
-    });
-    expect(findings.map(f => f.type)).toContain('NO_TOOLS_PATH');
-  });
-
   test('pure composition task without tools or evidence is NOT flagged', () => {
     const { findings } = auditor.auditGeneration({
       ...base,
@@ -256,16 +214,16 @@ describe('auditGeneration — whole-generation detection', () => {
     expect(findings).toHaveLength(0);
   });
 
-  test('gaps dedupe: repeated identical findings bump one gap entry', () => {
+  test('gaps dedupe: repeated identical failures bump one gap entry', () => {
     const mk = () => auditor.auditGeneration({
       ...base, taskId: 999101,
-      taskTitle: 'Evaluate the PDFs',
-      toolEvents: [],
-      rawOutput: "[fileRead(path='/x')]",
+      taskTitle: 'Read the config file',
+      toolEvents: [{ tool: 'fileRead', args: { path: '../secret' }, result: { ok: false, error: 'Path traversal blocked' } }],
+      rawOutput: 'Could not read the file.',
       outputHasEvidence: false,
     });
     mk(); mk();
-    const gaps = gapEntries().filter(g => g.type === 'TOOL_CALL_AS_TEXT' && g.agent === 'cmo');
+    const gaps = gapEntries().filter(g => g.type === 'TOOL_FAILURE' && g.agent === 'cmo');
     expect(gaps).toHaveLength(1);
     expect(gaps[0].count).toBeGreaterThanOrEqual(2);
   });
@@ -278,10 +236,16 @@ describe('recordMalformedCall + summarize', () => {
     expect(f.detail).toMatch(/never executed/);
   });
   test('summarize aggregates the recorded window', () => {
-    const s = auditor.summarize(24);
-    expect(s.total).toBeGreaterThanOrEqual(5);
-    expect(s.byType.TOOL_FAILURE).toBeGreaterThanOrEqual(1);
-    expect(s.byType.MISSED_OPPORTUNITY).toBeGreaterThanOrEqual(1);
+    // Legacy audit-log mode pinned explicitly: receipts are the default
+    // source since Phase 3 (see receipts.test.js US-109 for that mode).
+    process.env.MACF_AUDIT_SOURCE = 'legacy';
+    let s;
+    try { s = auditor.summarize(24); } finally { delete process.env.MACF_AUDIT_SOURCE; }
+    expect(s.total).toBeGreaterThanOrEqual(4);
+    expect(s.byType.TOOL_FAILURE).toBeGreaterThanOrEqual(2);
+    // Phase 2: no prose-inferred classes exist in telemetry anymore.
+    expect(s.byType.MISSED_OPPORTUNITY).toBeUndefined();
+    expect(s.byType.TOOL_CALL_AS_TEXT).toBeUndefined();
     expect(s.autoFixed).toBeGreaterThanOrEqual(1);
   });
 });
