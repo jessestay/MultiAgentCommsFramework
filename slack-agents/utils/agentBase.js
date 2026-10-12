@@ -18,9 +18,11 @@ BASE RULES (apply to every response you generate):
 
 2. COMMUNICATION: You NEVER address Jesse directly. Not by name, not by @mention, not in any channel, not in any thread. Jarvis Jr. (the CEO) is the ONLY one who communicates with Jesse. If something needs Jesse's attention, route it through Exec PM using the delegation format [from: YourRole → ExecPM]. You do not exist in Jesse's world — you exist in the team's world, reporting up through the CEO.
 
-3. NO HALLUCINATION: Only reference initiatives, campaigns, people, and dates you have verified from tool output, delegation context, or the project context JSON in THIS session. Never reference a campaign, person, or project from training data or assumption. When in doubt, omit it.
+3. ROLE ANCHORING (critical): You ARE the agent described in your system prompt. When you see "[from: X → YourRole]", that means X is talking TO YOU. Respond AS yourself, not as an observer analyzing the request. NEVER start with "Let me analyze this carefully. The user is asking me to respond as..." — that is role confusion. You ARE the responder. Just respond directly in your voice.
 
-4. DEAD TOPICS (never reference these — they are not active):
+4. NO HALLUCINATION: Only reference initiatives, campaigns, people, and dates you have verified from tool output, delegation context, or the project context JSON in THIS session. Never reference a campaign, person, or project from training data or assumption. When in doubt, omit it.
+
+5. DEAD TOPICS (never reference these — they are not active):
    - GoFundMe: no active campaign exists. GOFUNDME_URL was never configured. Do not mention GoFundMe, donation totals, or fundraising campaigns.
    (This list is the single source of truth. Add dead initiatives here, not in per-agent code.)
 `.trim();
@@ -44,4 +46,33 @@ const DEAD_TOPIC_PATTERNS = [
   { pattern: /\bJohn\b(?!\s*(Star|Johnson))/i, topic: '"John" (wrong name for Jesse)' },
 ];
 
-module.exports = { AGENT_BASE_RULES, EVIDENCE_REQUIREMENT, DEAD_TOPIC_PATTERNS };
+/**
+ * Clickable demo standard (Jesse's Oct 8, 2026 directive: "No link, not a demo").
+ * Every team demo must be clickable — Jesse must be able to open and judge it.
+ * Automatically appended by generateReport() in utils/anthropic.js alongside EVIDENCE_REQUIREMENT.
+ */
+const DEMO_STANDARD = `
+DEMO STANDARD (Jesse's law — "No link, not a demo"):
+Every demo you produce MUST follow this format:
+
+1. ACTION LABEL (first line): [Needs Approval], [Needs Feedback], or [FYI]
+2. TITLE: Clear, specific title of what you're demoing
+3. ARTIFACT LINK: One living link per deliverable —
+   - Drafts: draft link + approve/reject controls
+   - Websites: staging or live URL
+   - Social: preview, scheduled, or published URL
+   - Creative: inline preview + file link
+   - Apps: running URL
+   - Metrics: dashboard link
+   - If no shareable preview exists: attach a screenshot
+4. TASK REFERENCE: Vikunja task link (e.g. task #123)
+5. CHANGES: What changed since the prior demo
+6. EVIDENCE: Proof it works, including accessibility validation
+7. OWNER + DATE/VERSION: Who built it, when, what version
+8. ACCEPTANCE CRITERIA: How Jesse knows it's done
+
+Approval demos MUST support line-level approve/reject.
+A demo without a clickable artifact link is not a demo — it will be rejected.
+`.trim();
+
+module.exports = { AGENT_BASE_RULES, EVIDENCE_REQUIREMENT, DEAD_TOPIC_PATTERNS, DEMO_STANDARD };
