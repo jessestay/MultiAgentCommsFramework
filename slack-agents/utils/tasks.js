@@ -48,15 +48,11 @@ async function createTask(agentId, { title, description = '', priority = vikunja
   }
 }
 
-async function completeTask(agentId, taskId) {
-  if (!isEnabled()) return null;
-  try {
-    return await vikunja.completeTask(agentId, taskId);
-  } catch (err) {
-    console.error('[tasks] completeTask failed:', err.message);
-    return null;
-  }
-}
+// REMOVED (Oct 12, 2026 — #724): the completeTask wrapper. vikunja
+// .completeTask now has exactly one call site — engine/completion.js —
+// so no code path can complete a task around the verifier. Callers that
+// need completion go through completion.completeVerifiedTask (contracted)
+// or completion.completeLegacyTask (legacy path, Phase 2 transitional).
 
 // ─── Delegation → task tracking ──────────────────────────────────────────────
 function stripDelegationPrefix(text) {
@@ -201,7 +197,6 @@ module.exports = {
   isEnabled,
   agentUserId,
   createTask,
-  completeTask,
   trackDelegation,
   stripDelegationPrefix,
   isNoise,
