@@ -657,7 +657,15 @@ async function runCycle() {
   };
   // P1.6 (Oct 12, 2026 — WIP cap): revenue-focus tasks get the first slots
   // every cycle, stalest first within the lane.
+  // CONTRACT LANE (Oct 12, 2026 — #724 acceptance fix): since Phase 3, only
+  // contracted tasks can complete — uncontracted ones fail closed. Picking
+  // purely stalest-first would starve every contracted task behind the
+  // legacy backlog (one refused task per cycle, re-entering on cooldown
+  // still sorted ahead). Prefer the stalest eligible CONTRACTED task; fall
+  // back to the stalest eligible task overall so fail-closed pressure and
+  // attempt backoff on the legacy backlog are preserved.
   const candidate = actionable.find(t => REVENUE_FOCUS.has(t.id) && isEligible(t))
+    || actionable.find(t => isEligible(t) && !!parseContract(t.description))
     || actionable.find(t => isEligible(t));
 
   if (candidate) {
