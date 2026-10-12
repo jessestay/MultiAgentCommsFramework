@@ -89,6 +89,55 @@ async function chat({ systemPrompt, userMessage, model = 'smart', maxTokens = 12
   return turn.text;
 }
 
+// Gateway reachability preflight (Oct 12, 2026 — CEO mechanism repair).
+// Root cause of 7 consecutive directivePoll 600s timeouts (Oct 12 ~04:35-05:36
+// MDT): when the desktop is down, the tunnel proxy blackholes instead of
+// refusing, so EVERY chain attempt hangs until attemptTimeoutMs (60s). A
+// smart-tier delegation then burns 300s+ across rounds and the poller can
+// never complete — its retry/dead-letter machinery never gets a result to
+// act on. Fail fast: probe the gateway with a short timeout first and throw
+// immediately if unreachable, so callers get a quick failure and the
+// retry/dead-letter path can advance instead of hanging.
+let gatewayDownUntil = 0; // epoch ms; brief negative cache to avoid preflight storms
+
+// Test hook: clear the preflight negative cache between tests.
+function _resetGatewayCache() { gatewayDownUntil = 0; }
+
+async function gatewayReachable({ base, agent, timeoutMs = 5000 }) {
+  if (Date.now() < gatewayDownUntil) return false;
+  // NOTE: the axios `timeout` option alone is NOT enough here. When the
+  // desktop is down, the tunnel proxy blackholes the connection in a way
+  // that never settles the axios promise (no timeout, no error — verified
+  // Oct 12, 2026: raw axios GET via the proxy agent hung past its 5000ms
+  // timeout and the node event loop simply emptied). Race against our own
+  // timer so the preflight can never hang.
+  let timer;
+  try {
+    await Promise.race([
+      axios.get(`${base}/health`, {
+        httpsAgent: agent,
+        httpAgent: agent,
+        proxy: false, // proxy managed explicitly via the agent above
+        timeout: timeoutMs,
+        // Any HTTP response (even 404) means the gateway is alive; only
+        // transport failures (timeout, refused, reset) count as down.
+        validateStatus: () => true,
+      }),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`gateway preflight timed out after ${timeoutMs}ms`)), timeoutMs);
+      }),
+    ]);
+    return true;
+  } catch (e) {
+    // Timeout / refused / reset = unreachable. Cache briefly to avoid
+    // preflight storms when the desktop is down.
+    gatewayDownUntil = Date.now() + 60000;
+    return false;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 // One attempt against one model id. Returns { text, toolCalls } — either may
 // be empty (caller decides retry vs fallback).
 async function attemptOnce({ base, agent, modelName, body, signal, timeoutMs }) {
@@ -127,6 +176,14 @@ async function chatTurn({ systemPrompt, userMessage, messages, model = 'smart', 
   const base = String(getBaseUrl()).replace(/\/+$/, '');
   const proxy = tunnelProxyUrl();
   const agent = proxy ? new HttpsProxyAgent(proxy) : undefined;
+  // Fail fast when the desktop gateway is unreachable (see gatewayReachable
+  // above): without this, every attempt blackholes for attemptTimeoutMs.
+  // P1.4 (Oct 12, 2026): fail OVER to VM-direct OpenRouter instead of just
+  // failing fast — the team's brain must not die with Jesse's desktop.
+  if (!(await gatewayReachable({ base, agent }))) {
+    if (logRouting) console.log('[litellm] desktop gateway unreachable — engaging VM-direct OpenRouter failover');
+    return chatTurnDirect({ systemPrompt, userMessage, messages, maxTokens, tools });
+  }
   const chain = resolveChain(model); // tier shorthand or full model id
   const body = {
     messages: messages || [
@@ -163,4 +220,91 @@ async function chatTurn({ systemPrompt, userMessage, messages, model = 'smart', 
   throw new Error(`litellm: all models failed for '${model}' [${chain.join(' -> ')}]: ${errors.join('; ').slice(0, 300)}`);
 }
 
-module.exports = { chat, chatTurn, isConfigured, tunnelProxyUrl };
+// P1.4 (Oct 12, 2026) — VM-direct OpenRouter failover.
+//
+// When the desktop gateway is unreachable, call OpenRouter directly from the
+// VM instead of throwing. Chain: free models first ($0), paid DeepSeek V4
+// Flash as backup (funded key, ~$4-6/mo at current volume). Model IDs match
+// the tracked gateway config (proxies/litellm_config.yaml).
+//
+// Requires OPENROUTER_API_KEY in the VM env. The funded key lives on the
+// desktop gateway (C:\Users\stay\claude_proxy\macf_gateway.env); copy it to
+// the VM when the desktop is reachable. Without the key, the fail-fast error
+// is preserved so the retry/dead-letter machinery still advances.
+//
+// NOTE: the direct path does not support tools — callers get text only.
+// Tool-heavy loops degrade to a text answer rather than hanging forever.
+// FIX (Oct 12, 2026): reasoning-capable models eat the max_tokens budget on
+// reasoning and return null content (observed: finish_reason "length" with
+// content:null on all three chain models — the entire failover went "empty").
+// deepseek-v4-flash accepts reasoning:{enabled:false}; the two free models
+// mandate reasoning (400 if disabled), so cap reasoning tokens at 256 and
+// keep the content budget intact.
+const DIRECT_FAILOVER_CHAIN = [
+  { id: 'liquid/lfm-2.5-2.6b:free',           reasoning: { max_tokens: 256 } }, // verified working Oct 11
+  { id: 'nvidia/nemotron-3.5-lightning:free', reasoning: { max_tokens: 256 } }, // verified Oct 11 (flaky)
+  { id: 'deepseek/deepseek-v4-flash',         reasoning: { enabled: false } },   // paid backup (funded)
+];
+
+async function chatTurnDirect({ systemPrompt, userMessage, messages, maxTokens = 1200, tools }) {
+  const key = (process.env.OPENROUTER_API_KEY || '').trim();
+  if (!key) {
+    throw new Error('litellm: desktop gateway unreachable and no OPENROUTER_API_KEY on VM — cannot fail over (copy the funded key from the desktop gateway env to the VM)');
+  }
+  if (tools && tools.length) {
+    console.log('[litellm] VM-direct failover: tools requested but unsupported on direct path — returning text only');
+  }
+  const axios = require('axios');
+  const { HttpsProxyAgent } = require('https-proxy-agent');
+  // FIX (Oct 12, 2026): axios's automatic env-proxy handling trips this
+  // egress proxy ("Host in options.headers must match the request
+  // authority"). Use an explicit HttpsProxyAgent like the gateway path does,
+  // and disable axios's own proxy handling to avoid the conflict.
+  const egressProxy = process.env.HTTPS_PROXY || process.env.https_proxy || null;
+  const egressAgent = egressProxy ? new HttpsProxyAgent(egressProxy) : undefined;
+  const body = {
+    messages: messages || [
+      ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
+      { role: 'user', content: userMessage },
+    ],
+    max_tokens: maxTokens,
+  };
+  const errors = [];
+  for (const { id: modelId, reasoning } of DIRECT_FAILOVER_CHAIN) {
+    try {
+      // When reasoning is capped (not disabled), reserve that budget so the
+      // content reply isn't starved by a small caller-supplied maxTokens.
+      const effMaxTokens = (reasoning && typeof reasoning.max_tokens === 'number')
+        ? Math.max(maxTokens, reasoning.max_tokens + 128)
+        : maxTokens;
+      const resp = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+        ...body,
+        model: modelId,
+        reasoning,
+        max_tokens: effMaxTokens,
+      }, {
+        headers: {
+          Authorization: `Bearer ${key}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://staynalive.com',
+          'X-Title': 'MACF VM failover',
+        },
+        httpsAgent: egressAgent,
+        proxy: false,
+        timeout: 60000,
+      });
+      const text = resp.data && resp.data.choices && resp.data.choices[0] &&
+        resp.data.choices[0].message && resp.data.choices[0].message.content;
+      if (text && text.trim()) {
+        console.log(`[litellm] VM-direct failover succeeded via ${modelId}`);
+        return { text, toolCalls: [] };
+      }
+      errors.push(`${modelId}: empty response`);
+    } catch (e) {
+      errors.push(`${modelId}: ${e.message}`);
+    }
+  }
+  throw new Error(`litellm: VM-direct failover failed [${errors.join('; ').slice(0, 200)}]`);
+}
+
+module.exports = { chat, chatTurn, chatTurnDirect, isConfigured, tunnelProxyUrl, gatewayReachable, _resetGatewayCache };
