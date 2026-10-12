@@ -279,6 +279,20 @@ TASK-DONE: NO — <one line: what still needs Jesse or what remains>
     const result = await generateWithTools({ systemPrompt: owner.systemPrompt, context, maxTokens: 2000 });
     output = result.response;
     toolResults = result.toolResults || [];
+    // TOOL AUDIT (Oct 12, 2026 — Jesse's order, Vikunja #722): audit the RAW
+    // output the second generation completes, before sanitization strips the
+    // evidence. Catches narration-instead-of-tools, tool-call-as-text leaks,
+    // and tool failures; fixable failures are repaired on the spot.
+    try {
+      const audit = require('./toolUsageAuditor').auditGeneration({
+        agentId: ownerId, taskId: task.id, taskTitle: task.title, taskDescription: task.description || '',
+        via: 'generateWithTools', toolEvents: toolResults, rawOutput: output || '',
+        outputHasEvidence: hasEvidence(output || ''),
+      });
+      if (audit.findings.length) {
+        log(`tool audit task #${task.id}: ${audit.findings.map(f => `${f.type}${f.errorClass ? '/' + f.errorClass : ''}${f.autoFix && f.autoFix.fixed ? ' [auto-fixed]' : ''}`).join(', ')}`);
+      }
+    } catch (e) { log('tool audit failed (non-fatal):', e.message); }
   } catch (err) {
     log(`LLM error on task #${task.id}:`, err.message);
     // FIX (Oct 2, 2026): Never post "On it" without a follow-up. If the LLM
