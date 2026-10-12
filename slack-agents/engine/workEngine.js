@@ -19,6 +19,12 @@ const {
 } = require('../config');
 const vikunja = require('../utils/vikunja');
 const tasks = require('../utils/tasks');
+// #724 (Oct 12, 2026): contracts + verified completion. Completion is a
+// state transition taken when postconditions verify (engine/completion.js
+// holds the only vikunja.completeTask call site).
+const { parseContract } = require('./taskContract');
+const completion = require('./completion');
+const { getSchema } = require('./deliverableSchemas');
 const { generateReport, generateWithTools, isConfigured: llmConfigured } = require('../utils/anthropic');
 const { dmJesse } = require('../utils/dm');
 const state = require('../utils/state');
@@ -30,23 +36,10 @@ const WORK_COOLDOWN_HOURS = parseInt(process.env.WORK_ENGINE_COOLDOWN_H || '6', 
 const IDLE_PROPOSAL_HOURS = parseInt(process.env.WORK_ENGINE_IDLE_PROPOSAL_H || '12', 10);
 const ENABLED = (process.env.WORK_ENGINE_ENABLED || '1') === '1';
 
-// EVIDENCE GATE (Oct 12, 2026): the EVIDENCE_REQUIREMENT prompt promises that
-// "a conversational reply without verifiable evidence is not a deliverable and
-// will be rejected by the validation gate" — but no gate existed in code. This
-// is the gate. A deliverable must carry at least one piece of verifiable
-// evidence: a URL, a [MARKER], a task reference, or a metric. Narration of
-// intent ("Let me check...", "I'm pulling...") never passes.
-function hasEvidence(text) {
-  if (!text || text.length < 80) return false;
-  return (
-    /https?:\/\/\S+/i.test(text) ||                         // URL / artifact link
-    /\[(?:DEMO|FYI|NEEDS APPROVAL|NEEDS FEEDBACK)\]/i.test(text) || // demo markers
-    /task #\d+/i.test(text) ||                               // task reference
-    /(?:^|\s)#\d{2,}\b/.test(text) ||                        // Vikunja ref like #658
-    /\d[\d,]*\s*(%|\$|signups|downloads|views|clicks|shares|comments|leads)/i.test(text) || // metric
-    /(?:sandbox|reports?)\/[\w./-]+\.\w+/i.test(text)        // sandbox artifact path
-  );
-}
+// hasEvidence() DELETED (Oct 12, 2026 — #724, Phase 3): the prose evidence
+// gate is replaced by contract verification (engine/completion.js) —
+// postconditions checked against the world and the receipts ledger. There
+// is no text pattern left that can make work "count" as delivered.
 
 // AGENT HEALTH SYNC (Oct 7, 2026 — root-cause fix for the blind demo gate):
 // sprintDemo.js's checkRecentDemos() reads .agent-health.json, but only
@@ -239,12 +232,45 @@ async function workTask(task) {
 
   log(`working task #${task.id} "${task.title}" as ${ownerId}`);
 
+  // CONTRACT + LIFECYCLE (#724, Pillar 2): a task with a MACF-CONTRACT block
+  // runs the state machine OPEN → CLAIMED → WORKING → VERIFYING → DONE /
+  // BLOCKED, persisted per task.
+  const contract = parseContract(task.description);
+  if (!contract) {
+    // FAIL-CLOSED (Oct 12, 2026 — #724, Phase 3): the legacy prose path is
+    // deleted. An uncontracted task is never worked, never completed, and
+    // never relayed — it stays open until triage stamps a contract on it.
+    // The attempt is recorded so the picker backs off instead of spinning.
+    log(`task #${task.id}: no MACF-CONTRACT — fail-closed, not worked (needs triage)`);
+    recordAttempt(task.id, false);
+    return;
+  }
+  const lcKey = `taskLifecycle.${task.id}`;
+  let lifecycle = state.get(ENGINE_ID, lcKey) || { state: 'OPEN', attempts: 0, lastVerification: null };
+  if (lifecycle.state === 'DONE' || lifecycle.state === 'BLOCKED') {
+    log(`task #${task.id}: lifecycle is ${lifecycle.state} — not re-working`);
+    return;
+  }
+  lifecycle = { ...lifecycle, state: 'WORKING' };
+  state.set(ENGINE_ID, lcKey, lifecycle);
+  const saveLifecycle = (patch) => {
+    lifecycle = { ...lifecycle, ...patch };
+    state.set(ENGINE_ID, lcKey, lifecycle);
+  };
+
   const boundaries = `
 HARD BOUNDARIES (never violate):
 - Nothing is sent, published, posted publicly, bought, or charged without Jesse's explicit approval. Drafts stay drafts.
 - You cannot spend money, use his accounts, or message anyone outside the team.
 - If the task needs Jesse (his login, his card, his approval), do NOT do it — report exactly what he needs to do in one short step instead.
 - Post your work to the team channel; it is internal until Jesse approves it.`;
+
+  // Completion protocol: the typed-deliverable contract. The TASK-DONE
+  // prose protocol is deleted — the model has no channel through which to
+  // assert completion. US-104: structured verification failures from the
+  // last attempt are fed forward as data.
+  const completionProtocol = `
+DELIVERABLE FORMAT (enforced by code): your final answer must be ONLY a JSON object matching schema "${contract.deliverable.schema}" — {"status": "produced", "summary": "<one-paragraph summary of what you did>", "artifactRefs": ["<sandbox paths you wrote>"], plus any schema-specific fields}. Prose, markdown, or tool-call text as the final answer is a failed attempt. Whether this task is done is decided by the engine verifying the contract's postconditions against the real world — nothing you write can mark it done. Do the work with tools first, then return the JSON.${lifecycle.lastVerification ? `\n\nPREVIOUS VERIFICATION FAILURES — your last attempt did not check out. Fix these:\n${JSON.stringify(lifecycle.lastVerification, null, 2)}` : ''}`;
 
   const context = `
 You are working a task from the team's board as ${owner.slackName}.
@@ -259,35 +285,61 @@ Do the work now. You have TOOLS — use them when the task needs real output, no
 Produce the concrete deliverable: research findings, a draft, analysis, code, a plan — whatever the task calls for, within the boundaries above.
 Write it in the team's voice: direct, no fluff, no headers unless the deliverable needs them.
 
-EVIDENCE (required, enforced by code): your deliverable must contain at least one piece of verifiable evidence — a URL, a file path, a metric with a number, a task reference like "task #123 done", or an explicit [DEMO] marker on the key output. Narration without evidence does not count as a deliverable and will be rejected.
+EVIDENCE (required, enforced by code): this task has a contract. The engine verifies the contract's postconditions against the real world (files on disk, live URLs, the receipts ledger) before the task can complete — claims in your summary are not evidence. Do the work with tools so the effects exist, then summarize them.
 
 Do NOT narrate your process ("Let me check...", "I'm pulling...", "Here's my thinking"). Do the work with your tools, then write the deliverable directly. One short status line at most; the deliverable is the message.
-
-After the deliverable, on its own final line, write exactly one of:
-TASK-DONE: YES — <one line why no Jesse approval is needed>
-TASK-DONE: NO — <one line: what still needs Jesse or what remains>
+${completionProtocol}
 `.trim();
 
   let output;
   let toolResults = [];
+  let generationFailure = null;
   const startChannel = await resolveChannelId(owner.primaryChannel).catch(() => null);
   try {
-    // TOOLS (Oct 12, 2026): workTask previously used the tool-less
-    // generateReport — agents could only narrate intent ("Let me check...")
-    // because they had no way to act. generateWithTools gives them urlCheck,
-    // fileWrite/fileRead/fileList so tasks can produce real artifacts.
-    const result = await generateWithTools({ systemPrompt: owner.systemPrompt, context, maxTokens: 2000 });
+    // EXECUTION (#724): a contract naming a deterministic executor runs as
+    // code (engine/executors) — mechanical steps receipted, the model
+    // reachable only through the typed seam. Otherwise generateWithTools
+    // gives the agent urlCheck/fileWrite/fileRead/fileList so tasks
+    // produce real artifacts instead of narrated intent.
+    let result;
+    const executors = require('./executors');
+    if (contract.executor && executors.has(contract.executor)) {
+      result = await executors.dispatch(contract.executor, {
+        task, contract, agentId: ownerId,
+        postMessage: async ({ channel, text }) => {
+          const cid = await resolveChannelId(channel).catch(() => null);
+          if (!cid) throw new Error(`slack-poster: cannot resolve channel "${channel}"`);
+          await postAs(ownerId, cid, text);
+          return { ts: new Date().toISOString() };
+        },
+      });
+      result.toolResults = result.toolResults || [];
+    } else {
+      result = await generateWithTools({
+        systemPrompt: owner.systemPrompt, context, maxTokens: 2000, agentId: ownerId, taskId: task.id,
+        outputSchema: getSchema(contract.deliverable.schema), schemaName: contract.deliverable.schema,
+      });
+    }
     output = result.response;
     toolResults = result.toolResults || [];
+    // STRUCTURAL FAILURE (Oct 12, 2026 — #724): generateWithTools returns
+    // ok:false when the attempt failed in code — repeated invalid tool
+    // input, or a "deliverable" that was role-played tool-call text. That
+    // is a failed attempt, never a deliverable: no post, no relay, no
+    // audit of empty output. (This is the break that queued fabricated
+    // tool calls as deliverables for tasks 230/711/271/234/235.)
+    if (result.ok === false) {
+      generationFailure = result.errorClass || 'generation_failed';
+      output = null;
+    }
     // TOOL AUDIT (Oct 12, 2026 — Jesse's order, Vikunja #722): audit the RAW
     // output the second generation completes, before sanitization strips the
     // evidence. Catches narration-instead-of-tools, tool-call-as-text leaks,
     // and tool failures; fixable failures are repaired on the spot.
     try {
-      const audit = require('./toolUsageAuditor').auditGeneration({
+      const audit = generationFailure ? { findings: [] } : require('./toolUsageAuditor').auditGeneration({
         agentId: ownerId, taskId: task.id, taskTitle: task.title, taskDescription: task.description || '',
         via: 'generateWithTools', toolEvents: toolResults, rawOutput: output || '',
-        outputHasEvidence: hasEvidence(output || ''),
       });
       if (audit.findings.length) {
         log(`tool audit task #${task.id}: ${audit.findings.map(f => `${f.type}${f.errorClass ? '/' + f.errorClass : ''}${f.autoFix && f.autoFix.fixed ? ' [auto-fixed]' : ''}`).join(', ')}`);
@@ -308,6 +360,26 @@ TASK-DONE: NO — <one line: what still needs Jesse or what remains>
     recordAttempt(task.id, false);
     return;
   }
+  if (generationFailure) {
+    // Failed attempt (see the structural-failure note above): log + backoff
+    // only. No Slack post, no relay — there is no deliverable.
+    log(`task #${task.id}: generation failed validation (${generationFailure}) — attempt recorded, no deliverable posted`);
+    if (contract) {
+      // Contracted: the failure counts toward the lifecycle attempt budget
+      // and feeds forward as structured data (US-104).
+      const failures = [{ type: 'deliverable_schema', satisfied: false, observed: generationFailure }];
+      const attempts = (lifecycle.attempts || 0) + 1;
+      if (attempts >= (contract.maxAttempts || 3)) {
+        saveLifecycle({ state: 'BLOCKED', attempts, lastVerification: failures });
+        completion.recordVerificationBlocked({ taskId: task.id, agentId: ownerId, failures });
+        log(`task #${task.id}: BLOCKED after ${attempts} attempts (${generationFailure})`);
+      } else {
+        saveLifecycle({ state: 'WORKING', attempts, lastVerification: failures });
+      }
+    }
+    recordAttempt(task.id, false);
+    return;
+  }
   if (!output) {
     if (startChannel) {
       await postAs(ownerId, startChannel,
@@ -323,126 +395,74 @@ TASK-DONE: NO — <one line: what still needs Jesse or what remains>
   // actual deliverable below. The separate "On it" message added nothing but
   // ack-style clutter that the delivery learner correctly penalizes.
 
-  const doneMatch = output.match(/TASK-DONE:\s*(YES|NO)\s*[—-]\s*(.+)/i);
-  // SANITIZE (Oct 12, 2026): free-tier models leak internal control tokens
-  // (<|tool_call_start|>, [read(path=...)]) into "deliverables" — raw engine
-  // internals were posted to Slack and queued for relay to Jesse (task #268).
-  // Strip them; if nothing substantive remains, treat as empty output.
-  let deliverable = output.replace(/TASK-DONE:.*$/gim, '').trim();
-  deliverable = deliverable
-    .replace(/<\|[^|]*\|>/g, '')
-    .replace(/\[(?:tool_call|read|write|exec|bash|shell)[^\]]*\]/gi, '')
-    .trim();
-  if (!deliverable) {
-    if (startChannel) {
-      await postAs(ownerId, startChannel,
-        `[work engine → ${owner.slackName}] Task #${task.id}: ${task.title}\\n\\n` +
-        `Output was model-internal control tokens only — no real deliverable. Logged; will retry after cooldown.`
-      ).catch(e => log('sanitized-empty post failed:', e.message));
-    }
-    recordAttempt(task.id, false);
-    return;
-  }
-  // EVIDENCE GATE (Oct 12, 2026): the prompt promises a validation gate —
-  // this is it. Narration-of-intent ("Let me check...", "I'm pulling...")
-  // carries no verifiable evidence and is NOT a deliverable. Reject it:
-  // no demo credit, no relay to Jesse, no task completion. The task stays
-  // open and retries; the failure is logged for the quality learner.
-  if (!hasEvidence(deliverable)) {
-    log(`task #${task.id}: deliverable REJECTED by evidence gate (no URL/marker/task-ref/metric). ` +
-      `Preview: ${deliverable.slice(0, 120).replace(/\n/g, ' ')}`);
-    if (startChannel) {
-      await postAs(ownerId, startChannel,
-        `[work engine → ${owner.slackName}] Task #${task.id}: ${task.title}\n\n` +
-        `No verifiable deliverable produced (output was narration without evidence). Logged; will retry after cooldown.`
-      ).catch(e => log('no-evidence post failed:', e.message));
-    }
-    recordAttempt(task.id, false);
-    return;
-  }
-  const doneYes = doneMatch && doneMatch[1].toUpperCase() === 'YES';
-  const doneWhy = doneMatch ? doneMatch[2].trim() : '';
-
-  // BACKOFF tracking (Oct 5, 2026): Record tool failures for LOOP tasks so
-  // the backoff check at the top of workTask can suppress repeat spam.
-  const isLoop = /^LOOP:/i.test(task.title || '');
-  if (isLoop) {
-    const toolErr = output.match(/tool (?:system )?error[:\s]+([^\n]{1,120})/i);
-    if (toolErr) {
-      const failKey = `toolFail.${task.id}`;
-      const failures = state.get(ENGINE_ID, failKey) || [];
-      failures.push({ ts: new Date().toISOString(), error: toolErr[1].trim() });
-      // Keep only last 10
-      state.set(ENGINE_ID, failKey, failures.slice(-10));
-    } else {
-      // Tool worked this time — clear the failure history
-      state.set(ENGINE_ID, `toolFail.${task.id}`, []);
-    }
-  }
-
-  // Post the deliverable to the owner's channel.
-  const channelId = await resolveChannelId(owner.primaryChannel).catch(() => null);
-  if (channelId && deliverable) {
-    await postAs(ownerId, channelId,
-      `[work engine → ${owner.slackName}] Task #${task.id}: ${task.title}\n\n${deliverable}`
-    ).catch(err => log('post failed:', err.message));
-    // P0.2 (Oct 12, 2026): a DEMO is task-linked output with evidence — not
-    // a heartbeat. Record it so the sprint-demo check measures real output.
-    state.set(ENGINE_ID, `lastDemo.${ownerId}`, new Date().toISOString());
-    state.set(ENGINE_ID, `lastDemoTask.${ownerId}`, task.id);
-  }
-
-  // Record progress on the task itself.
-  const toolSummary = toolResults.length
-    ? `Tools used: ${toolResults.map(t => t.tool).join(', ')}.\n` : '';
-  const comment =
-    `Work engine cycle (${new Date().toISOString()}):\n` +
-    `Owner: ${owner.slackName}. Deliverable posted to #${owner.primaryChannel}.\n` +
-    toolSummary +
-    (doneYes ? `Marked done: ${doneWhy}` : `Still open: ${doneWhy || 'needs follow-up'}`);
-  await vikunja.addComment('execPM', task.id, comment).catch(err =>
-    log(`comment failed on #${task.id}:`, err.message));
-
-  // Standing LOOP tasks are never auto-completed: the loop must survive every
-  // cycle. (The task text also instructs the model to end TASK-DONE: NO;
-  // this guard makes it structural, not prompt-dependent.)
-  // (isLoopTask already declared at top of workTask for backoff check)
-  if (doneYes && !isLoopTask) {
-    // FAIL-CLOSED (Oct 7, 2026): the old .catch + unconditional log reported
-    // "task #N completed" even when completeTask threw — e.g. Vikunja 500
-    // "database is locked" on #631 — leaving the task open in Vikunja while
-    // the engine's own books said done. Only log success; a failed complete
-    // leaves the task open so the next cycle retries it.
-    try {
-      await vikunja.completeTask('execPM', task.id);
-      log(`task #${task.id} completed`);
+  // ─── Contracted path: VERIFYING → DONE / WORKING / BLOCKED (#724) ───────
+  // The generation produced a schema-valid deliverable (or the attempt
+  // would already have failed above). Completion is now decided ONLY by
+  // verification against the world + the ledger. hasEvidence, TASK-DONE
+  // parsing, and the sanitizers below do not exist on this path.
+  if (contract) {
+    saveLifecycle({ state: 'VERIFYING' });
+    const outcome = await completion.completeVerifiedTask({ taskId: task.id, contract, agentId: ownerId });
+    if (outcome.completed) {
+      saveLifecycle({ state: 'DONE', completedAt: new Date().toISOString(), lastVerification: null });
+      log(`task #${task.id} completed (verified: ${outcome.results.map(r => r.type).join(', ')})`);
+      const channelId = await resolveChannelId(owner.primaryChannel).catch(() => null);
+      if (channelId && output) {
+        await postAs(ownerId, channelId,
+          `[work engine → ${owner.slackName}] Task #${task.id}: ${task.title}\n\n${output}`
+        ).catch(err => log('post failed:', err.message));
+        state.set(ENGINE_ID, `lastDemo.${ownerId}`, new Date().toISOString());
+        state.set(ENGINE_ID, `lastDemoTask.${ownerId}`, task.id);
+      }
+      await vikunja.addComment('execPM', task.id,
+        `Work engine cycle (${new Date().toISOString()}):\n` +
+        `Owner: ${owner.slackName}. Deliverable VERIFIED against contract postconditions ` +
+        `(${outcome.results.map(r => `${r.type}=pass`).join(', ')}). Marked done by the completion verifier.`
+      ).catch(err => log(`comment failed on #${task.id}:`, err.message));
       updateAgentHealth(ownerId, true);
-    } catch (err) {
-      log(`complete failed on #${task.id}:`, err.message);
-      updateAgentHealth(ownerId, false);
+      recordAttempt(task.id, true);
+      if (output) {
+        enqueueRelay({
+          taskId: task.id, title: task.title, agent: ownerId,
+          deliverable: output.slice(0, 2000), done: true, receiptBacked: true,
+          ts: new Date().toISOString(),
+        });
+      }
+      return;
     }
-  } else {
-    // Task worked but left open (or a standing LOOP task): still record the
-    // activity so the demo gate sees the work happening.
-    updateAgentHealth(ownerId, false);
+    // Verification failed: structured failures feed the next attempt.
+    const attempts = (lifecycle.attempts || 0) + 1;
+    const failTypes = outcome.failures.map(f => f.type).join(', ');
+    if (attempts >= (contract.maxAttempts || 3)) {
+      saveLifecycle({ state: 'BLOCKED', attempts, lastVerification: outcome.failures });
+      completion.recordVerificationBlocked({ taskId: task.id, agentId: ownerId, failures: outcome.failures });
+      log(`task #${task.id}: BLOCKED — verification failed after ${attempts} attempts (${failTypes})`);
+      if (startChannel) {
+        await postAs(ownerId, startChannel,
+          `[work engine → ${owner.slackName}] Task #${task.id}: ${task.title}\n\n` +
+          `Verification failed after ${attempts} attempts (${failTypes}) — task blocked for review. No deliverable was accepted.`
+        ).catch(e => log('blocked post failed:', e.message));
+      }
+    } else {
+      saveLifecycle({ state: 'WORKING', attempts, lastVerification: outcome.failures });
+      log(`task #${task.id}: verification failed (${failTypes}) — attempt ${attempts}/${contract.maxAttempts || 3}, back to WORKING`);
+      if (startChannel) {
+        await postAs(ownerId, startChannel,
+          `[work engine → ${owner.slackName}] Task #${task.id}: ${task.title}\n\n` +
+          `Produced output did not verify yet (${failTypes}). Logged; will retry with the failure details next cycle.`
+        ).catch(e => log('verify-fail post failed:', e.message));
+      }
+    }
+    recordAttempt(task.id, false);
+    return;
   }
 
-  // Record the attempt (clears failure strikes on success).
-  recordAttempt(task.id, true);
-
-  // P0.3 (Oct 12, 2026): queue real deliverables for relay to Jesse.
-  // A demo = task-linked output with evidence. The relay queue is drained
-  // by the sprint-demo check and surfaced to Jesse in chat.
-  if (deliverable) {
-    enqueueRelay({
-      taskId: task.id,
-      title: task.title,
-      agent: ownerId,
-      deliverable: deliverable.slice(0, 2000),
-      done: doneYes,
-      ts: new Date().toISOString(),
-    });
-  }
+  // LEGACY PATH DELETED (Oct 12, 2026 — #724, Phase 3): everything that
+  // used to follow — TASK-DONE prose parsing, control-token sanitizers,
+  // the hasEvidence() gate, and prose-based completion — is gone. Past
+  // this point every task is contracted (uncontracted tasks fail closed
+  // at the top of workTask) and the contracted branch above always
+  // returns: DONE, WORKING, or BLOCKED, decided by verification.
 }
 
 // P0.3 relay queue: real task-linked deliverables awaiting relay to Jesse.
@@ -690,4 +710,4 @@ function stop() {
   log('stopped');
 }
 
-module.exports = { init, stop, runCycle, isJesseGated, isDormant, isTimeCritical, updateAgentHealth, recordAttempt, isParked, enqueueRelay, drainRelayQueue, hasEvidence };
+module.exports = { init, stop, runCycle, workTask, isJesseGated, isDormant, isTimeCritical, updateAgentHealth, recordAttempt, isParked, enqueueRelay, drainRelayQueue };
