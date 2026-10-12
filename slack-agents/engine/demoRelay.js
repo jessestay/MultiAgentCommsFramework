@@ -33,91 +33,63 @@ function saveState(state) {
 }
 
 /**
- * Check if a Slack message qualifies as a demo under Jesse's standard.
- * Returns { qualifies: bool, reason: string, artifactLink: string|null }
+ * Receipt-based demo qualification (Oct 12, 2026 — #724, Phase 3, US-108).
  *
- * A real demo must DEMONSTRATE work, not just mention it. The checks:
- * 1. Action label present ([Needs Approval], [Needs Feedback], [FYI])
- * 2. Artifact link present AND verifiable (URL resolves)
- * 3. Task reference present
- * 4. Substantive description of the work (not just "copy that" / "done")
- * 5. Evidence section or concrete deliverable description
+ * The prose standard (qualifiesAsDemo) is DELETED. A demo exists for a
+ * task iff the receipts ledger holds, within the window, an artifact
+ * receipt attributable to that task — and, for file artifacts, the file
+ * still exists with a matching hash at relay time (verify, don't
+ * pattern-match). The relay line is formatted from receipt fields, so the
+ * artifact Jesse sees is one the engine itself issued and just
+ * re-verified, traceable to a receipt ID.
  */
-function qualifiesAsDemo(text) {
-  if (!text || typeof text !== 'string') {
-    return { qualifies: false, reason: 'empty' };
-  }
+const DEMO_ARTIFACT_KINDS = ['file', 'slack_message', 'vikunja_task'];
 
-  // 1. Must have an action label
-  const hasLabel = ACTION_LABELS.some(label =>
-    text.toUpperCase().includes(label.toUpperCase())
-  );
-  if (!hasLabel) {
-    return { qualifies: false, reason: 'no action label' };
+function demoForTask(taskId, { windowHours = 24 } = {}) {
+  let artifacts;
+  try {
+    artifacts = require('./receipts').artifactsForTask(taskId);
+  } catch (e) {
+    return { qualifies: false, reason: `ledger unreadable: ${e.message}` };
   }
-
-  // 2. Must have an artifact link (URL)
-  const urlMatch = text.match(/https?:\/\/[^\s<>"]+/);
-  if (!urlMatch) {
-    return { qualifies: false, reason: 'no artifact link — no link, not a demo' };
+  const cutoff = Date.now() - windowHours * 3600 * 1000;
+  const candidates = (artifacts || []).filter(a =>
+    DEMO_ARTIFACT_KINDS.includes(a.kind) && new Date(a.ts).getTime() >= cutoff);
+  if (!candidates.length) {
+    return { qualifies: false, reason: 'no artifact receipt for this task in the window' };
   }
-
-  // 3. Must reference a task
-  const taskMatch = text.match(/task\s*#?\d+/i) || text.match(/#\d{2,}/);
-  if (!taskMatch) {
-    return { qualifies: false, reason: 'no task reference' };
-  }
-
-  // 4. Must have substantive description — not just an acknowledgment
-  // Strip the label, URL, and task ref, then check what's left
-  let substantive = text;
-  for (const label of ACTION_LABELS) {
-    substantive = substantive.replace(new RegExp(label.replace(/[[\]]/g, '\\$&'), 'gi'), '');
-  }
-  substantive = substantive.replace(/https?:\/\/[^\s<>"]+/g, '');
-  substantive = substantive.replace(/task\s*#?\d+/gi, '');
-  substantive = substantive.replace(/#\d{2,}/g, '');
-  substantive = substantive.replace(/\[from:[^\]]+\]/gi, '');
-  substantive = substantive.replace(/\[work engine[^\]]*\]/gi, '');
-  substantive = substantive.trim();
-
-  // Acknowledgment patterns that are NOT demos
-  const ackPatterns = [
-    /^(copy that|got it|acknowledged|roger|understood|will do|on it)[\s.!]*$/i,
-    /^(copy that|got it)[\s.!]*holding/i,
-    /nothing from me goes live without/i,
-    /^(done|completed|finished)[\s.!]*$/i,
-  ];
-  for (const pattern of ackPatterns) {
-    if (pattern.test(substantive)) {
-      return { qualifies: false, reason: 'acknowledgment, not a demo — no work demonstrated' };
+  const a = candidates[candidates.length - 1];
+  if (a.kind === 'file') {
+    let buf;
+    try {
+      buf = fs.readFileSync(a.ref);
+    } catch {
+      return { qualifies: false, reason: 'artifact failed re-verification: file missing (deleted since receipt)', staleReceipt: a };
+    }
+    if (a.sha256) {
+      const sha = require('crypto').createHash('sha256').update(buf).digest('hex');
+      if (sha !== a.sha256) {
+        return { qualifies: false, reason: 'artifact failed re-verification: hash mismatch (file changed since receipt)', staleReceipt: a };
+      }
     }
   }
-
-  // Must have minimum substantive content (at least 20 meaningful words
-  // describing the work, not just filler)
-  const words = substantive.split(/\s+/).filter(w => w.length > 2);
-  if (words.length < 20) {
-    return { qualifies: false, reason: `insufficient description (${words.length} words, need 20+) — describe the work` };
-  }
-
-  // 5. Must describe WHAT was built/done (deliverable language)
-  const deliverableSignals = [
-    /built|created|generated|wrote|designed|implemented|completed|finished|produced/i,
-    /artifact|deliverable|report|document|design|draft|version|update/i,
-    /here(?:'s| is)|attached|linked|below/i,
-    /##\s+\w+/,  // Markdown section headers (Artifact Link, Evidence, etc.)
-  ];
-  const hasDeliverableSignal = deliverableSignals.some(p => p.test(text));
-  if (!hasDeliverableSignal) {
-    return { qualifies: false, reason: 'no deliverable described — what was built?' };
-  }
-
   return {
     qualifies: true,
-    reason: 'meets standard',
-    artifactLink: urlMatch[0],
+    demo: {
+      taskId,
+      agent: a.agentId || 'unknown',
+      artifactKind: a.kind,
+      artifactRef: a.ref,
+      receiptId: a.receiptId,
+      ts: a.ts,
+      label: '[FYI]',
+    },
   };
+}
+
+/** The relay line for a qualified demo — every field from the receipt. */
+function formatRelayLine(demo) {
+  return `[RELAY-DEMO] ${demo.label || '[FYI]'} | ${demo.agent} | task #${demo.taskId} | ${demo.artifactKind}: ${demo.artifactRef} | receipt ${demo.receiptId}`;
 }
 
 /**
@@ -141,37 +113,10 @@ async function verifyArtifactLink(url) {
   }
 }
 
-/**
- * Format a qualifying demo for Jesse.
- */
-function formatForJesse(demo) {
-  const label = ACTION_LABELS.find(l =>
-    demo.text.toUpperCase().includes(l.toUpperCase())
-  ) || '[FYI]';
-
-  // Extract title (first meaningful line after label)
-  const lines = demo.text.split('\n').filter(l => l.trim());
-  const title = lines.find(l =>
-    !ACTION_LABELS.some(al => l.toUpperCase().includes(al.toUpperCase()))
-  ) || 'Untitled demo';
-
-  return {
-    label,
-    title: title.slice(0, 120),
-    artifactLink: demo.artifactLink,
-    agent: demo.agentId,
-    task: demo.taskRef,
-    timestamp: demo.ts,
-    fullText: demo.text,
-    needsWork: demo.needsWork || false,
-    needsWorkReason: demo.needsWorkReason || null,
-  };
-}
-
 module.exports = {
-  qualifiesAsDemo,
+  demoForTask,
+  formatRelayLine,
   verifyArtifactLink,
-  formatForJesse,
   loadState,
   saveState,
   scanForDemos,
@@ -258,25 +203,26 @@ sys.stdout.write(entry['surrogate'])`;
           continue;
         }
 
-        const check = qualifiesAsDemo(text);
-        if (check.qualifies) {
-          // Verify the artifact link is actually live before relaying
-          const linkLive = await verifyArtifactLink(check.artifactLink);
-          if (!linkLive) {
-            console.log(`[demoRelay] Skipping ${msgKey}: artifact link dead (${check.artifactLink})`);
-            continue;
-          }
-
-          const agentMatch = text.match(/\[from:\s*(\w+)/) || text.match(/\[work engine →\s*(\w+)/);
-          const taskMatch = text.match(/task\s*#?(\d+)/i) || text.match(/#(\d{2,})/);
-
-          const demo = formatForJesse({
-            text,
-            agentId: agentMatch ? agentMatch[1].toLowerCase() : 'unknown',
-            taskRef: taskMatch ? `#${taskMatch[1]}` : 'unknown',
-            ts: m.ts,
-            artifactLink: check.artifactLink,
-          });
+        // Receipt-based qualification (#724 Phase 3): the message must
+        // reference a task, and that task must hold a live artifact
+        // receipt. The message's own prose qualifies nothing.
+        const taskMatch = text.match(/task\s*#?(\d+)/i) || text.match(/#(\d{2,})/);
+        if (!taskMatch) continue;
+        const demoCheck = demoForTask(parseInt(taskMatch[1], 10));
+        if (demoCheck.qualifies) {
+          const d = demoCheck.demo;
+          const demo = {
+            label: d.label,
+            title: (text.split('\n').find(l => l.trim()) || `Task #${d.taskId} demo`).slice(0, 120),
+            artifactLink: d.artifactRef,
+            agent: d.agent,
+            task: `#${d.taskId}`,
+            timestamp: m.ts,
+            fullText: text,
+            needsWork: false,
+            needsWorkReason: null,
+            receiptId: d.receiptId,
+          };
           demo.channelId = channelId;
           demo.msgKey = msgKey;
 
@@ -301,14 +247,13 @@ sys.stdout.write(entry['surrogate'])`;
   return newDemos;
 }
 
-// CLI: test a message against the standard
+// CLI: check a task's receipt-backed demo status
 if (require.main === module) {
-  const testText = process.argv.slice(2).join(' ');
-  if (testText) {
-    const result = qualifiesAsDemo(testText);
-    console.log(JSON.stringify(result, null, 2));
+  const taskId = parseInt(process.argv[2], 10);
+  if (taskId) {
+    console.log(JSON.stringify(demoForTask(taskId), null, 2));
   } else {
-    console.log('Usage: node demoRelay.js "<message text>"');
-    console.log('Tests whether a message meets Jesse\'s demo standard.');
+    console.log('Usage: node demoRelay.js <taskId>');
+    console.log('Shows whether the task holds a relayable artifact receipt.');
   }
 }
