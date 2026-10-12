@@ -168,14 +168,22 @@ async function attemptOnce({ base, agent, modelName, body, signal, timeoutMs }) 
 // ReAct loop uses: the loop appends tool results and calls again.
 //
 // Walks the tier's fallback chain top-down (see routerSettings above).
-async function chatTurn({ systemPrompt, userMessage, messages, model = 'smart', maxTokens = 1200, tools, toolChoice = 'auto', signal }) {
+async function chatTurn({ systemPrompt, userMessage, messages, model = 'smart', maxTokens = 1200, tools, toolChoice = 'auto', signal, responseFormat }) {
   if (!isConfigured()) {
     throw new Error('litellm not configured');
   }
   const { emptyRetries, attemptTimeoutMs, logRouting } = routerSettings();
   const base = String(getBaseUrl()).replace(/\/+$/, '');
   const proxy = tunnelProxyUrl();
-  const agent = proxy ? new HttpsProxyAgent(proxy) : undefined;
+  // FIX (Oct 12, 2026): use the protocol-correct proxy agent. HttpsProxyAgent
+  // is for HTTPS tunneling — using it for plain http:// gateway URLs caused
+  // intermittent blackholes (verified: raw socket + HttpProxyAgent work,
+  // HttpsProxyAgent hangs). keepAlive:false: the tunnel proxy silently kills
+  // idle pooled sockets.
+  const { HttpProxyAgent } = require('http-proxy-agent');
+  const isHttps = /^https:/.test(base);
+  const AgentClass = isHttps ? HttpsProxyAgent : HttpProxyAgent;
+  const agent = proxy ? new AgentClass(proxy, { keepAlive: false, timeout: 10000 }) : undefined;
   // Fail fast when the desktop gateway is unreachable (see gatewayReachable
   // above): without this, every attempt blackholes for attemptTimeoutMs.
   // P1.4 (Oct 12, 2026): fail OVER to VM-direct OpenRouter instead of just
@@ -196,6 +204,14 @@ async function chatTurn({ systemPrompt, userMessage, messages, model = 'smart', 
     // Strip our internal _mcp marker before sending to the gateway.
     body.tools = tools.map(t => ({ type: t.type || 'function', function: t.function }));
     body.tool_choice = toolChoice;
+  }
+  if (responseFormat) {
+    // Constrained decoding at the gateway (Oct 12, 2026 — #724 amendment):
+    // an OpenAI-style response_format (json_schema strict) the provider
+    // enforces at decode time where supported. Callers validate locally
+    // regardless; routes that cannot honor it surface as model errors and
+    // the chain falls through.
+    body.response_format = responseFormat;
   }
   const errors = [];
   for (const modelName of chain) {
@@ -261,7 +277,8 @@ async function chatTurnDirect({ systemPrompt, userMessage, messages, maxTokens =
   // authority"). Use an explicit HttpsProxyAgent like the gateway path does,
   // and disable axios's own proxy handling to avoid the conflict.
   const egressProxy = process.env.HTTPS_PROXY || process.env.https_proxy || null;
-  const egressAgent = egressProxy ? new HttpsProxyAgent(egressProxy) : undefined;
+  // Same keepAlive:false rationale as the gateway path above.
+  const egressAgent = egressProxy ? new HttpsProxyAgent(egressProxy, { keepAlive: false, timeout: 10000 }) : undefined;
   const body = {
     messages: messages || [
       ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
@@ -297,7 +314,10 @@ async function chatTurnDirect({ systemPrompt, userMessage, messages, maxTokens =
         resp.data.choices[0].message && resp.data.choices[0].message.content;
       if (text && text.trim()) {
         console.log(`[litellm] VM-direct failover succeeded via ${modelId}`);
-        return { text, toolCalls: [] };
+        // toolsDropped (Oct 12, 2026 — #724 amendment): the direct path has
+        // NO native tool channel. Callers must DETECT this and flag text
+        // emulation explicitly instead of silently degrading.
+        return { text, toolCalls: [], ...(tools && tools.length ? { toolsDropped: true } : {}) };
       }
       errors.push(`${modelId}: empty response`);
     } catch (e) {
