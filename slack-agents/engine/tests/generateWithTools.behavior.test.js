@@ -90,20 +90,23 @@ describe('generateWithTools — real tool execution', () => {
 });
 
 describe('the failure modes Jesse ordered detected', () => {
-  test('#702 pattern: tool-call syntax as the final answer executes NOTHING and the auditor flags it', async () => {
-    scriptModel([
-      "[fileRead(path='/home/sandbox/reports'), fileList(path='/home/sandbox/reports')]",
-    ]);
-    const { response, toolsUsed } = await generateWithTools({
+  test('#702 pattern: tool-call syntax as the final answer executes NOTHING and is rejected as a deliverable', async () => {
+    // Updated for #724 (Oct 12, 2026): the loop no longer RETURNS role-played
+    // tool-call text for a downstream gate to catch — it rejects the attempt
+    // in code (ok:false, invalid_deliverable). The auditor still flags the
+    // raw model text as telemetry when handed it.
+    const rawModelText = "[fileRead(path='/home/sandbox/reports'), fileList(path='/home/sandbox/reports')]";
+    scriptModel([rawModelText]);
+    const result = await generateWithTools({
       systemPrompt: 'You are a test agent.', context: 'Evaluate the PDFs in the reports folder.', maxTokens: 500,
     });
-    expect(toolsUsed).toBe(0); // nothing executed — the call was just text
-
-    const { findings } = auditor.auditGeneration({
-      agentId: 'cmo', taskId: 702, taskTitle: 'Evaluate the PDFs',
-      via: 'generateWithTools', toolEvents: [], rawOutput: response, outputHasEvidence: false,
-    });
-    expect(findings.map(f => f.type)).toContain('TOOL_CALL_AS_TEXT');
+    expect(result.toolsUsed).toBe(0); // nothing executed — the call was just text
+    expect(result.ok).toBe(false);
+    expect(result.errorClass).toBe('invalid_deliverable');
+    expect(result.response).toBeNull();
+    // Phase 2: the auditor no longer flags this from prose at all — the
+    // rejection above IS the enforcement now (see toolUsageAuditor.test.js).
+    expect(rawModelText).toContain('fileRead');
   });
 
   test('malformed tool-call JSON is recorded by the auditor immediately', async () => {
@@ -136,7 +139,12 @@ describe('the failure modes Jesse ordered detected', () => {
     expect(failures[failures.length - 1].errorClass).toBe('blocked_path');
   });
 
-  test('narration instead of tool use is flagged as a missed opportunity', async () => {
+  test('narration instead of tool use: Phase 2 — no prose finding; the miss is receipt absence, known to completion', async () => {
+    // Updated for #724 Phase 2: MISSED_OPPORTUNITY (a narration-regex
+    // inference) is deleted. For uncontracted work the narration is still
+    // returned on the legacy path; for contracted work the same output is
+    // an invalid_deliverable / verification failure in code — see
+    // workEngine-completion.behavior.test.js.
     scriptModel([
       "Let me check the project state to understand the files I need to evaluate, then I'll pull the details together.",
     ]);
@@ -144,11 +152,12 @@ describe('the failure modes Jesse ordered detected', () => {
       systemPrompt: 'You are a test agent.', context: 'Evaluate the report files.', maxTokens: 500,
     });
     expect(toolsUsed).toBe(0);
+    expect(response).toMatch(/Let me check/);
     const { findings } = auditor.auditGeneration({
       agentId: 'execPM', taskId: 658, taskTitle: 'Evaluate the report files',
       via: 'generateWithTools', toolEvents: [], rawOutput: response, outputHasEvidence: false,
     });
-    expect(findings.map(f => f.type)).toContain('MISSED_OPPORTUNITY');
+    expect(findings.map(f => f.type)).not.toContain('MISSED_OPPORTUNITY');
   });
 
   test('unknown (hallucinated) tool names surface as unknown_tool failures', async () => {
