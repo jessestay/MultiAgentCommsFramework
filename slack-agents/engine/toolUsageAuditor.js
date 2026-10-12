@@ -59,55 +59,18 @@ const FIXABLE_ROOTS = [
   '/home/sandbox/reports',
 ];
 
-// ─── Detection patterns ──────────────────────────────────────────────────────
-
-// Present/future-tense intent narration: the signature of an agent describing
-// work instead of doing it.
-const NARRATION_PATTERNS = [
-  /\blet me (check|look|pull|fetch|see|find|grab|review|start)\b/i,
-  /\bi(?:'m| am) (pulling|checking|fetching|looking|gathering|compiling|reviewing|working on)\b/i,
-  /\bi(?:'ll| will) (check|look|pull|fetch|grab|review|start)\b/i,
-  /\bnow (checking|pulling|fetching|looking|gathering)\b/i,
-  /\bfirst,? (i|let me) (check|look|pull|fetch|review)\b/i,
-];
-
-// Tool-call syntax sitting in a FINAL answer means the model intended to act
-// and the call never executed — the exact task #702 failure mode.
-const TOOL_CALL_AS_TEXT_PATTERNS = [
-  /\[\s*(fileRead|fileWrite|fileList|urlCheck)\s*\(/,          // [fileRead(path='x')]
-  /\b(fileRead|fileWrite|fileList|urlCheck)\((?:path|url)\s*=/, // bare fileRead(path='x')
-  /<\|tool_call/,                                                // leaked control tokens
-  /\[TOOL:\s*(fileRead|fileWrite|fileList|urlCheck)\]/,         // unexecuted [TOOL:] in final text
-];
-
-// Does the task itself plainly require acting on the world (files, URLs,
-// verification) rather than pure composition?
-const TOOL_TASK_PATTERNS = [
-  /https?:\/\/\S+/i,
-  /\b(pdf|csv|spreadsheet|docx?|files?|artifact|html page)\b/i,
-  /\b(check|verify|validate|confirm)\b[^.\n]{0,50}\b(url|link|site|page|status|price|listing)\b/i,
-  /\b(download|upload|attach|export|scrape|fetch)\b/i,
-  /\b(read|open|list|write|create|build|generate|save)\b[^.\n]{0,40}\b(file|report|page|doc|html|artifact|draft)\b/i,
-];
-
-function hasNarration(text) {
-  if (!text) return false;
-  return NARRATION_PATTERNS.some(re => re.test(text));
-}
-
-function detectToolCallAsText(text) {
-  if (!text) return null;
-  for (const re of TOOL_CALL_AS_TEXT_PATTERNS) {
-    const m = text.match(re);
-    if (m) return m[1] || m[0].slice(0, 40);
-  }
-  return null;
-}
-
-function taskImpliesTools(taskText) {
-  if (!taskText) return false;
-  return TOOL_TASK_PATTERNS.some(re => re.test(taskText));
-}
+// ─── Text-pattern detectors: DELETED (Oct 12, 2026 — #724, Phase 2) ─────────
+// The retire table in docs/code-enforced-tool-use-design.md removes every
+// prose-inference detector from this module: hasNarration/NARRATION_PATTERNS,
+// detectToolCallAsText/TOOL_CALL_AS_TEXT, taskImpliesTools. Enforcement
+// moved into code paths that cannot be talked around:
+//   - unexecuted tool-call syntax is rejected by the generateWithTools loop
+//     itself (invalid_deliverable), which owns the canonical pattern set;
+//   - "could have used a tool" is now known exactly, as receipt absence,
+//     by engine/completion.js verification;
+//   - this module remains as telemetry over recorded events: tool failures
+//     (classified + auto-fixed at execution time), malformed calls, and
+//     ledger-backed summarize().
 
 // ─── Error classification (the "why") ────────────────────────────────────────
 
@@ -288,13 +251,14 @@ function openGap(finding) {
 function recordFinding(finding) {
   appendAudit(finding);
   bumpCounters([finding]);
-  // Gap policy: surface what the auto-fixer could NOT resolve, plus the two
-  // model-behavior classes Jesse explicitly wants visibility on.
+  // Gap policy: surface what the auto-fixer could NOT resolve, plus
+  // malformed model calls (a model-behavior class Jesse wants visibility
+  // on). (TOOL_CALL_AS_TEXT / NO_TOOLS_PATH gaps were deleted with the
+  // text detectors in Phase 2 — those failures are now failed attempts in
+  // the generation loop and verification failures in completion.js.)
   const needsGap =
     (finding.type === 'TOOL_FAILURE' && !(finding.autoFix && finding.autoFix.fixed)) ||
-    finding.type === 'TOOL_CALL_AS_TEXT' ||
-    finding.type === 'MALFORMED_TOOL_CALL' ||
-    finding.type === 'NO_TOOLS_PATH';
+    finding.type === 'MALFORMED_TOOL_CALL';
   if (needsGap) openGap(finding);
   return finding;
 }
@@ -353,60 +317,19 @@ function auditGeneration({ agentId = null, taskId = null, taskTitle = '', taskDe
   via = 'generateWithTools', toolEvents = [], rawOutput = '', outputHasEvidence = false, model = null } = {}) {
   const findings = [];
   try {
-    const taskText = `${taskTitle} ${taskDescription}`;
     const events = Array.isArray(toolEvents) ? toolEvents : [];
-    const succeeded = events.filter(e => e && e.result && e.result.ok);
     const failed = events.filter(e => e && e.result && !e.result.ok);
 
-    // 1. Tool failures with full context.
+    // Tool failures with full context — the only generation-level finding
+    // left after the Phase 2 detector removal. Everything prose-shaped
+    // (narration, tool-call-as-text, tool-implying tasks) is enforced in
+    // the generation loop and the completion verifier, not inferred here.
+    // (taskTitle/taskDescription/rawOutput/outputHasEvidence/via remain in
+    // the signature for caller compatibility; telemetry no longer reads
+    // prose.)
     for (const ev of failed) {
       const f = recordToolEvent({ tool: ev.tool, args: ev.args || {}, result: ev.result, agentId, taskId });
       if (f) findings.push(f);
-    }
-
-    // 2. Tool-call syntax in the final text = intended calls never executed.
-    const leaked = detectToolCallAsText(rawOutput);
-    if (leaked) {
-      findings.push(recordFinding({
-        ts: new Date().toISOString(),
-        type: 'TOOL_CALL_AS_TEXT',
-        agentId, taskId, tool: leaked, model,
-        errorClass: 'unexecuted_call',
-        detail: `final output contains unexecuted tool-call syntax (${leaked}) — the model wrote the call as text instead of invoking it, so no tool ran. ` +
-          'Diagnosis: tool-call formatting failure at the model layer; the generation must not count as a delivery.',
-        autoFix: { attempted: false, fixed: false, action: null },
-      }));
-    }
-
-    // 3. Text-only path for a tool-implying task = routing bug.
-    if (via !== 'generateWithTools' && taskImpliesTools(taskText)) {
-      findings.push(recordFinding({
-        ts: new Date().toISOString(),
-        type: 'NO_TOOLS_PATH',
-        agentId, taskId, model,
-        errorClass: 'routing',
-        detail: `task #${taskId} implies tool use but was generated via "${via}" (no tools available). ` +
-          'Diagnosis: caller routed a tool task through the text-only path — the original Oct 12 root cause.',
-        autoFix: { attempted: false, fixed: false, action: null },
-      }));
-    }
-
-    // 4. Missed opportunity: could have used a tool, didn't.
-    if (succeeded.length === 0 && via === 'generateWithTools' && !leaked) {
-      const narrated = hasNarration(rawOutput);
-      const needed = taskImpliesTools(taskText);
-      if (narrated || (needed && !outputHasEvidence)) {
-        findings.push(recordFinding({
-          ts: new Date().toISOString(),
-          type: 'MISSED_OPPORTUNITY',
-          agentId, taskId, model,
-          errorClass: narrated ? 'narration' : 'no_evidence_no_tools',
-          detail: narrated
-            ? `agent narrated intent ("${(rawOutput.match(NARRATION_PATTERNS.find(r => r.test(rawOutput))) || [''])[0]}") with zero successful tool calls — it described the work instead of doing it.`
-            : `task implies tool use and the output has no verifiable evidence, yet zero tools were used — the agent answered from imagination instead of checking.`,
-          autoFix: { attempted: false, fixed: false, action: null },
-        }));
-      }
     }
   } catch { /* fail-open */ }
   return { findings };
@@ -415,6 +338,15 @@ function auditGeneration({ agentId = null, taskId = null, taskTitle = '', taskDe
 // ─── Summary for standup / self-healer / verification ────────────────────────
 
 function summarize(windowHours = 24) {
+  // US-109 (Oct 12, 2026 — #724): telemetry is computed from the receipts
+  // ledger (engine/receipts.js) — the auditor is telemetry over recorded
+  // events, not a recorder of inferences. Receipts became the DEFAULT in
+  // Phase 3 (the Phase 1 flag flip); MACF_AUDIT_SOURCE=legacy restores the
+  // old audit-log aggregation for comparison. The receipts mode is
+  // fail-closed (a corrupt ledger throws, per Pillar 1).
+  if (process.env.MACF_AUDIT_SOURCE !== 'legacy') {
+    return require('./receipts').summarizeFromReceipts(windowHours);
+  }
   const out = { windowHours, total: 0, byType: {}, byClass: {}, autoFixed: 0, recent: [] };
   try {
     const file = path.join(stateDir(), '.tool-usage-audit.jsonl');
@@ -442,9 +374,6 @@ module.exports = {
   recordMalformedCall,
   classifyToolError,
   attemptFix,
-  hasNarration,
-  detectToolCallAsText,
-  taskImpliesTools,
   summarize,
   // test hooks
   _SANDBOX_CANDIDATES: SANDBOX_CANDIDATES,
