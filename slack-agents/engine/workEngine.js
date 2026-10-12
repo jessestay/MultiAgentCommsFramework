@@ -19,7 +19,7 @@ const {
 } = require('../config');
 const vikunja = require('../utils/vikunja');
 const tasks = require('../utils/tasks');
-const { generateReport, isConfigured: llmConfigured } = require('../utils/anthropic');
+const { generateReport, generateWithTools, isConfigured: llmConfigured } = require('../utils/anthropic');
 const { dmJesse } = require('../utils/dm');
 const state = require('../utils/state');
 const { acquireLock, isLockTask, holderId: lockHolderId } = require('./lock');
@@ -29,6 +29,24 @@ const CYCLE_MIN = parseInt(process.env.WORK_ENGINE_CYCLE_MIN || '30', 10);
 const WORK_COOLDOWN_HOURS = parseInt(process.env.WORK_ENGINE_COOLDOWN_H || '6', 10);
 const IDLE_PROPOSAL_HOURS = parseInt(process.env.WORK_ENGINE_IDLE_PROPOSAL_H || '12', 10);
 const ENABLED = (process.env.WORK_ENGINE_ENABLED || '1') === '1';
+
+// EVIDENCE GATE (Oct 12, 2026): the EVIDENCE_REQUIREMENT prompt promises that
+// "a conversational reply without verifiable evidence is not a deliverable and
+// will be rejected by the validation gate" — but no gate existed in code. This
+// is the gate. A deliverable must carry at least one piece of verifiable
+// evidence: a URL, a [MARKER], a task reference, or a metric. Narration of
+// intent ("Let me check...", "I'm pulling...") never passes.
+function hasEvidence(text) {
+  if (!text || text.length < 80) return false;
+  return (
+    /https?:\/\/\S+/i.test(text) ||                         // URL / artifact link
+    /\[(?:DEMO|FYI|NEEDS APPROVAL|NEEDS FEEDBACK)\]/i.test(text) || // demo markers
+    /task #\d+/i.test(text) ||                               // task reference
+    /(?:^|\s)#\d{2,}\b/.test(text) ||                        // Vikunja ref like #658
+    /\d[\d,]*\s*(%|\$|signups|downloads|views|clicks|shares|comments|leads)/i.test(text) || // metric
+    /(?:sandbox|reports?)\/[\w./-]+\.\w+/i.test(text)        // sandbox artifact path
+  );
+}
 
 // AGENT HEALTH SYNC (Oct 7, 2026 — root-cause fix for the blind demo gate):
 // sprintDemo.js's checkRecentDemos() reads .agent-health.json, but only
@@ -64,8 +82,38 @@ function updateAgentHealth(agentId, completed) {
   }
 }
 
-let slackClient = null;
-let timer = null;
+// P1.6 (Oct 12, 2026 — WIP cap): revenue tasks get the first work slots
+// every cycle. Everything else waits until the focus list is clear or
+// parked. Task IDs: #82 audit drafts, #81 workshop promo, #75 workshop
+// rollout, #658 PDF verdicts, #59 Guidepoint receivable, #56 DataAnnotation.
+const REVENUE_FOCUS = new Set([82, 81, 75, 658, 59, 56]);
+
+// STRIKE SYSTEM (Oct 12, 2026 — starvation fix): a task whose work attempt
+// fails must still record lastWorked, or the candidate picker re-selects it
+// every cycle forever (task #11: 71 consecutive attempts, 40 tasks starved).
+// 3 failed attempts in 4h parks the task for the rest of the window so the
+// backlog keeps moving. Strikes expire automatically after 4h.
+function recordAttempt(taskId, ok) {
+  const now = new Date().toISOString();
+  state.set(ENGINE_ID, `lastWorked.${taskId}`, now);
+  const key = `failStrikes.${taskId}`;
+  if (ok) {
+    state.set(ENGINE_ID, key, []);
+    return;
+  }
+  const fourHoursAgo = Date.now() - 4 * 3600 * 1000;
+  const strikes = (state.get(ENGINE_ID, key) || [])
+    .filter(s => new Date(s).getTime() > fourHoursAgo);
+  strikes.push(now);
+  state.set(ENGINE_ID, key, strikes.slice(-10));
+}
+
+function isParked(taskId) {
+  const fourHoursAgo = Date.now() - 4 * 3600 * 1000;
+  const strikes = (state.get(ENGINE_ID, `failStrikes.${taskId}`) || [])
+    .filter(s => new Date(s).getTime() > fourHoursAgo);
+  return strikes.length >= 3;
+}
 
 // Tasks matching this are Jesse-gated: the team may not execute them, but
 // Jesse gets an immediate ping (Jesse's rule: things that absolutely need him
@@ -112,9 +160,22 @@ function isTimeCritical(task) {
 async function postAs(agentId, channelId, text) {
   const agent = AGENTS[agentId];
   if (!agent) throw new Error(`unknown agent ${agentId}`);
+
+  // GARBLED OUTPUT REJECTION (Oct 9, 2026): Apply the same validation
+  // as directivePoll.js to work-engine deliverables. The work-engine path
+  // was posting garbled output (CUXO CoT leak, CRO GoFundMe reply) because
+  // isGarbledOutput was only checked in directivePoll.
+  const { isGarbledOutput, sanitizeForSlack } = require('../utils/delegation');
+  const clean = sanitizeForSlack(text);
+  if (isGarbledOutput(clean)) {
+    log(`REJECTED garbled output from ${agentId} — not posting`);
+    log(`Garbled preview: ${clean.slice(0, 100)}...`);
+    return; // Don't post, don't throw — just skip
+  }
+
   await slackClient.chat.postMessage({
     channel: channelId,
-    text,
+    text: clean,
     username: agent.slackName,
     icon_emoji: agent.icon,
     unfurl_links: false,
@@ -193,17 +254,14 @@ ${task.description ? `Details: ${task.description}` : ''}
 ${task.due_date ? `Due: ${task.due_date}` : ''}
 ${boundaries}
 
-Do the work now. Produce the concrete deliverable: research findings, a draft, analysis, code, a plan — whatever the task calls for, within the boundaries above.
+Do the work now. You have TOOLS — use them when the task needs real output, not just words. Check URLs, write files, build the artifact first, then report what you built.
+
+Produce the concrete deliverable: research findings, a draft, analysis, code, a plan — whatever the task calls for, within the boundaries above.
 Write it in the team's voice: direct, no fluff, no headers unless the deliverable needs them.
 
-EVIDENCE (required): your deliverable must contain at least one piece of verifiable evidence — a URL, a file path, a metric with a number, a task reference like "task #123 done", or an explicit [DEMO] marker on the key output. Narration without evidence does not count as a deliverable.
+EVIDENCE (required, enforced by code): your deliverable must contain at least one piece of verifiable evidence — a URL, a file path, a metric with a number, a task reference like "task #123 done", or an explicit [DEMO] marker on the key output. Narration without evidence does not count as a deliverable and will be rejected.
 
-NARRATION (standing CEO directive — the team must be SEEN working): narrate
-your work the way a real teammate talks in the channel while they work — what
-you're doing, what you're deciding, what you just found, what's next. First
-person, conversational, no corporate filler, no robotic status pings. The team
-reads this live; make them feel the work happening. If you're blocked or need
-another exec, say so plainly and name them.
+Do NOT narrate your process ("Let me check...", "I'm pulling...", "Here's my thinking"). Do the work with your tools, then write the deliverable directly. One short status line at most; the deliverable is the message.
 
 After the deliverable, on its own final line, write exactly one of:
 TASK-DONE: YES — <one line why no Jesse approval is needed>
@@ -211,9 +269,16 @@ TASK-DONE: NO — <one line: what still needs Jesse or what remains>
 `.trim();
 
   let output;
+  let toolResults = [];
   const startChannel = await resolveChannelId(owner.primaryChannel).catch(() => null);
   try {
-    output = await generateReport({ systemPrompt: owner.systemPrompt, context, maxTokens: 2000 });
+    // TOOLS (Oct 12, 2026): workTask previously used the tool-less
+    // generateReport — agents could only narrate intent ("Let me check...")
+    // because they had no way to act. generateWithTools gives them urlCheck,
+    // fileWrite/fileRead/fileList so tasks can produce real artifacts.
+    const result = await generateWithTools({ systemPrompt: owner.systemPrompt, context, maxTokens: 2000 });
+    output = result.response;
+    toolResults = result.toolResults || [];
   } catch (err) {
     log(`LLM error on task #${task.id}:`, err.message);
     // FIX (Oct 2, 2026): Never post "On it" without a follow-up. If the LLM
@@ -221,18 +286,22 @@ TASK-DONE: NO — <one line: what still needs Jesse or what remains>
     if (startChannel) {
       await postAs(ownerId, startChannel,
         `[work engine → ${owner.slackName}] Task #${task.id}: ${task.title}\n\n` +
-        `Hit an error while working this: ${err.message}. Will retry next cycle.`
+        `Hit an error while working this: ${err.message}. Logged; will retry after cooldown.`
       ).catch(e => log('failure post failed:', e.message));
     }
+    // FIX (Oct 12, 2026 — starvation): record the attempt even on failure,
+    // or this task is re-picked every cycle forever.
+    recordAttempt(task.id, false);
     return;
   }
   if (!output) {
     if (startChannel) {
       await postAs(ownerId, startChannel,
         `[work engine → ${owner.slackName}] Task #${task.id}: ${task.title}\n\n` +
-        `No output generated. Will retry next cycle.`
+        `No output generated. Logged; will retry after cooldown.`
       ).catch(e => log('empty post failed:', e.message));
     }
+    recordAttempt(task.id, false);
     return;
   }
   // REMOVED (Oct 5, 2026): The "On it — digging in now" narration was pure noise.
@@ -241,7 +310,42 @@ TASK-DONE: NO — <one line: what still needs Jesse or what remains>
   // ack-style clutter that the delivery learner correctly penalizes.
 
   const doneMatch = output.match(/TASK-DONE:\s*(YES|NO)\s*[—-]\s*(.+)/i);
-  const deliverable = output.replace(/TASK-DONE:.*$/gim, '').trim();
+  // SANITIZE (Oct 12, 2026): free-tier models leak internal control tokens
+  // (<|tool_call_start|>, [read(path=...)]) into "deliverables" — raw engine
+  // internals were posted to Slack and queued for relay to Jesse (task #268).
+  // Strip them; if nothing substantive remains, treat as empty output.
+  let deliverable = output.replace(/TASK-DONE:.*$/gim, '').trim();
+  deliverable = deliverable
+    .replace(/<\|[^|]*\|>/g, '')
+    .replace(/\[(?:tool_call|read|write|exec|bash|shell)[^\]]*\]/gi, '')
+    .trim();
+  if (!deliverable) {
+    if (startChannel) {
+      await postAs(ownerId, startChannel,
+        `[work engine → ${owner.slackName}] Task #${task.id}: ${task.title}\\n\\n` +
+        `Output was model-internal control tokens only — no real deliverable. Logged; will retry after cooldown.`
+      ).catch(e => log('sanitized-empty post failed:', e.message));
+    }
+    recordAttempt(task.id, false);
+    return;
+  }
+  // EVIDENCE GATE (Oct 12, 2026): the prompt promises a validation gate —
+  // this is it. Narration-of-intent ("Let me check...", "I'm pulling...")
+  // carries no verifiable evidence and is NOT a deliverable. Reject it:
+  // no demo credit, no relay to Jesse, no task completion. The task stays
+  // open and retries; the failure is logged for the quality learner.
+  if (!hasEvidence(deliverable)) {
+    log(`task #${task.id}: deliverable REJECTED by evidence gate (no URL/marker/task-ref/metric). ` +
+      `Preview: ${deliverable.slice(0, 120).replace(/\n/g, ' ')}`);
+    if (startChannel) {
+      await postAs(ownerId, startChannel,
+        `[work engine → ${owner.slackName}] Task #${task.id}: ${task.title}\n\n` +
+        `No verifiable deliverable produced (output was narration without evidence). Logged; will retry after cooldown.`
+      ).catch(e => log('no-evidence post failed:', e.message));
+    }
+    recordAttempt(task.id, false);
+    return;
+  }
   const doneYes = doneMatch && doneMatch[1].toUpperCase() === 'YES';
   const doneWhy = doneMatch ? doneMatch[2].trim() : '';
 
@@ -268,12 +372,19 @@ TASK-DONE: NO — <one line: what still needs Jesse or what remains>
     await postAs(ownerId, channelId,
       `[work engine → ${owner.slackName}] Task #${task.id}: ${task.title}\n\n${deliverable}`
     ).catch(err => log('post failed:', err.message));
+    // P0.2 (Oct 12, 2026): a DEMO is task-linked output with evidence — not
+    // a heartbeat. Record it so the sprint-demo check measures real output.
+    state.set(ENGINE_ID, `lastDemo.${ownerId}`, new Date().toISOString());
+    state.set(ENGINE_ID, `lastDemoTask.${ownerId}`, task.id);
   }
 
   // Record progress on the task itself.
+  const toolSummary = toolResults.length
+    ? `Tools used: ${toolResults.map(t => t.tool).join(', ')}.\n` : '';
   const comment =
     `Work engine cycle (${new Date().toISOString()}):\n` +
     `Owner: ${owner.slackName}. Deliverable posted to #${owner.primaryChannel}.\n` +
+    toolSummary +
     (doneYes ? `Marked done: ${doneWhy}` : `Still open: ${doneWhy || 'needs follow-up'}`);
   await vikunja.addComment('execPM', task.id, comment).catch(err =>
     log(`comment failed on #${task.id}:`, err.message));
@@ -302,7 +413,44 @@ TASK-DONE: NO — <one line: what still needs Jesse or what remains>
     updateAgentHealth(ownerId, false);
   }
 
-  state.set(ENGINE_ID, `lastWorked.${task.id}`, new Date().toISOString());
+  // Record the attempt (clears failure strikes on success).
+  recordAttempt(task.id, true);
+
+  // P0.3 (Oct 12, 2026): queue real deliverables for relay to Jesse.
+  // A demo = task-linked output with evidence. The relay queue is drained
+  // by the sprint-demo check and surfaced to Jesse in chat.
+  if (deliverable) {
+    enqueueRelay({
+      taskId: task.id,
+      title: task.title,
+      agent: ownerId,
+      deliverable: deliverable.slice(0, 2000),
+      done: doneYes,
+      ts: new Date().toISOString(),
+    });
+  }
+}
+
+// P0.3 relay queue: real task-linked deliverables awaiting relay to Jesse.
+function enqueueRelay(item) {
+  try {
+    const queue = state.get(ENGINE_ID, 'relayQueue') || [];
+    queue.push(item);
+    state.set(ENGINE_ID, 'relayQueue', queue.slice(-50)); // cap: no unbounded growth
+  } catch (e) {
+    log('relay queue write failed:', e.message);
+  }
+}
+
+function drainRelayQueue() {
+  try {
+    const queue = state.get(ENGINE_ID, 'relayQueue') || [];
+    state.set(ENGINE_ID, 'relayQueue', []);
+    return queue;
+  } catch (e) {
+    log('relay queue drain failed:', e.message);
+    return [];
+  }
 }
 
 // ─── Idle mode: invent revenue / improvement work ────────────────────────────
@@ -367,7 +515,20 @@ End with one line exactly: PROPOSAL-TITLE: <short title>
 }
 
 // ─── One engine cycle ────────────────────────────────────────────────────────
+let cycleInFlight = false;
+
 async function runCycle() {
+  // FIX (Oct 12, 2026): overlap guard. Two schedulers (native interval +
+  // Hatchet engine-tick) were double-driving cycles with no mutex — the same
+  // task could be picked twice concurrently (duplicate LLM spend, duplicate
+  // Slack posts, distorted strike counts). Fail closed: a tick that arrives
+  // mid-cycle skips.
+  if (cycleInFlight) {
+    log('previous cycle still in flight — skipping overlapping tick');
+    return;
+  }
+  cycleInFlight = true;
+  try {
   if (!slackClient) {
     log('no Slack client yet — skipping cycle');
     return;
@@ -443,20 +604,27 @@ async function runCycle() {
   // .find() which grabbed the first unworked task in Vikunja's return order —
   // tasks at the end of the list (#85, #87) were starved indefinitely.
   // Now: oldest-updated first, so stale tasks get priority.
-  const actionable = open.filter(t => !isJesseGated(t));
+  const actionable = open.filter(t => !isJesseGated(t) && !isDormant(t));
   actionable.sort((a, b) => {
     // Vikunja API uses 'updated', not 'updated_at'
     const aUpdated = new Date(a.updated || a.updated_at || 0).getTime();
     const bUpdated = new Date(b.updated || b.updated_at || 0).getTime();
     return aUpdated - bUpdated; // Oldest first
   });
-  const candidate = actionable.find(t => {
+  const isEligible = (t) => {
+    // FIX (Oct 12, 2026 — starvation): a task that failed 3x in 4h is parked;
+    // without this, one poisoned task blocks the whole backlog forever.
+    if (isParked(t.id)) return false;
     const last = state.get(ENGINE_ID, `lastWorked.${t.id}`);
     if (!last) return true;
     // High-priority work gets revisited sooner.
     const cooldown = (t.priority || 0) >= 3 ? 2 : WORK_COOLDOWN_HOURS;
     return hoursSince(last) >= cooldown;
-  });
+  };
+  // P1.6 (Oct 12, 2026 — WIP cap): revenue-focus tasks get the first slots
+  // every cycle, stalest first within the lane.
+  const candidate = actionable.find(t => REVENUE_FOCUS.has(t.id) && isEligible(t))
+    || actionable.find(t => isEligible(t));
 
   if (candidate) {
     await workTask(candidate).catch(err => log('workTask error:', err.message));
@@ -466,6 +634,9 @@ async function runCycle() {
   // 3. Nothing actionable → idle mode: invent revenue / improvement work.
   log('no actionable tasks — entering idle proposal mode');
   await idleProposal().catch(err => log('idleProposal error:', err.message));
+  } finally {
+    cycleInFlight = false;
+  }
 }
 
 // ─── Service lifecycle ───────────────────────────────────────────────────────
@@ -473,6 +644,14 @@ function init(app) {
   slackClient = app.client;
   if (!ENABLED) {
     log('disabled via WORK_ENGINE_ENABLED=0');
+    return;
+  }
+  // FIX (Oct 12, 2026): in Hatchet mode the engine-tick cron owns scheduling —
+  // starting the native 30-min interval here DOUBLE-DRIVES runCycle (two
+  // interleaved schedules, no overlap guard, 2x LLM spend, duplicate picks).
+  // Pass startTimer:false when Hatchet drives the cycle.
+  if (app.startTimer === false) {
+    log('client set — native timer disabled (Hatchet drives cycles)');
     return;
   }
   log(`starting — cycle every ${CYCLE_MIN} min (first run in 90s)`);
@@ -497,4 +676,4 @@ function stop() {
   log('stopped');
 }
 
-module.exports = { init, stop, runCycle, isJesseGated, isDormant, isTimeCritical, updateAgentHealth };
+module.exports = { init, stop, runCycle, isJesseGated, isDormant, isTimeCritical, updateAgentHealth, recordAttempt, isParked, enqueueRelay, drainRelayQueue, hasEvidence };
