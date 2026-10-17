@@ -1,0 +1,250 @@
+---
+description: Provides a central library of reusable visual inspection tasks for stakeholders (DES, MD, CTW, USER), to be included as acceptance criteria for user stories requiring visual inspection.
+globs: []
+alwaysApply: true
+topic: Workflow Standards
+version: 1.0.0
+---
+# Visual Inspection Library [REUSABLE COMPONENT]
+
+## Overview
+This document serves as a central library of reusable visual inspection tasks for different stakeholders. These tasks MUST be included as acceptance criteria for any user story requiring visual inspection and stakeholder approval.
+
+## General Requirements
+
+### Artifact Generation [MANDATORY]
+1. For each user story requiring visual inspection:
+   - Run `scripts/test/generate-review-artifacts.sh` or equivalent
+   - Ensure HTML output files are generated in the appropriate directory
+   - Capture screenshots at all required device sizes
+
+### Artifact Organization [REQUIRED]
+1. **HTML Output Location**:
+   - `docs/user-stories/[sprint-X]/[US-ID]/reviews/html-output/`
+   - Should include HTML from all key pages (homepage, listings, detail pages)
+
+2. **Screenshot Location**:
+   - `docs/user-stories/[sprint-X]/[US-ID]/screenshots/`
+   - Should include desktop, tablet, and mobile views of all key pages
+
+3. **Review Templates Location**:
+   - `docs/user-stories/[sprint-X]/[US-ID]/reviews/stakeholder/`
+   - Should include role-specific templates (des-review.md, md-review.md, ctw-review.md, user-review.md)
+
+## Designer (DES) Inspection Tasks
+
+These tasks MUST be included as acceptance criteria for any user story requiring DES approval:
+
+### DES Task 1: Source Code Examination [REQUIRED]
+```gherkin
+Given the theme implementation is complete
+When DES reviews the implementation
+Then DES examines the actual CSS and template files to verify:
+  - Color variables match brand guidelines
+  - Typography implementation follows specifications
+  - Spacing and layout systems are correctly implemented 
+  - Component structure follows design patterns
+  - Semantic HTML elements are properly utilized
+  - Accessibility features are properly implemented
+And DES references specific lines/sections of code in review feedback
+```
+
+### DES Task 2: Screenshot Analysis [REQUIRED]
+```gherkin
+Given screenshots of the theme are available
+When DES reviews the implementation
+Then DES compares screenshots with original wireframes/mockups
+And DES verifies:
+  - Visual hierarchy matches design intent
+  - Spacing and alignment are consistent
+  - Brand elements are consistently applied
+  - Responsive adaptations maintain design integrity
+  - User interface components render as designed
+And DES provides specific feedback with screenshot references
+```
+
+### DES Task 3: Live HTML Verification [REQUIRED]
+```gherkin
+Given the theme is running on a development server
+When DES reviews the implementation
+Then DES uses curl or similar tools to retrieve full HTML output
+And DES verifies:
+  - CSS variables are properly applied in the rendered output
+  - HTML structure matches design specifications
+  - All required design elements are present in the DOM
+  - CSS classes are applied consistently
+  - Responsive breakpoints are correctly implemented
+And DES confirms proper implementation with specific HTML references
+```
+
+## Marketing Director (MD) Inspection Tasks
+
+These tasks MUST be included as acceptance criteria for any user story requiring MD approval:
+
+### MD Task 1: Source Code Examination [REQUIRED]
+```gherkin
+Given the theme implementation is complete
+When MD reviews the implementation
+Then MD verifies:
+  - Brand messaging is correctly implemented in templates
+  - Meta tags contain appropriate brand and SEO content
+  - Schema.org markup is properly implemented
+  - Brand voice is consistent throughout the codebase
+  - Social media integration points are properly coded
+And MD references specific content areas with line numbers
+```
+
+### MD Task 2: Screenshot Analysis [REQUIRED]
+```gherkin
+Given screenshots of the theme are available
+When MD reviews the implementation
+Then MD verifies:
+  - Brand story is visually communicated
+  - Content presentation reinforces brand messaging
+  - Visual hierarchy elevates key marketing messages
+  - Calls-to-action are visually prominent
+  - Competitive differentiation is visually evident
+And MD evaluates content presentation across device sizes
+```
+
+### MD Task 3: Live HTML Verification [REQUIRED]
+```gherkin
+Given the theme is running on a development server
+When MD reviews the implementation
+Then MD uses curl to check:
+  - SEO elements in live HTML (meta tags, heading structure)
+  - Social sharing tags (Open Graph, Twitter Cards)
+  - Schema.org markup for events and venues
+  - Structured data implementation for search engines
+  - Analytics tracking code placement
+And MD confirms brand message delivery is properly implemented
+```
+
+## Copy/Technical Writer (CTW) Inspection Tasks
+
+These tasks MUST be included as acceptance criteria for any user story requiring CTW approval:
+
+### CTW Task 1: Source Code Examination [REQUIRED]
+```gherkin
+Given the theme implementation is complete
+When CTW reviews the implementation
+Then CTW verifies:
+  - Text implementation in templates follows content guidelines
+  - Text overflow issues are handled in CSS
+  - Text truncation is appropriately managed
+  - Font sizing is consistent across the application
+  - Internationalization hooks are properly implemented
+And CTW references specific content issues with line numbers
+```
+
+### CTW Task 2: Screenshot Analysis [REQUIRED]
+```gherkin
+Given screenshots of the theme are available
+When CTW reviews the implementation
+Then CTW verifies:
+  - Text is readable across all device sizes
+  - Typographic hierarchy is consistent
+  - Text-to-background contrast meets accessibility standards
+  - Content organization follows information hierarchy principles
+  - Labels and UI text are consistent and clear
+And CTW provides specific content improvement recommendations
+```
+
+### CTW Task 3: Live HTML Verification [REQUIRED]
+```gherkin
+Given the theme is running on a development server
+When CTW reviews the implementation
+Then CTW uses curl to check:
+  - Content encoding and character sets
+  - Heading structure and semantic HTML for content
+  - Link text and descriptive attributes
+  - Form labels and instructions
+  - Accessible text alternatives for images and media
+And CTW confirms proper implementation with specific HTML references
+```
+
+## USER Instructions [REQUIRED]
+
+For user stories requiring USER approval, the following instructions MUST be provided:
+
+### USER Review Instructions [REQUIRED]
+```
+# Review Instructions for [US-ID]
+
+## How to Access the Implementation
+
+1. Visit the following URLs to review the implementation:
+   - Homepage: http://[development-server-url]
+   - Events Listing: http://[development-server-url]/events
+   - Single Event: http://[development-server-url]/events/sample-event
+   - Venue Page: http://[development-server-url]/venues/sample-venue
+
+2. Review each page on the following devices/screen sizes:
+   - Desktop computer (or desktop view in browser dev tools)
+   - Tablet (or tablet view in browser dev tools)
+   - Mobile phone (or mobile view in browser dev tools)
+
+3. If you don't have access to the development server, review the screenshots in:
+   `docs/user-stories/[sprint-X]/[US-ID]/screenshots/`
+
+## What to Review
+
+Please focus on the following aspects during your review:
+- Does the implementation match the approved design mockups?
+- Does the implementation reflect the Austin Shows personality: "Vibrant, Authentic, Connected, and A Little Weird"?
+- Is the user experience intuitive and enjoyable?
+- Can you easily find and read information across device sizes?
+- Do you notice any visual issues or inconsistencies?
+
+## How to Provide Feedback
+
+Please complete the review template located at:
+`docs/user-stories/[sprint-X]/[US-ID]/reviews/stakeholder/user-review.md`
+
+Your detailed feedback is essential for ensuring the implementation meets business requirements and user expectations.
+```
+
+## Review Documentation Requirements [MANDATORY]
+
+All reviews MUST be documented using the standardized templates in the user story's `reviews/stakeholder/` directory. Reviews are INVALID unless they include:
+
+1. **Specific Evidence References**:
+   - Source code references with file names and line numbers
+   - Screenshot references with file names
+   - HTML verification references with specific elements/issues
+
+2. **Verification Statement**:
+   - Each reviewer MUST explicitly state they have examined all three required sources:
+     1. The actual source code files
+     2. The screenshots showing the implementation
+     3. The HTML output from curl commands
+
+3. **Clear Approval Decision**:
+   - Approved
+   - Approved with recommendations (with specific recommendations listed)
+   - Requires changes (with specific required changes listed)
+
+## Implementation in User Stories [REQUIRED]
+
+For each user story requiring visual inspection, add the following acceptance criteria:
+
+```markdown
+### Stakeholder Review Requirements
+
+- **AC-REVIEW-DES-01:** Designer (DES) must perform a comprehensive source code examination of implementation files.
+- **AC-REVIEW-DES-02:** Designer (DES) must analyze screenshots of all key pages in both mobile and desktop versions.
+- **AC-REVIEW-DES-03:** Designer (DES) must verify the live HTML output for proper implementation.
+
+- **AC-REVIEW-MD-01:** Marketing Director (MD) must examine source code for brand messaging and SEO elements.
+- **AC-REVIEW-MD-02:** Marketing Director (MD) must analyze screenshots for brand story and content presentation.
+- **AC-REVIEW-MD-03:** Marketing Director (MD) must verify live HTML for SEO and marketing elements.
+
+- **AC-REVIEW-CTW-01:** Copy/Technical Writer (CTW) must examine source code for text implementation and handling.
+- **AC-REVIEW-CTW-02:** Copy/Technical Writer (CTW) must analyze screenshots for readability and content hierarchy.
+- **AC-REVIEW-CTW-03:** Copy/Technical Writer (CTW) must verify live HTML for content structure and accessibility.
+
+- **AC-REVIEW-USER-01:** USER must receive clear instructions on how to access and review the implementation.
+- **AC-REVIEW-DOCUMENT-01:** All stakeholder reviews must be properly documented using standardized templates.
+```
+
+Each of these acceptance criteria MUST be expanded with GIVEN-WHEN-THEN details as shown in the task sections above.

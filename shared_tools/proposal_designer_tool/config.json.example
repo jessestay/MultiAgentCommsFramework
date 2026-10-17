@@ -1,0 +1,14 @@
+{
+    "canva_api_key": "YOUR_CANVA_API_KEY_HERE",
+    "canva_client_id": "YOUR_CANVA_CLIENT_ID_HERE",
+    "canva_client_secret": "YOUR_CANVA_CLIENT_SECRET_HERE",
+    "canva_brand_template_id": "YOUR_BRAND_TEMPLATE_ID_HERE",
+    "input_csv_path": "assets/proposal_content_for_canva_template.csv",
+    "output_pdf_path": "brand_proposal_output.pdf",
+    "redirect_uri": "http://localhost:8000/callback",
+    "output_log_path": "brand_proposal_output.log",
+    "canva_token_cache_path": ".canva_token_cache.json",
+    "default_font": "Arial",
+    "max_retries": 3,
+    "timeout_seconds": 30
+} 

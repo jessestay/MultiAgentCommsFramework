@@ -1,0 +1,73 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 067: Contextual Briefing Package Procedure [WORKFLOW]
+
+## 1. Purpose
+This rule defines the mandatory "Contextual Briefing Package" procedure. Its purpose is to ensure that AI agents, particularly the Software Engineering Team (SET), are equipped with comprehensive and targeted context before undertaking significant development tasks (e.g., new feature implementation, complex bug fixes, major refactoring). This aims to improve the quality and consistency of AI-generated work and reduce regressions.
+
+## 2. Trigger Conditions
+This procedure is triggered when the Executive Secretary (ES) assigns a new "significant development task" to SET. A task is considered significant if it:
+- Involves creating new files or modifying multiple existing files.
+- Implements a new user story or a substantial part of one.
+- Addresses a complex bug with potential system-wide impact.
+- Involves refactoring core components or shared modules.
+ES will make the determination if a task warrants this procedure.
+
+## 3. Components of the Contextual Briefing Package
+The Contextual Briefing Package is assembled by ES, with input from SET if necessary, and MUST include the following:
+
+1.  **Task Definition**: Clear and concise description of the task, referencing the specific User Story ID(s) if applicable.
+2.  **Key Related Files**: A list of primary existing source code files, configuration files, or documentation files that SET will likely need to interact with or understand.
+    *   ES should use the Project File Locator (`061-TOOLING-file-locator.mdc`) and `grep_search` as needed to identify these.
+3.  **Relevant Existing Rules**: Links to any `.cursor/rules/` that are particularly relevant to the task (e.g., coding standards, testing protocols, specific architectural guidelines).
+4.  **Relevant Project Documentation**:
+    *   Links to the specific User Story document(s) in `docs/user-stories/`.
+    *   Links to any relevant technical documentation in `docs/technical/` (e.g., diagrams, specific API docs).
+5.  **Summarized Git History (Key Files)**: For the key files identified, a brief summary of recent relevant changes, or pointers to critical commits. ES may ask SET to provide this if deep technical insight is required. `git log -- <file_path>` can be a starting point.
+6.  **Link to Project Architecture Overview**: A direct link to `.cursor/docs/technical/PROJECT_ARCHITECTURE_OVERVIEW.md`.
+7.  **Specific Questions/Areas of Focus**: Any particular areas ES or other stakeholders want SET to pay special attention to.
+8.  **Expected Outcome/Deliverables**: Clear definition of what a successful completion of the task looks like.
+
+## 4. Responsibilities
+
+### 4.1. Executive Secretary (ES)
+-   Identifies tasks requiring a Contextual Briefing Package.
+-   Assembles the package, gathering all components listed in Section 3.
+-   May request input from SET or CTW for specific components (e.g., Git history summary, technical document links).
+-   Delivers the complete package to SET when assigning the task.
+-   Ensures SET acknowledges receipt and understanding of the package.
+
+### 4.2. Software Engineering Team (SET)
+-   Reviews the Contextual Briefing Package thoroughly upon receipt.
+-   Asks clarifying questions to ES if any part of the package is unclear or incomplete.
+-   Confirms understanding of the task and its context before commencing work.
+-   Uses the information within the package to guide development and decision-making.
+-   Provides input to ES for package components if requested (e.g., identifying key technical files, summarizing relevant Git history).
+
+## 5. Procedure Flow
+1.  ES identifies a significant development task for SET.
+2.  ES prepares the Contextual Briefing Package.
+3.  ES assigns the task to SET, providing the complete package.
+    ```
+    🔵 **Executive Secretary (ES)**: @SET: Please undertake [Task X]. Here is the Contextual Briefing Package:
+    - Task Definition: ...
+    - Key Related Files: [`file1.py`, `module/file2.js`]
+    - Relevant Rules: [`030-TESTING-tdd-bdd.mdc`, `031-TESTING-code-quality.mdc`]
+    - Relevant Docs: [`docs/user-stories/sprint-X/US-ID/US-ID.md`, `.cursor/docs/technical/PROJECT_ARCHITECTURE_OVERVIEW.md`]
+    - Git History Summary (file1.py): ...
+    - Specific Focus: Ensure new functions are unit tested.
+    - Expected Outcome: Feature Y implemented and all tests passing.
+    ```
+4.  SET reviews the package.
+5.  SET acknowledges and asks any clarifying questions.
+    ```
+    🟠 **Software Engineering Team (SET)**: Received and understood. Regarding Key Related File `file1.py`, is the recent refactor in commit `abc1234` the current baseline?
+    ```
+6.  ES clarifies if needed.
+7.  SET proceeds with the task.
+
+## 6. Review and Updates
+This procedure and the effectiveness of the Contextual Briefing Package should be reviewed periodically during sprint retrospectives or as needed, and this rule file updated accordingly.

@@ -1,0 +1,44 @@
+---
+description: Mandates investigating Git history as the first step for troubleshooting problematic files, prioritizing reversion to known good states.
+globs: []
+alwaysApply: true
+topic: Workflow Standards
+version: 1.0.0
+---
+---
+### Rule: Prioritize Git History for Troubleshooting Problematic Files
+
+**Version:** 1.0.0
+**Date:** {{CURRENT_DATE}}
+
+**Description:**
+
+When a file exhibits persistent issues (e.g., test failures, linter errors that are difficult to resolve, unexpected behavior), the **first mandatory step** is to investigate its Git history thoroughly before attempting iterative manual fixes or other complex debugging procedures.
+
+**Procedure:**
+
+1.  **Identify Problematic File:** Clearly note the specific file causing issues.
+2.  **Search Git History:**
+    *   Use commands like `git log -- <file_path>` to review the commit history for that specific file.
+    *   Pay close attention to commit messages. Look for messages indicating successful tests, fixes, or milestones that suggest the file was in a stable state.
+    *   Prioritize recent commits, especially those around the time the file was last known to be working (e.g., "yesterday," "last successful build").
+3.  **Inspect Historical Versions:**
+    *   If a potentially "good" commit is identified, use `git show <commit_hash>:<file_path>` to view the exact content of the file at that point in history.
+    *   Examine any associated build logs, test reports, or comments within the historical code that might confirm its stability.
+4.  **Decision Point:**
+    *   **Known Good Version Found:** If a demonstrably working version of the file is found in the history:
+        *   **Prefer Reverting/Using:** The preferred approach is to revert the file to this known good state or use its content as a clean baseline.
+        *   If changes made *after* the known good version are critical and must be preserved, carefully re-introduce them to the known good version, testing incrementally.
+    *   **No Clear Good Version Found:** If, after a thorough search, no reliably working historical version can be identified, then (and only then) proceed with more detailed, iterative troubleshooting of the current version (e.g., step-by-step linting fixes, debugging).
+5.  **Documentation:** Briefly document the Git history check (e.g., "Checked git log for `filename.php` up to commit X, no definitive prior working state found for current issue Y") before proceeding to other methods if a good version isn't found.
+
+**Rationale:**
+
+This approach aims to:
+*   Save significant time and effort by avoiding redundant troubleshooting if a solution (a prior working version) already exists in the repository.
+*   Reduce the risk of introducing new errors during complex manual fixes.
+*   Leverage the version control system as a primary tool for stability and recovery.
+
+**Applies To:**
+
+All development and testing activities, particularly when encountering files that resist initial fixing attempts. This is a primary responsibility of the Software Engineer in Test (SET) and should be guided/overseen by the Engineering Shepherd (ES).

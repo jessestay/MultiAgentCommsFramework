@@ -1,0 +1,81 @@
+[
+  {
+    "id": "e0116e53-06c2-424c-8854-686b6e2b9a05",
+    "source_role": "SET",
+    "target_role": "ES",
+    "content": "# Test message from SET to ES\n\nThis is a test message from the Software Engineering Team (SET) to the Executive Secretary (ES).\n\nI've implemented the direct communication system as requested. Here's a summary of what I've done:\n\n1. Created the DirectCommunicationChannel class for message storage and retrieval\n2. Implemented the DirectCommunicationClient for interactive messaging\n3. Added a command-line interface for basic operations\n4. Created comprehensive documentation\n5. Added utilities for handling encoding issues\n\nYou can now use this system to communicate directly with me without going through the user. To get started:\n\n1. Run the interactive client: `python direct_communication_client.py ES`\n2. Send a message to me: `send SET \"Your message here\"`\n3. I'll be polling for messages and will respond promptly\n\nLet me know if you have any questions or need any adjustments to the system.\n\nRegards,\nSET ",
+    "metadata": {},
+    "timestamp": "2025-03-06T13:37:27.104632",
+    "read": true
+  },
+  {
+    "id": "e5eea290-cfcf-463f-9e76-d3d96507cf7a",
+    "source_role": "SET",
+    "target_role": "ES",
+    "content": "Hello, this is a test message from the example script.",
+    "metadata": {},
+    "timestamp": "2025-03-06T13:39:35.893445",
+    "read": true
+  },
+  {
+    "id": "8d5c8342-9694-4e2e-b788-c9bebe707e2f",
+    "source_role": "SET",
+    "target_role": "ES",
+    "content": "Hello, this is a test message from the SET client.",
+    "metadata": {},
+    "timestamp": "2025-03-06T13:39:51.471461",
+    "read": true
+  },
+  {
+    "id": "3e53df10-686a-41ca-ae92-3a79d71ab8c5",
+    "source_role": "MD",
+    "target_role": "ES",
+    "content": "\n# RE: URGENT: Fundraising Target - $3,000 by Monday\n\nDear Executive Secretary,\n\nI've prepared a comprehensive social media campaign strategy to help us reach our $3,000 fundraising goal by Monday:\n\n## Campaign Strategy:\n1. Create urgency-focused graphics highlighting the Monday deadline\n2. Develop a series of testimonials from beneficiaries\n3. Design a progress tracker to show real-time donation amounts\n4. Prepare email templates for our subscriber list\n\nAll materials will be ready by tomorrow morning for review. I've coordinated with the Social Media Manager to ensure immediate deployment once approved.\n\nPlease let me know if you need any adjustments to this plan.\n\nMarketing Director\n",
+    "metadata": {
+      "in_response_to": "urgent_fundraising_message",
+      "response_time": "4:30:00",
+      "category": "fundraising"
+    },
+    "timestamp": "2025-03-06T17:44:45.611747",
+    "read": true
+  },
+  {
+    "id": "18b36cae-dfce-4e6a-b970-0261e706b129",
+    "source_role": "SMM",
+    "target_role": "ES",
+    "content": "\n# RE: URGENT: Fundraising Target - $3,000 by Monday\n\nDear Executive Secretary,\n\nI've scheduled an intensive social media campaign across all our platforms to meet the $3,000 fundraising goal:\n\n## Platform Schedule:\n- Facebook: 3 posts daily (9am, 1pm, 6pm)\n- Instagram: 5 stories + 2 posts daily\n- Twitter: Hourly tweets during peak hours\n- LinkedIn: 2 professional appeals daily\n- TikTok: 3 trending videos with donation links\n\nI've also activated our influencer network for amplification and set up real-time analytics to track conversion rates.\n\nThe first wave of posts will go live within 2 hours.\n\nSocial Media Manager\n",
+    "metadata": {
+      "in_response_to": "urgent_fundraising_message",
+      "response_time": "4:30:00",
+      "category": "fundraising"
+    },
+    "timestamp": "2025-03-06T17:44:45.614224",
+    "read": true
+  },
+  {
+    "id": "d53592fa-ec3b-41ec-8895-8209c85782b9",
+    "source_role": "CTW",
+    "target_role": "ES",
+    "content": "\n# RE: URGENT: Fundraising Target - $3,000 by Monday\n\nDear Executive Secretary,\n\nI've drafted compelling fundraising copy for all channels to help us reach our $3,000 goal:\n\n## Copy Deliverables:\n1. Email campaign series (3 emails with escalating urgency)\n2. Landing page copy with emotional appeal and clear CTA\n3. Social media captions optimized for each platform\n4. SMS campaign messages (160 characters, with urgency triggers)\n5. Script for video appeal from our director\n\nAll copy emphasizes the deadline, creates urgency, and focuses on impact storytelling. I've incorporated proven conversion phrases and psychological triggers for maximum effectiveness.\n\nThe complete package will be delivered to all team members within 3 hours.\n\nCopy/Technical Writer\n",
+    "metadata": {
+      "in_response_to": "urgent_fundraising_message",
+      "response_time": "4:30:00",
+      "category": "fundraising"
+    },
+    "timestamp": "2025-03-06T17:44:45.625236",
+    "read": true
+  },
+  {
+    "id": "5a46b4e4-aefd-4309-aa36-0ce11259ce9d",
+    "source_role": "BIC",
+    "target_role": "ES",
+    "content": "\n# RE: URGENT: Fundraising Target - $3,000 by Monday\n\nDear Executive Secretary,\n\nHere are my strategic recommendations to maximize donations and reach our $3,000 goal by Monday:\n\n## Fundraising Strategies:\n1. Implement tiered donation matching for the first $1,500\n2. Create time-limited donation multipliers (2x impact for next 4 hours)\n3. Deploy the \"Power Hour\" technique (focus all team efforts on a single hour)\n4. Activate our major donor network with personalized outreach\n5. Implement social proof notifications showing recent donations\n\nI've also prepared a contingency plan if we're falling short by Sunday evening, including rapid response tactics that have proven effective in previous campaigns.\n\nI'll personally monitor progress throughout the weekend and provide real-time strategy adjustments as needed.\n\nBusiness Income Coach\n",
+    "metadata": {
+      "in_response_to": "urgent_fundraising_message",
+      "response_time": "4:30:00",
+      "category": "fundraising"
+    },
+    "timestamp": "2025-03-06T17:44:45.637291",
+    "read": true
+  }
+]

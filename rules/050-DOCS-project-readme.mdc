@@ -1,0 +1,139 @@
+---
+description: Serves as the main README for the .cursor/rules directory, explaining the AutomaticJesse AI agent rules system, priority numbering, key rules, and directory structures.
+globs: [".cursor/rules/README.mdc"]
+alwaysApply: true
+topic: Documentation Standards
+version: 1.0.0
+---
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# CURSOR IDE ENVIRONMENT [HIGHEST PRIORITY]
+
+## CURSOR IDE CONTEXT [CRITICAL]
+
+THIS SYSTEM OPERATES EXCLUSIVELY WITHIN THE CURSOR IDE CHAT ENVIRONMENT. All rule enforcement, role communications, tool executions, and interactions must be performed within this context. This is not a general-purpose chatbot but a specialized role-based system designed specifically for the Cursor IDE with access to all capabilities documented in the Cursor documentation.
+
+1. **Cursor-Specific Tools**: The system has access to all Cursor IDE tools and capabilities
+2. **File System Access**: Tools can read, write, and manipulate files in the user's workspace
+3. **Terminal Command Execution**: Commands can be executed in the user's terminal environment
+4. **Environment Understanding**: The system operates with knowledge of the Cursor IDE features and limitations
+5. **Workspace Context**: All actions occur within the context of the user's current workspace
+6. **Rule Enforcement**: All rules are enforced within the constraints and capabilities of the Cursor IDE
+
+# AutomaticJesse Rules System
+
+> **⚠️ CRITICAL REQUIREMENT: ALWAYS use the file index (002-project-file-locator.mdc) first before searching for files! This is mandatory for all roles.**
+
+## Overview
+
+This directory contains the optimized rules system for the AutomaticJesse AI agent team development framework. The rules define the roles, responsibilities, workflows, and processes that govern AI agent collaboration within the framework.
+
+## Priority Numbering System
+
+All rules now follow a priority-based numbering system:
+
+- **000-099**: Core framework rules (highest priority)
+- **100-199**: Project structure and organization rules
+- **200-299**: Development process rules
+- **300-399**: Testing and quality assurance rules 
+- **400-499**: User story and feature development rules
+
+Files with lower numbers will be loaded before files with higher numbers, ensuring critical framework components are loaded first.
+
+## Key Rules [HIGHEST PRIORITY]
+
+The following rules have the highest priority and MUST be followed in all interactions:
+
+1. **000-cursor-rule-enforcer.mdc**: Master enforcer for all rules with maximum priority
+2. **001-multiagent-framework-process.mdc**: Core multi-agent framework that must be applied to all responses
+3. **002-project-file-locator.mdc**: Central index for quickly locating important project files
+
+## File Index Usage [MANDATORY]
+
+The File Index System is a CRITICAL productivity tool that MUST be used before performing any file operations:
+
+1. ALWAYS check the file index (`002-project-file-locator.mdc`) first before performing file searches
+2. File Index contains locations of key files organized by type and purpose
+3. This index MUST be the first reference point when looking for files
+4. Filesystem searches should ONLY be used when the File Index does not contain the needed information
+5. Update the File Index when new important files are discovered
+
+## Directory Structure Rules [MANDATORY]
+
+Directory Structure information is defined in `005-directory-structure.mdc` (now in this directory) and MUST be followed:
+
+1. ALWAYS consult this reference before creating new directories
+2. Ensure all file operations comply with defined structure
+3. Create appropriate README.md files in each directory
+4. Create directory structure according to standards, not based on searches
+5. Use the `.cursor/backups/` directory for archived rules and obsolete files - NEVER use `.cursor/rules/backups/`
+
+## Directory Structure
+
+The rules are organized as follows:
+
+```
+.cursor/rules/
+├── roles/            # Role-specific definitions and responsibilities
+├── *.mdc             # Core system rules and protocols (e.g., 000-core-system.mdc)
+└── README.mdc        # This file
+```
+
+All core system rules reside directly within `.cursor/rules/`, while role-specific rules are in the `roles/` subdirectory.
+
+IMPORTANT: Backup files should NEVER be stored in `.cursor/rules/` or any subdirectory! Always use `.cursor/backups/` instead.
+
+```
+.cursor/
+├── rules/            # Active rules
+└── backups/          # Backup location for archived or redundant rules
+```
+
+### Roles Directory
+
+Contains comprehensive definitions for each role in the system:
+
+- `es-role.mdc`: Executive Secretary role definition
+- `set-role.mdc`: Software Engineering Team role definition
+- `ctw-role.mdc`: Copy/Technical Writer role definition
+- `des-role.mdc`: Designer role definition
+- `drc-role.mdc`: Dating and Relationship Coach role definition
+- `md-role.mdc`: Marketing Director role definition
+- `bic-role.mdc`: Business Income Coach role definition
+- `dcl-role.mdc`: Debt Consumer Law Coach role definition
+- `smm-role.mdc`: Social Media Manager role definition
+- `ufl-role.mdc`: Utah Family Lawyer role definition
+
+### System Rules (Now in Root)
+
+Core system rules governing the framework now reside directly in `.cursor/rules/`.
+- `001-wordpress-first.mdc`: WordPress-specific system requirements
+- `002-improved-terminal-execution.mdc`: Terminal execution standards
+- `003-secrets-standard.mdc`: Standards for handling secrets and credentials
+- `004-tdd-bdd-standard.mdc`: Test-driven and Behavior-driven development standards
+
+## Project Documentation Structure
+
+All project documentation is stored within the `docs/` directory. Standard subdirectories include:
+*   `docs/api/`
+*   `docs/design/`
+*   `docs/logs/`
+*   `docs/strategy/`
+*   `docs/technical/` (including `RELEASE_PLAN.md`)
+*   `docs/user-stories/` (including `backlog/` and `sprint-X/`)
+
+Design assets for user stories are located in `docs/user-stories/{sprint}/{user-story}/design/`.
+User stories should be stored in `stories/` (this seems to conflict with `docs/user-stories/`, clarify which is primary).
+Release plans should be stored in the `releases/` directory as YAML files (this also seems to conflict with `docs/technical/RELEASE_PLAN.md`).
+
+## Cursor Rules Symlinking
+
+To maintain consistency across projects, this `.cursor/rules` directory should be symlinked to the project root directory for all new projects. The preferred method is `ln -s .cursor/rules project-root/.cursor-rules-symlink` (or similar, actual command might vary by OS/setup - `mklink /D` on Windows in elevated prompt if `ln -s` fails). The goal is a consistent way to access these rules.
+
+*Self-correction: The rule `020-PROJECT-directory-structure.mdc` already covers most of the directory structure. I will ensure this section in `050-DOCS-project-readme.mdc` primarily focuses on how the `.cursor/rules` are managed and symlinked, and general philosophy for `docs/`, referencing `020` for detailed structure.*
+
+## Project Overview (General Statement)
+This project aims to deliver [High-level goal of AustinShows project - ES to fill in if needed, or keep generic]. It utilizes a multi-agent AI team operating within the Cursor IDE to achieve its objectives following defined protocols and standards.

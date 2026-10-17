@@ -1,0 +1,53 @@
+name: Test Cursor Rules
+
+on:
+  push:
+    paths:
+      - '.cursor/rules/**'
+  pull_request:
+    paths:
+      - '.cursor/rules/**'
+  workflow_dispatch:
+
+jobs:
+  test-rules:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov
+      
+      - name: Run tests
+        run: |
+          python -m pytest .cursor/tests/test_role_response.py -v
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: .cursor/tests/results/
+      
+      - name: Check for test failures
+        run: |
+          if [ -f .cursor/tests/results/*_role_response_tests.md ]; then
+            if grep -q "FAIL" .cursor/tests/results/*_role_response_tests.md; then
+              echo "Tests failed. See test results for details."
+              exit 1
+            fi
+          fi
+          if [ -f .cursor/tests/results/*_documentation_tests.md ]; then
+            if grep -q "FAIL" .cursor/tests/results/*_documentation_tests.md; then
+              echo "Tests failed. See test results for details."
+              exit 1
+            fi
+          fi 

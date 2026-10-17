@@ -1,0 +1,27 @@
+#!/bin/bash
+# .git/hooks/pre-push — Run tests before pushing.
+#
+# INSTALL: cp this to ~/workspace/macf/.git/hooks/pre-push && chmod +x
+#
+# This prevents pushing broken code. If tests fail, the push is blocked.
+# Bypass with: git push --no-verify (only for emergencies, document why)
+
+set -e
+
+echo "Running pre-push tests..."
+
+cd ~/workspace/macf/slack-agents
+
+# Run unit tests (skip integration tests — they need real APIs)
+npx jest engine/tests/ --testPathIgnorePatterns=integration --forceExit 2>&1 | tail -5
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ TESTS FAILED — push blocked."
+  echo "Fix the tests, then push again."
+  echo "Emergency bypass: git push --no-verify (document why)"
+  exit 1
+fi
+
+echo ""
+echo "✅ All tests pass — push allowed."

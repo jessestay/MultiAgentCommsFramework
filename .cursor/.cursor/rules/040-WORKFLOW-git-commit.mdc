@@ -1,0 +1,22 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# AI Git Commit Policy (Temporary) [CRITICAL]
+
+## Overview
+This rule defines the temporary Git commit policy for the AI development team. This policy is in effect until User Story `US-TD-008-ai-git-workflow-and-staging-enhancement.md` is fully implemented.
+
+## Current Policy: Commit to Main Branch [TEMPORARY]
+
+1.  **Default Branch**: All code changes made by the AI development team (all roles) MUST be committed directly to the `main` Git branch.
+2.  **No Feature Branches (AI-Led)**: For AI-driven development, separate feature branches are not to be used by default *by the AI itself* at this time. Manual feature branching by the user remains an option.
+3.  **Continuous Integration**: Changes committed to `main` should trigger any existing CI/CD processes configured for the `main` branch.
+
+## Future Policy (Reference US-TD-008)
+This temporary policy will be replaced by a more robust workflow involving a dedicated AI development branch (e.g., `ai-dev`) and a staging environment, as detailed in `docs/user-stories/backlog/US-TD-008-ai-git-workflow-and-staging-enhancement.md`.
+
+## Enforcement
+- All roles, especially the Software Engineering Team (SET) and the Executive Secretary (ES) coordinating commits, MUST adhere to this temporary policy.
+- This rule will be updated or superseded upon the completion and implementation of US-TD-008.

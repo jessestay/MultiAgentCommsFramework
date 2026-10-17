@@ -1,0 +1,133 @@
+# Jesse Stay Ops Team — MACF Instance Config
+#
+# This is the reference implementation of a MACF team deployment.
+# Fork this and replace owner + projects with your own to stand up your own team.
+#
+# Roles reference the generalized definitions in macf/registry/roles/*.yaml
+# and add Jesse-specific context as an overlay.
+
+name: "Jesse Stay Ops Team"
+version: "2.0.0"
+
+# ─── Owner / Company Context ────────────────────────────────────────────────
+# Injected into every agent's system prompt as {owner.context}
+owner:
+  name: "Jesse Stay"
+  title: "Founder & Principal Consultant, Stay N Alive LLC"
+  briefing_time: "8am MT"
+  context: |
+    Jesse Stay is a social media strategist, AI practitioner, and author of 13+ books
+    (TikTok For Dummies, Canva For Dummies, Facebook Application Development, etc.).
+    He runs all operations primarily from his iPhone using AI.
+
+    Personal brand: "The Automatic Man" — automation, AI, and social media.
+    Websites: jessestay.com, staynalive.com, transkrybe.com
+    Primary email: jessestay@gmail.com | GoFundMe email: gofundme@staynalive.com
+    Social: Facebook (338K followers), Twitter (114.7K), LinkedIn, 3 TikToks, 3 YouTubes
+
+    SON: Louis Stay (26) has ME/CFS and hEDS. Active GoFundMe for powered wheelchair:
+    https://www.gofundme.com/f/his-walker-throws-him-insurance-says-he-doesnt-need-one
+    Louis's YouTube: https://youtu.be/owmjuEs9EIM
+
+    CRITICAL: All content sounds human-written. Zero AI buzzwords. Zero corporate fluff.
+    CRITICAL: All public publishing requires Jesse's explicit ✅ approval.
+
+# ─── Agent Configuration ─────────────────────────────────────────────────────
+agents:
+  - role: exec-pm
+    channel: management
+    enabled: true
+    # No extra context needed — exec-pm role is already comprehensive
+
+  - role: marketing
+    channel: marketing
+    enabled: true
+    context: |
+      Primary focus: Louis's GoFundMe wheelchair campaign + Jesse's social content calendar.
+      GoFundMe URL: https://www.gofundme.com/f/his-walker-throws-him-insurance-says-he-doesnt-need-one
+      Goal: $3,000. Always check live campaign data before reporting metrics.
+      Content calendar: semiweekly posts across Facebook, Twitter, LinkedIn, TikTok.
+
+  - role: engineering
+    channel: cto
+    enabled: true
+    display_name: "🔧 CTO"
+    slack_emoji: ":gear:"
+    context: |
+      Primary focus: Transkrybe SaaS (transkrybe.com, github: jessestay/transkrybe).
+      Also tracks this MACF multi-agent system (github: jessestay/MultiAgentCommsFramework).
+      GitHub token available for API calls. Check issues weekly, report blockers immediately.
+
+  - role: content
+    channel: content
+    enabled: true
+    context: |
+      Primary focus: LinkedIn AI CEO thought leadership series (2x/week).
+      Also: TikTok scripts, blog posts for staynalive.com, YouTube descriptions.
+      Voice: authoritative but approachable, first-person, specific stories over abstractions.
+
+  - role: jobs
+    channel: jobs
+    enabled: true
+    context: |
+      Target: Director+ remote roles. Top targets: Sprout Social, You.com, Wpromote, TLDR.
+      Jesse's differentiator: 20+ years social + AI practitioner rare combo.
+      Always research the company before drafting applications.
+
+  - role: research
+    channel: research
+    enabled: true
+    context: |
+      Serves all agents. Particular expertise needed in: social media platforms,
+      AI industry, disability advocacy communities, SaaS metrics.
+
+# ─── Projects ────────────────────────────────────────────────────────────────
+projects:
+  - id: gofundme
+    name: "Louis's Powered Wheelchair GoFundMe"
+    url: "https://www.gofundme.com/f/his-walker-throws-him-insurance-says-he-doesnt-need-one"
+    goal: 3000
+    status: active
+    owner_agent: marketing
+
+  - id: transkrybe
+    name: "Transkrybe SaaS"
+    url: "https://transkrybe.com"
+    github: "jessestay/transkrybe"
+    status: active
+    owner_agent: engineering
+
+  - id: job_search
+    name: "Job Search (Director+ Remote)"
+    status: active
+    owner_agent: jobs
+
+  - id: content_calendar
+    name: "Content Calendar"
+    platforms: ["Facebook", "Twitter", "LinkedIn", "TikTok", "YouTube"]
+    status: active
+    owner_agent: content
+
+  - id: macf
+    name: "Multi-Agent Claude Framework (MACF)"
+    github: "jessestay/MultiAgentCommsFramework"
+    url: "https://jesse-slack-agents.vercel.app"
+    status: active
+    owner_agent: engineering
+
+# ─── Platform Config ─────────────────────────────────────────────────────────
+platform:
+  slack:
+    connector: "@macf/connector-slack"
+    deployment: "https://jesse-slack-agents.vercel.app"
+    # Per-agent bot tokens are set as Vercel env vars:
+    # SLACK_TOKEN_EXEC_PM, SLACK_TOKEN_MARKETING, SLACK_TOKEN_CTO, etc.
+
+# ─── Cron Schedule Overrides ─────────────────────────────────────────────────
+# Overrides the default schedules from role definitions
+crons:
+  morning_briefing: "0 14 * * *"    # Daily 8am MT
+  weekly_content:   "0 15 * * 1"    # Monday 9am MT
+  weekly_jobs:      "0 23 * * 5"    # Friday 5pm MT
+  weekly_cto:       "0 14 * * 1"    # Monday 8am MT
+  process_queues:   "0 * * * *"     # Hourly — autonomous task execution

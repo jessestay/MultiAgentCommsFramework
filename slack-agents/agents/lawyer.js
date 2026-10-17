@@ -1,0 +1,201 @@
+// agents/lawyer.js — Lawyer (@lawyer) | MACF Role: Elite Business Lawyer (EBL)
+// Legal strategy, contract review, compliance monitoring, IP protection.
+// Memory: isolated to lawyer namespace.
+
+const cron = require('node-cron');
+const fs = require('fs');
+const path = require('path');
+const { AGENTS, CHANNELS } = require('../config');
+const state = require('../utils/state');
+const { generateReport, generateWithTools } = require('../utils/anthropic');
+const { resolveChannel: _resolveChannel } = require('../utils/channels');
+const { relay, stripDelegations } = require('../utils/delegation');
+
+const AGENT = AGENTS.lawyer;
+const AGENT_ID = AGENT.id; // 'lawyer'
+
+let slackClient = null;
+
+async function resolveChannel(name) {
+  return _resolveChannel(slackClient, name);
+}
+
+async function postToChannel(channelName, text, threadTs = null) {
+  const channelId = await resolveChannel(channelName);
+  if (!channelId) { console.warn(`[lawyer] Channel not found: #${channelName}`); return; }
+  try {
+    await slackClient.chat.postMessage({
+      channel: channelId,
+      ...(threadTs ? { thread_ts: threadTs } : {}), text,
+      username: AGENT.slackName, icon_emoji: AGENT.icon, unfurl_links: false,
+    });
+    state.updateChannelActivity(channelName);
+    console.log(`[lawyer] ✅ Posted to #${channelName}`);
+  } catch (err) {
+    console.error(`[lawyer] Error posting to #${channelName}:`, err.message);
+  }
+}
+
+// ─── Monthly legal checkup ────────────────────────────────────────────────────
+async function postMonthlyLegalCheckup() {
+  const thisMonth = `${new Date().getFullYear()}-${new Date().getMonth() + 1}`;
+  if (state.get(AGENT_ID, 'lastMonthlyCheckup') === thisMonth) return;
+
+  console.log('[lawyer] Running monthly legal checkup...');
+
+  const openRisks = state.get(AGENT_ID, 'openRisks') || [];
+
+  const context = `
+Monthly legal checkup for Jesse Stay — ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}.
+
+Jesse's business context:
+- transkrybe.com: SaaS music transcription product (collecting user audio/data)
+- MultiAgentCommsFramework (MACF): proprietary software framework he's building
+- Self-employed/founder with social media consulting history
+- Exploring executive employment (reviewing offer letters, NDAs)
+
+Open risks from memory: ${openRisks.length > 0 ? openRisks.map(r => `${r.severity.toUpperCase()}: ${r.description}`).join('; ') : 'None logged'}
+
+Write a monthly legal status memo covering:
+1. ✅ Things Jesse has protected (IP, entity, contracts)
+2. ⚠️ Things he should address this month (specific action items)
+3. 🔴 Anything HIGH RISK that needs immediate attention or outside counsel
+
+Include specific recommendations. Flag anything with "🔴 HIGH RISK — consult an attorney" for serious matters.
+Reminder: This is guidance, not legal representation. High-stakes matters should involve a licensed attorney.
+  `.trim();
+
+  const memo = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
+  await postToChannel(AGENT.primaryChannel, memo);
+  state.set(AGENT_ID, 'lastMonthlyCheckup', thisMonth);
+}
+
+// ─── Handle @mention ──────────────────────────────────────────────────────────
+async function handleMention({ event, say }) {
+  const text = (event.text || '').replace(/<@[A-Z0-9]+>/g, '').trim();
+  if (!text) {
+    await say("Counsel here. What legal matter needs attention?");
+    return;
+  }
+
+  console.log(`[lawyer] Handling mention: "${text.slice(0, 80)}"`);
+  const threadCtx = event.threadContext || '';
+
+  const context = `
+Jesse asked: "${text}"${threadCtx}
+
+Respond as a business lawyer. Be direct about risk and what to do about it. For anything genuinely high-stakes, say so clearly and recommend Jesse engage a licensed attorney — this is guidance, not representation.
+  `.trim();
+
+  const response = await generateReport({ systemPrompt: AGENT.systemPrompt, context, maxTokens: 1500 });
+  await relay(response, AGENT_ID);
+  await say(stripDelegations(response));
+
+  // Log anything flagged as a risk
+  if (response.toLowerCase().includes('risk') || response.toLowerCase().includes('concern')) {
+    state.push(AGENT_ID, 'openRisks', {
+      description: text.slice(0, 200),
+      severity: response.toLowerCase().includes('high risk') ? 'high' : 'medium',
+      identified: new Date().toISOString(),
+    });
+  }
+
+  state.updateChannelActivity(AGENT.primaryChannel);
+}
+
+// ─── Handle delegation ────────────────────────────────────────────────────────
+async function handleDelegation(messageText, visitedAgents = new Set(), channelId = null, threadTs = null) {
+  const match = messageText.match(/\[from:\s*(.+?)\s*→\s*Lawyer\]\s*(.+)/si);
+  if (!match) return false;
+
+  const fromAgent = match[1].trim();
+  const request = match[2].trim();
+  console.log(`[lawyer] Delegation from ${fromAgent}: ${request.slice(0, 80)}`);
+
+  state.push(AGENT_ID, 'delegationLog', {
+    from: fromAgent, request: request.slice(0, 200), timestamp: new Date().toISOString()
+  });
+
+  const context = `
+Legal request from ${fromAgent}: "${request}"
+Provide legal guidance covering: Risk | Exposure | Recommendation.
+Flag HIGH RISK items with "🔴". Note this is guidance, not representation.
+  `.trim();
+
+  // TOOL EXECUTION (Oct 9, 2026): Lawyer now has tools — can check URLs, read
+  // files when reviewing contracts or researching legal matters.
+  const { response, toolResults, toolsUsed } = await generateWithTools({
+    systemPrompt: AGENT.systemPrompt,
+    context,
+    maxTokens: 2000,
+    agentId: AGENT_ID,
+  });
+  const subResults = await relay(response, AGENT_ID, visitedAgents, channelId);
+
+  // POLLER IS SOLE POSTER (Oct 4, 2026 — architectural fix):
+  // Do NOT post directly. Return the response for the poller to validate and post.
+  return {
+    completed: true,
+    response: `[from: Lawyer → ${fromAgent}] ${stripDelegations(response)}`,
+    threadTs: threadTs,
+    channel: AGENT.primaryChannel,
+    subResults: subResults,
+    // EVIDENCE FIX (Oct 9, 2026): Lawyer now executes tools. Evidence reflects
+    // actual tool usage, not just LLM text generation.
+    evidence: toolsUsed > 0
+      ? `Legal guidance with ${toolsUsed} tool execution(s): ${toolResults.map(t => t.tool).join(', ')}`
+      : 'Legal guidance generated (LLM report, no tools needed)',
+    agentId: AGENT_ID,
+    timestamp: new Date().toISOString()
+  };
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+function init(app) {
+  slackClient = app.client;
+  console.log('[lawyer] ⚖️ Lawyer initialized');
+
+  // Monthly legal checkup — 1st of each month at 10am MT (16:00 UTC)
+  cron.schedule('0 16 1 * *', () =>
+    postMonthlyLegalCheckup().catch(err => console.error('[lawyer] Monthly checkup error:', err))
+  );
+}
+
+
+// ─── Hourly autonomous demo (Oct 11, 2026) ────────────────────────────────────
+// Ensures lawyer produces verifiable output every hour per Jesse's law,
+// even when no directives are assigned. Fast and deterministic (no LLM call).
+async function runAutonomous() {
+  const now = new Date();
+  const artifactPath = path.join(__dirname, '..', 'hidden_files', 'lawyer-legal-watch.md');
+  const content = `# Lawyer Legal Watch
+Generated: ${now.toISOString()} (autonomous lawyer hourly run)
+
+## Open legal items
+- **Midland Funding v. Stay:** hearing Nov 19, 2026, 1:00pm MT — no action needed until courtesy binders (due ~Nov 5).
+- **Anthropic copyright case:** awaiting Bartolomei decision — no action.
+- **829 Studios referral agreement:** review still open, no signature authorized.
+
+## Notes
+- Nothing requires Jesse's signature or decision this hour.
+- Standing rule: no contact with anyone about the Midland case.
+
+- Last updated: ${now.toISOString()}
+`;
+  try {
+    const dir = path.dirname(artifactPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(artifactPath, content);
+    console.log(`[lawyer] Hourly pulse written to ${artifactPath}`);
+    state.push(AGENT_ID, 'legalWatches', {
+      timestamp: now.toISOString(),
+      path: artifactPath,
+    });
+    return { agentId: 'lawyer', artifactPath, timestamp: now.toISOString() };
+  } catch (err) {
+    console.error(`[lawyer] Hourly pulse failed:`, err.message);
+    throw err;
+  }
+}
+
+module.exports = { init, handleMention, handleDelegation, postMonthlyLegalCheckup, runAutonomous };

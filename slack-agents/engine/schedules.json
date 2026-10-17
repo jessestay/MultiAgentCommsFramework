@@ -1,0 +1,132 @@
+{
+  "_comment": "MACF Engine Schedule Manifest (Oct 10, 2026). Declares every recurring job the engine requires to stay functional. The install script (install-schedules.sh) ensures each exists; check-schedules.js verifies and self-heals. If a job is listed here but not scheduled, that is a defect \u2014 the TDD suite fails.",
+  "schedules": [
+    {
+      "cadence": "1h",
+      "command": "cd ~/workspace/macf/slack-agents && node engine/autonomousRunner.js",
+      "critical": true,
+      "id": "autonomous-agent-driver",
+      "owner": "goal:macf-24-7-work-engine-operation",
+      "purpose": "Calls each agent's runAutonomous() hourly to generate verifiable artifacts. Without this, agents go silent and the sprint-demo-check flags them. (Root-caused Oct 9, 2026: script existed but was never scheduled.)",
+      "title": "Autonomous agent hourly driver"
+    },
+    {
+      "cadence": "5m",
+      "command": "cd ~/workspace/macf/slack-agents && node engine/directivePoll.js",
+      "critical": true,
+      "id": "directive-poll",
+      "owner": "goal:macf-24-7-work-engine-operation",
+      "purpose": "Scans #management and #marketing for [from: CEO \u2192 Role] messages and routes to agents. The Railway bot's LLM path is down; the VM handles directives directly.",
+      "title": "CEO directive poller"
+    },
+    {
+      "cadence": "1h",
+      "command": "cd ~/workspace/macf/slack-agents && node engine/sprintDemo.js",
+      "critical": true,
+      "id": "sprint-demo-check",
+      "owner": "goal:macf-24-7-work-engine-operation",
+      "purpose": "Enforces Jesse's law: every agent with active tasks must produce verifiable demo output hourly. Includes demo relay to Jesse.",
+      "title": "Hourly sprint demo check"
+    },
+    {
+      "cadence": "15m",
+      "command": "cd ~/workspace/macf/slack-agents && node engine/vikunja-team-monitor.js",
+      "critical": false,
+      "id": "team-delivery-monitor",
+      "owner": "goal:macf-24-7-work-engine-operation",
+      "purpose": "Checks active tasks, flags stale tasks, reports deliveries. Monitoring only \u2014 never marks tasks done.",
+      "title": "Vikunja team delivery monitor"
+    },
+    {
+      "cadence": "5m",
+      "command": "HATCHET_ENABLED=1 bash ~/workspace/macf/engine-watchdog.sh",
+      "critical": true,
+      "id": "macf-engine-watchdog",
+      "owner": "goal:macf-24-7-work-engine-operation",
+      "purpose": "Supervises the engine process, restarts if down, self-heals VM snapshot damage. Runs check-schedules.js for schedule self-healing.",
+      "title": "MACF engine watchdog"
+    },
+    {
+      "cadence": "10m",
+      "command": "cd ~/workspace/macf/slack-agents && node engine/self-healer.js",
+      "critical": false,
+      "id": "macf-self-healer",
+      "owner": "goal:macf-24-7-work-engine-operation",
+      "purpose": "Autonomous repair layer: diagnoses failure modes, applies fixes, verifies with tests.",
+      "title": "MACF self-healer"
+    },
+    {
+      "cadence": "2h",
+      "command": "python3 ~/workspace/macf/directive-watch/watch.py",
+      "critical": false,
+      "id": "ceo-directive-watch",
+      "owner": "goal:macf-24-7-work-engine-operation",
+      "purpose": "Catches silent directive threads before Jesse has to ask. Nudges owners with verified facts; escalates to Jesse if still silent.",
+      "title": "CEO directive watch"
+    },
+    {
+      "cadence": "5m",
+      "command": "cd ~/workspace/macf/slack-agents && node engine/delivery-learner.js",
+      "critical": false,
+      "id": "delivery-quality-learner",
+      "owner": "goal:macf-24-7-work-engine-operation",
+      "purpose": "Scores agent messages on delivery evidence, learns patterns, tracks per-agent quality.",
+      "title": "Delivery quality learner"
+    },
+    {
+      "cadence": "30m",
+      "command": "~/workspace/macf/slack-agents/engine/refresh-and-sync-mcp.sh",
+      "critical": false,
+      "id": "mcp-token-refresh",
+      "owner": "goal:macf-24-7-work-engine-operation",
+      "purpose": "Refreshes Canva and Buffer OAuth tokens on desktop, syncs to VM. Keeps MCP integrations alive.",
+      "title": "MCP token refresh"
+    },
+    {
+      "id": "ticket-triage",
+      "title": "Ticket triage \u2014 auto-assign new tickets",
+      "cadence": "15m",
+      "command": "cd ~/workspace/macf/slack-agents && node engine/ticket-triage.js",
+      "owner": "goal:macf-24-7-work-engine-operation",
+      "critical": true,
+      "purpose": "Monitors Vikunja for unassigned tasks every 15 min. Urgent tasks assigned immediately to appropriate agent; normal tasks assigned to execPM for sprint planning. (Built Oct 10, 2026 \u2014 Jesse: no ticket should sit unassigned.)"
+    },
+    {
+      "id": "hourly-standup",
+      "title": "Hourly Scrum Standup",
+      "cadence": "1h",
+      "command": "cd ~/workspace/macf/slack-agents && node engine/standup.js",
+      "owner": "goal:macf-24-7-work-engine-operation",
+      "critical": true,
+      "purpose": "Hourly team standup (Cockburn Scrum): 3 questions \u2014 done last hour, plan next hour, blockers. execPM as scrum master. Posts to #management for osmotic communication."
+    },
+    {
+      "id": "sprint-planning",
+      "title": "Sprint Planning (12h)",
+      "cadence": "12h",
+      "command": "cd ~/workspace/macf/slack-agents && node engine/sprint.js plan",
+      "owner": "goal:macf-24-7-work-engine-operation",
+      "critical": true,
+      "purpose": "12-hour sprint planning: review completed work, prioritize Vikunja backlog (max 3), set sprint goal. Cockburn: frequent delivery, focus."
+    },
+    {
+      "id": "sprint-review",
+      "title": "Sprint Review & Retrospective (12h)",
+      "cadence": "12h",
+      "command": "cd ~/workspace/macf/slack-agents && node engine/sprint.js review",
+      "owner": "goal:macf-24-7-work-engine-operation",
+      "critical": false,
+      "purpose": "12-hour sprint review + retrospective: demo completed work to Jesse, reflect on what worked/didn't, feed improvements to improvement loop. Cockburn: reflective improvement."
+    },
+    {
+      "id": "release-planning",
+      "title": "Release Planning (48h)",
+      "cadence": "48h",
+      "command": "cd ~/workspace/macf/slack-agents && node engine/releasePlanning.js",
+      "owner": "goal:macf-24-7-work-engine-operation",
+      "critical": false,
+      "purpose": "Every 4 sprints: review velocity, prioritize user stories with points/acceptance criteria, set release goal. Cockburn: frequent delivery at release cadence."
+    }
+  ],
+  "version": "1.3.0"
+}

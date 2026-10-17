@@ -1,0 +1,144 @@
+{
+  "_comment": "MACF Scrum configuration \u2014 Jesse (Oct 10, 2026). Follows Alistair Cockburn's Crystal Clear methodology.",
+  "cockburn_principles": {
+    "expert_user_access": "Jesse is the product owner; all demos relay to him for approval (demoRelay.js)",
+    "focus": "Sprint goals limited to 3 priorities max; WIP limits enforced",
+    "frequent_delivery": "Every 12h sprint must produce verifiable deliverables (Jesse's law: no link, not a demo)",
+    "osmotic_communication": "All standups and sprint events post in #management for team-wide visibility",
+    "personal_safety": "Agents report blockers honestly without penalty; blockers are system defects to fix, not blame",
+    "reflective_improvement": "Each sprint retro feeds the improvement loop (engine/improvementLoop.js)",
+    "technical_environment": "TDD/BDD required; automated tests gate every sprint deliverable"
+  },
+  "sprint": {
+    "enabled": true,
+    "length_hours": 12,
+    "planning": {
+      "enabled": true,
+      "prioritize_backlog": true,
+      "review_completed": true,
+      "set_sprint_goal": true
+    },
+    "review": {
+      "demo_completed_work": true,
+      "enabled": true,
+      "feed_improvement_loop": true,
+      "retrospective": true
+    }
+  },
+  "standup": {
+    "channel": "C0ASH4TF604",
+    "enabled": true,
+    "interval_minutes": 60,
+    "max_standup_age_minutes": 30,
+    "questions": [
+      "What did you accomplish in the last hour?",
+      "What are you planning for the next hour?",
+      "Any blockers?"
+    ],
+    "scrum_master": "execpm"
+  },
+  "wip_limits": {
+    "per_agent": 3,
+    "sprint_priorities": 3
+  },
+  "release": {
+    "enabled": true,
+    "sprints_per_release": 4,
+    "planning": {
+      "review_velocity": true,
+      "prioritize_stories": true,
+      "set_release_goal": true
+    }
+  },
+  "user_stories": {
+    "enabled": true,
+    "require_acceptance_criteria": true,
+    "require_bdd_tests": true,
+    "require_tdd_tests": true,
+    "story_point_scale": [
+      1,
+      2,
+      3,
+      5,
+      8,
+      13
+    ],
+    "bdd_runs_before_tdd": true
+  },
+  "velocity": {
+    "enabled": true,
+    "track_completion_rate": true,
+    "sprints_for_average": 5,
+    "use_for_planning": true
+  },
+  "blocker_aging": {
+    "enabled": true,
+    "escalate_after_standups": 3,
+    "auto_create_defect_ticket": true
+  },
+  "async_standup": {
+    "enabled": true,
+    "log_path": "engine/.async-standups.json",
+    "merge_into_next_standup": true
+  },
+  "burndown": {
+    "enabled": true,
+    "update_frequency": "hourly",
+    "show_in_sprint_review": true
+  },
+  "retrospective": {
+    "rotating_facilitator": true,
+    "facilitator_rotation": [
+      "execpm",
+      "cmo",
+      "cco",
+      "cto",
+      "cfo",
+      "cro"
+    ],
+    "feed_improvement_loop": true
+  },
+  "definition_of_done": {
+    "tests_pass": "All automated tests pass (BDD + TDD)",
+    "demo_link_works": "Demo artifact has a working clickable link",
+    "jesse_approved": "Jesse has approved the demo",
+    "no_regressions": "No existing functionality broken",
+    "documented": "Changes documented where applicable"
+  },
+  "story_splitting": {
+    "enabled": true,
+    "split_threshold": 8,
+    "suggest_split_techniques": [
+      "Split by acceptance criteria (each criterion = separate story)",
+      "Split by happy path vs edge cases",
+      "Split by UI vs backend",
+      "Spike first: research story (0 points) then split"
+    ]
+  },
+  "sprint_firewall": {
+    "enabled": true,
+    "lock_sprint_on_start": true,
+    "new_work_goes_to_backlog": true,
+    "product_owner_override_only": true,
+    "product_owner": "jesse"
+  },
+  "release_notes": {
+    "enabled": true,
+    "auto_generate": true,
+    "require_jesse_approval": true,
+    "include_velocity": true,
+    "include_burndown_summary": true
+  },
+  "tech_debt": {
+    "enabled": true,
+    "max_percent_of_sprint": 20,
+    "tag": "tech-debt",
+    "auto_suggest_from_gaps": true
+  },
+  "bdd_docs": {
+    "enabled": true,
+    "source_dir": "engine/tests",
+    "output": "docs/bdd-specs.md",
+    "auto_generate": true
+  }
+}

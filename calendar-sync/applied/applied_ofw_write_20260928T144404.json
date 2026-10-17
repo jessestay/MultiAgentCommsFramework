@@ -1,0 +1,109 @@
+{
+  "brief_id": "ofw_write_20260928T144404",
+  "applied_at": "2026-09-28T15:00:37+00:00",
+  "applied": [
+    {
+      "sync_key": "gcal_32omf98bnpc0esb03pifqu80s0_initial",
+      "op": "ofw_create",
+      "status": "already_exists"
+    },
+    {
+      "sync_key": "gcal_v5i8t4lfmui6dsrcomusaogn3s_initial",
+      "op": "ofw_create",
+      "status": "already_exists"
+    },
+    {
+      "sync_key": "gcal_unji4p7ivi71gpjuvfp3so4bjc_20261031T220000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists"
+    },
+    {
+      "sync_key": "gcal_4uu7trh09pvk04unr1mdn86am4_20261111T010000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists"
+    },
+    {
+      "sync_key": "gcal_0j46gkka0iq3i2v1jhq09tgb6j_20270215_initial",
+      "op": "ofw_create",
+      "status": "already_exists"
+    },
+    {
+      "sync_key": "gcal_26dqvcmovtjkorce44m440tu6o_20270301T220000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists"
+    },
+    {
+      "sync_key": "gcal_ivbijolt0pa2qsc30tffspvmlo_initial",
+      "op": "ofw_create",
+      "status": "already_exists"
+    },
+    {
+      "sync_key": "gcal_698ajn5c98t28vln04ccn8r1sa_20270320T210000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists"
+    },
+    {
+      "sync_key": "gcal_6jl3radh7hr3bc79mr1bhmdohm_20270405T210000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists"
+    },
+    {
+      "sync_key": "gcal_4usaa0tdr6h5k5h26gcrst07g2_20270428T210000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists"
+    },
+    {
+      "sync_key": "gcal_3krlb461gf5tgjah44c0oerpo5_20270429T210000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists"
+    },
+    {
+      "sync_key": "gcal_7fhgcevd4nt3gloj8hv4ng3ctb_20270503T210000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists"
+    },
+    {
+      "sync_key": "gcal_78pn0mc6c667jn485tisc34fsq_20270504T210000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists"
+    },
+    {
+      "sync_key": "gcal_1g2cjt5ge18dlf1it8ib9u3ip7_20270509T150000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists"
+    },
+    {
+      "sync_key": "gcal_6odta4bm42qt7e0leag31ea2vu_20270527T000000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists"
+    },
+    {
+      "sync_key": "gcal_epingii4j08varn97o9q7ectbs_notesfix",
+      "op": "ofw_update",
+      "status": "already_exists"
+    },
+    {
+      "sync_key": "gcal_fmeo2e8gtt5ttkfkjviqa703ds_notesfix",
+      "op": "ofw_update",
+      "status": "ok"
+    },
+    {
+      "sync_key": "gcal_ltlca02hqd539b0p2lhn1s55kj_20261126T020000Z_notesfix",
+      "op": "ofw_update",
+      "status": "ok"
+    },
+    {
+      "sync_key": "gcal_2hco8b6ri5a28vnt9qre552spj_20261228T020000Z_notesfix",
+      "op": "ofw_update",
+      "status": "ok"
+    },
+    {
+      "sync_key": "gcal_rlqkernij3j3ph5cu2fqrm19a0_20270118_notesfix",
+      "op": "ofw_update",
+      "status": "ok"
+    }
+  ],
+  "failed": [],
+  "skipped_reemit": [],
+  "watermark_note": "watermark_google advanced to 2026-09-28T15:00:37+00:00"
+}

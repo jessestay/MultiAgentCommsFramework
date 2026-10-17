@@ -1,0 +1,25 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Native WSL2 Development Environment [MANDATORY]
+
+**This project exclusively uses native WSL2 for development and testing. Docker is NOT used under any circumstances.**
+
+All WordPress, PHP, MySQL, and web server components are installed directly in the WSL2 environment. This approach provides:
+
+1. Simplified development workflow
+2. Direct file system access
+3. Improved performance
+4. Reduced complexity
+5. Standard WSL2 environment that matches production
+
+Refer to `200-local-development.mdc` for complete details on the WSL2 native setup process and requirements.
+
+**PROHIBITED: Do not introduce any Docker dependencies or references in any part of this project.**
+
+## WP-ENV Specific Configuration
+
+*   **Volume Mapping for Secrets**: If using a `.secrets` directory on the host, ensure it's mapped into `wp-env` containers via `.wp-env.json` for access within the container (e.g., `"./.secrets": "/var/www/html/.secrets"`).
+*   **Ticketmaster API Key (Example)**: For the AustinShows project, the Ticketmaster API key is stored in the WP database option `austin_shows_ticketmaster_api_key`. Use `wp austin-shows set-secret ticketmaster-api-key <key>` via `wp-env run cli` to set it. Access within PHP should use `get_option('austin_shows_ticketmaster_api_key')`. The working directory inside `wp-env cli` is `/var/www/html`.

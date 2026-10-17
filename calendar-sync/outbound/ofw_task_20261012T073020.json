@@ -1,0 +1,156 @@
+{
+  "brief_id": "ofw_write_20261012T073020",
+  "issued_at": "2026-10-12T07:30:20+00:00",
+  "direction": "google_to_ofw",
+  "idempotency": "per-spec sync_key, checked against OFW notes before create",
+  "spec_count": 9,
+  "specs": [
+    {
+      "op": "ofw_delete",
+      "sync_key": "gcal_32omf98bnpc0esb03pifqu80s0_v2026-10-05T14_32_57.875Z_del",
+      "google_event_id": "32omf98bnpc0esb03pifqu80s0",
+      "ofw_key": "CK-15cdd2534a16f99e",
+      "title": "Rebecca Parent Time - Fall Break (Part 1 of 2)",
+      "preconditions": [
+        "CEO must confirm the OFW entry was actually located and deleted in the browser before state is updated."
+      ]
+    },
+    {
+      "op": "ofw_delete",
+      "sync_key": "gcal_fmeo2e8gtt5ttkfkjviqa703ds_v2026-10-05T14_32_59.813Z_del",
+      "google_event_id": "fmeo2e8gtt5ttkfkjviqa703ds",
+      "ofw_key": "CK-c9d9b2f2d28c4a9d",
+      "title": "Rebecca Parent Time Fall Break Part 2",
+      "preconditions": [
+        "CEO must confirm the OFW entry was actually located and deleted in the browser before state is updated."
+      ]
+    },
+    {
+      "op": "ofw_create",
+      "sync_key": "gcal_e1d7f5g50k077hf5c8bvp5mcdo_v2026-10-05T14_33_08.829Z",
+      "google_event_id": "e1d7f5g50k077hf5c8bvp5mcdo",
+      "title": "Rebecca Parent Time - Fall Break",
+      "parent": "Rebecca",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2026-10-14T18:00:00-06:00",
+      "end": "2026-10-18T19:00:00-06:00",
+      "all_day": false,
+      "notes": "Per shared Google Calendar; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Oct 12, 2026). MACF-SYNC: ofw-event | google-event-id: e1d7f5g50k077hf5c8bvp5mcdo\nsync_key: gcal_e1d7f5g50k077hf5c8bvp5mcdo_v2026-10-05T14_33_08.829Z",
+      "preconditions": [
+        "If op=ofw_create and an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "If op=ofw_update and ofw_key not found, return not_found \u2014 do not create; the apply path will re-emit as create.",
+        "If op=ofw_delete and ofw_key not found, return not_found \u2014 apply path removes the stale map entry."
+      ]
+    },
+    {
+      "op": "ofw_delete",
+      "sync_key": "gcal_ivbijolt0pa2qsc30tffspvmlo_v2026-10-05T14_33_18.703Z_del",
+      "google_event_id": "ivbijolt0pa2qsc30tffspvmlo",
+      "ofw_key": "CK-b9704cb4039f3c46",
+      "title": "Jesse Parent Time - Spring Break",
+      "preconditions": [
+        "CEO must confirm the OFW entry was actually located and deleted in the browser before state is updated."
+      ]
+    },
+    {
+      "op": "ofw_create",
+      "sync_key": "gcal_ba4f5nr5u6531jn4bgqp7ik8u4_v2026-10-05T14_33_19.725Z",
+      "google_event_id": "ba4f5nr5u6531jn4bgqp7ik8u4",
+      "title": "Jesse Parent Time - Spring Break",
+      "parent": "Jesse",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2027-03-05T18:00:00-07:00",
+      "end": "2027-03-14T19:00:00-06:00",
+      "all_day": false,
+      "notes": "Per shared Google Calendar; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Oct 12, 2026). MACF-SYNC: ofw-event | google-event-id: ba4f5nr5u6531jn4bgqp7ik8u4\nsync_key: gcal_ba4f5nr5u6531jn4bgqp7ik8u4_v2026-10-05T14_33_19.725Z",
+      "preconditions": [
+        "If op=ofw_create and an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "If op=ofw_update and ofw_key not found, return not_found \u2014 do not create; the apply path will re-emit as create.",
+        "If op=ofw_delete and ofw_key not found, return not_found \u2014 apply path removes the stale map entry."
+      ]
+    },
+    {
+      "op": "ofw_update",
+      "sync_key": "gcal_ltlca02hqd539b0p2lhn1s55kj_20261126T020000Z_v2026-10-05T14_33_31.551Z",
+      "google_event_id": "ltlca02hqd539b0p2lhn1s55kj_20261126T020000Z",
+      "title": "Thanksgiving Holiday - Jesse Parent Time",
+      "parent": "Jesse",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2026-11-25T18:00:00-07:00",
+      "end": "2026-11-29T19:00:00-07:00",
+      "all_day": false,
+      "notes": "Per shared Google Calendar; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Oct 12, 2026). MACF-SYNC: ofw-event | google-event-id: ltlca02hqd539b0p2lhn1s55kj_20261126T020000Z\nsync_key: gcal_ltlca02hqd539b0p2lhn1s55kj_20261126T020000Z_v2026-10-05T14_33_31.551Z",
+      "preconditions": [
+        "If op=ofw_create and an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "If op=ofw_update and ofw_key not found, return not_found \u2014 do not create; the apply path will re-emit as create.",
+        "If op=ofw_delete and ofw_key not found, return not_found \u2014 apply path removes the stale map entry."
+      ],
+      "ofw_key": "CK-af106978da9cf57b"
+    },
+    {
+      "op": "ofw_update",
+      "sync_key": "gcal_6odta4bm42qt7e0leag31ea2vu_20270527T000000Z_v2026-10-05T14_51_01.284Z",
+      "google_event_id": "6odta4bm42qt7e0leag31ea2vu_20270527T000000Z",
+      "title": "Memorial Day - Rebecca Parent Time",
+      "parent": "Rebecca",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2027-05-28T18:00:00-06:00",
+      "end": "2027-05-31T19:00:00-06:00",
+      "all_day": false,
+      "notes": "Per shared Google Calendar; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Oct 12, 2026). MACF-SYNC: ofw-event | google-event-id: 6odta4bm42qt7e0leag31ea2vu_20270527T000000Z\nsync_key: gcal_6odta4bm42qt7e0leag31ea2vu_20270527T000000Z_v2026-10-05T14_51_01.284Z",
+      "preconditions": [
+        "If op=ofw_create and an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "If op=ofw_update and ofw_key not found, return not_found \u2014 do not create; the apply path will re-emit as create.",
+        "If op=ofw_delete and ofw_key not found, return not_found \u2014 apply path removes the stale map entry."
+      ],
+      "ofw_key": "CK-094baeb587bab955"
+    },
+    {
+      "op": "ofw_create",
+      "sync_key": "gcal_12c4un8idsu9semo694hqv9do4_v2026-10-05T14_51_02.330Z",
+      "google_event_id": "12c4un8idsu9semo694hqv9do4",
+      "title": "Presidents Day - Rebecca Parent Time",
+      "parent": "Rebecca",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2027-02-12T18:00:00-07:00",
+      "end": "2027-02-15T19:00:00-07:00",
+      "all_day": false,
+      "notes": "Per shared Google Calendar; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Oct 12, 2026). MACF-SYNC: ofw-event | google-event-id: 12c4un8idsu9semo694hqv9do4\nsync_key: gcal_12c4un8idsu9semo694hqv9do4_v2026-10-05T14_51_02.330Z",
+      "preconditions": [
+        "If op=ofw_create and an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "If op=ofw_update and ofw_key not found, return not_found \u2014 do not create; the apply path will re-emit as create.",
+        "If op=ofw_delete and ofw_key not found, return not_found \u2014 apply path removes the stale map entry."
+      ]
+    },
+    {
+      "op": "ofw_delete",
+      "sync_key": "gcal_0j46gkka0iq3i2v1jhq09tgb6j_20270215_v2026-10-05T15_12_09.179Z_del",
+      "google_event_id": "0j46gkka0iq3i2v1jhq09tgb6j_20270215",
+      "ofw_key": "CK-794fd7236ab23902",
+      "title": "Rebecca Parent Time - President'sDay",
+      "preconditions": [
+        "CEO must confirm the OFW entry was actually located and deleted in the browser before state is updated."
+      ]
+    }
+  ]
+}

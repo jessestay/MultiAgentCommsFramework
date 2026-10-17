@@ -1,0 +1,82 @@
+---
+description: Defines the Teach Back Context Confirmation procedure to ensure shared understanding for complex or context-heavy tasks.
+globs: []
+alwaysApply: true
+---
+# 068: Teach Back Context Confirmation Procedure [WORKFLOW]
+
+## 1. Purpose
+
+**Version:** 1.0.0
+**Status:** Active
+**Rule ID:** `068-WORKFLOW-teach-back-confirmation`
+
+## 1. Purpose
+
+This rule defines the "Teach Back Context Confirmation" procedure within the Multi-Agent Communications Framework (MACF). Its primary goal is to ensure a shared understanding between the delegating role (typically ES) and the receiving role (typically SET) when a complex task or a task requiring significant context is assigned. This helps to catch misunderstandings early, before substantial work is undertaken.
+
+## 2. When to Use This Procedure
+
+This procedure **MUST** be initiated by the AI role *receiving* a task assignment under the following conditions:
+
+*   **Complex Tasks:** When the task involves multiple components, significant logic changes, or has a high potential for unforeseen impacts.
+*   **After Enhanced Briefing:** When the task was accompanied by an "Enhanced Pre-Task Contextual Briefing Package" (as per rule `067-WORKFLOW-contextual-briefing`).
+*   **High Ambiguity Potential:** When the receiving role perceives any ambiguity in the task requirements or the provided context, even if not explicitly designated "complex."
+
+## 3. The "Teach Back" Summary
+
+The AI role performing the teach back (e.g., SET) **MUST** provide a concise summary to the delegating role (e.g., ES) that includes:
+
+1.  **Understanding of the Core Task/Goal:** A brief restatement of what the primary objective of the task is.
+2.  **Key Files/Components Involved:** Identification of the main files, modules, or systems that will likely be modified or interacted with.
+3.  **Potential Impacts/Risks (Initial Assessment):** A brief mention of any obvious potential impacts on other parts of the system or risks identified from the initial understanding.
+4.  **Acknowledgement of Critical Context:** Explicit confirmation that key pieces of context provided in the briefing (if any) have been understood (e.g., "Acknowledged the constraint regarding database schema immutability").
+
+This summary should be delivered as the *first part* of the receiving role's response after being assigned the task.
+
+## 4. Delegating Role's Responsibility
+
+The delegating role (e.g., ES) **MUST** carefully review the "Teach Back" summary.
+
+*   **If Aligned:** If the summary accurately reflects the task and context, the delegating role confirms this (e.g., "Your understanding is correct. Please proceed."), and the receiving role can begin implementation.
+*   **If Misaligned:** If the summary indicates a misunderstanding, the delegating role **MUST** provide immediate clarification, correct the misunderstanding, and may request another brief teach back to ensure alignment before work proceeds.
+
+## 5. Example Interaction (ES assigning to SET)
+
+**ES Message:**
+```
+🔵 **Executive Secretary (ES)**: @SET Please implement the new user authentication flow as detailed in US-AUTH-005. The Contextual Briefing Package includes the new UI mockups, API specifications for the identity provider, and the existing `AuthService.php` which will need significant modification. Be mindful of the performance requirements outlined in the NFRs.
+```
+
+**SET's Teach Back Response:**
+```
+🟠 **Software Engineering Team (SET)**: Understood. My task is to implement the new user authentication flow for US-AUTH-005.
+
+*   **Core Goal:** Replace the current login mechanism with an OAuth2 flow connecting to the new identity provider.
+*   **Key Files/Components:** `AuthService.php` will be heavily modified. I'll also be working with new UI components based on the mockups and interacting with the specified identity provider API.
+*   **Potential Impacts:** This will affect all existing login points and user session management. Performance for authentication calls needs to be monitored against NFRs.
+*   **Critical Context Ack:** Acknowledged the API specs and the need to modify `AuthService.php`, and the performance NFRs.
+
+Is this understanding correct? If so, I will proceed with creating a detailed implementation plan.
+```
+
+**ES Confirmation:**
+```
+🔵 **Executive Secretary (ES)**: Yes, @SET, your understanding is correct and aligns with the requirements. Please proceed.
+```
+
+## 6. Benefits
+
+*   Reduces wasted effort due to misinterpretations.
+*   Ensures critical context is not overlooked.
+*   Fosters clearer communication and shared understanding from the outset.
+*   Provides an early checkpoint for complex tasks.
+
+## 7. Relation to Other Rules
+
+*   This procedure is often triggered by the delivery of an "Enhanced Pre-Task Contextual Briefing Package" (Rule `067-WORKFLOW-contextual-briefing`).
+*   It precedes the detailed implementation planning by the receiving role.
+
+## 8. Enforcement
+
+All AI roles are responsible for adhering to this procedure. ES will typically oversee its application for tasks delegated to SET. Failure to perform a teach back for applicable tasks may be flagged during reviews or retrospectives.

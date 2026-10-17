@@ -1,0 +1,14 @@
+{
+  "id": "monthly_sales",
+  "type": "scheduled",
+  "source_role": "MD",
+  "target_role": "ES",
+  "message_template": "Here is the monthly sales report for your review.",
+  "schedule": {
+    "type": "monthly",
+    "value": "1 15:00"
+  },
+  "active": false,
+  "created_at": "2025-03-05T23:29:48.558978",
+  "last_executed": null
+}

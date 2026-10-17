@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.6/phpunit.xsd"
+         backupGlobals="false"
+         backupStaticAttributes="false"
+         colors="true"
+         verbose="true"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         processIsolation="false"
+         stopOnFailure="false"
+         bootstrap="tests/php/bootstrap.php">
+    <coverage processUncoveredFiles="true">
+        <include>
+            <directory suffix=".php">./src</directory> <!-- Adjust if source is elsewhere -->
+        </include>
+        <exclude>
+            <directory suffix=".php">./vendor</directory>
+            <directory suffix=".php">./tests</directory>
+        </exclude>
+    </coverage>
+    <testsuites>
+        <testsuite name="unit">
+            <directory>tests/php/Unit</directory>
+            <!-- If tests are not in tests/php/unit, adjust path above -->
+            <!-- Example: <directory suffix="Test.php">./frameworks/reviews/tests</directory> -->
+            <!-- Example: <directory suffix="Test.php">./shared_tools/proposal_designer_tool/tests</directory> -->
+        </testsuite>
+        <testsuite name="integration">
+            <directory>tests/php/integration</directory>
+            <!-- If tests are not in tests/php/integration, adjust path above -->
+        </testsuite>
+    </testsuites>
+    <php>
+        <ini name="error_reporting" value="-1"/>
+        <!-- Add any ENV variables needed for tests -->
+        <!-- <env name="APP_ENV" value="testing"/> -->
+    </php>
+</phpunit> 

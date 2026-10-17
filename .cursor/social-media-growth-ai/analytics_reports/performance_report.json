@@ -1,0 +1,189 @@
+{
+  "page_id": "123456789",
+  "report_generated": "2025-03-15T00:08:42.162317",
+  "period": {
+    "start_date": "2025-02-13",
+    "end_date": "2025-03-15",
+    "days": 30
+  },
+  "previous_period": {
+    "start_date": "2025-01-14",
+    "end_date": "2025-02-12",
+    "days": 30
+  },
+  "metrics_comparison": {
+    "impressions": {
+      "current": 52037,
+      "previous": 39158,
+      "change_pct": 32.88983094131467
+    },
+    "engaged_users": {
+      "current": 10394,
+      "previous": 7822,
+      "change_pct": 32.88161595499872
+    },
+    "new_followers": {
+      "current": 192,
+      "previous": 182,
+      "change_pct": 5.4945054945054945
+    }
+  },
+  "post_performance": {
+    "total_posts": 30,
+    "top_posts": [
+      {
+        "post_id": "123456789_1",
+        "impressions": 1000,
+        "engagements": 120,
+        "engagement_rate": 12.0,
+        "reactions": {
+          "like": 80,
+          "love": 30,
+          "wow": 5,
+          "haha": 5
+        },
+        "clicks": 45,
+        "shares": 15,
+        "timestamp": "2025-03-15T00:08:42.162026"
+      },
+      {
+        "post_id": "123456789_3",
+        "impressions": 780,
+        "engagements": 70,
+        "engagement_rate": 9.0,
+        "reactions": {
+          "like": 58,
+          "love": 19,
+          "wow": 5,
+          "haha": 5
+        },
+        "clicks": 38,
+        "shares": 9,
+        "timestamp": "2025-03-13T00:08:42.162026"
+      },
+      {
+        "post_id": "123456789_6",
+        "impressions": 750,
+        "engagements": 67,
+        "engagement_rate": 9.0,
+        "reactions": {
+          "like": 55,
+          "love": 18,
+          "wow": 5,
+          "haha": 5
+        },
+        "clicks": 35,
+        "shares": 8,
+        "timestamp": "2025-03-10T00:08:42.162026"
+      },
+      {
+        "post_id": "123456789_9",
+        "impressions": 720,
+        "engagements": 64,
+        "engagement_rate": 9.0,
+        "reactions": {
+          "like": 52,
+          "love": 16,
+          "wow": 5,
+          "haha": 5
+        },
+        "clicks": 32,
+        "shares": 6,
+        "timestamp": "2025-03-07T00:08:42.162026"
+      },
+      {
+        "post_id": "123456789_12",
+        "impressions": 690,
+        "engagements": 62,
+        "engagement_rate": 9.0,
+        "reactions": {
+          "like": 49,
+          "love": 15,
+          "wow": 5,
+          "haha": 5
+        },
+        "clicks": 29,
+        "shares": 5,
+        "timestamp": "2025-03-04T00:08:42.162026"
+      }
+    ],
+    "avg_engagement_rate": 7.233333333333333,
+    "median_engagement_rate": 7.0
+  },
+  "audience": {
+    "gender": {
+      "male": 0.45,
+      "female": 0.55
+    },
+    "age": {
+      "18-24": 0.15,
+      "25-34": 0.35,
+      "35-44": 0.25,
+      "45-54": 0.15,
+      "55+": 0.1
+    },
+    "location": {
+      "United States": 0.65,
+      "United Kingdom": 0.1,
+      "Canada": 0.08,
+      "Australia": 0.05,
+      "Other": 0.12
+    }
+  },
+  "insights": [
+    {
+      "insight_type": "engagement",
+      "title": "Engagement Trend Improving",
+      "description": "Your engagement rate has increased by 15% compared to the previous period.",
+      "metrics": {
+        "current": 4.5,
+        "previous": 3.9,
+        "change_pct": 15.4
+      },
+      "priority": "high"
+    },
+    {
+      "insight_type": "content",
+      "title": "Top Performing Content Type",
+      "description": "Posts with images are performing 30% better than posts without images.",
+      "metrics": {
+        "image_posts": 5.2,
+        "text_posts": 4.0,
+        "change_pct": 30.0
+      },
+      "priority": "medium"
+    },
+    {
+      "insight_type": "audience",
+      "title": "Audience Growth Slowing",
+      "description": "Your follower growth rate has decreased by 5% compared to the previous period.",
+      "metrics": {
+        "current_growth": 2.8,
+        "previous_growth": 2.95,
+        "change_pct": -5.1
+      },
+      "priority": "medium"
+    }
+  ],
+  "best_posting_times": {
+    "Monday": {
+      "9": 3.5,
+      "15": 2.8,
+      "18": 3.2
+    },
+    "Wednesday": {
+      "12": 4.2,
+      "18": 3.9,
+      "20": 3.0
+    },
+    "Friday": {
+      "10": 3.2,
+      "14": 2.9,
+      "20": 4.5
+    },
+    "Saturday": {
+      "11": 5.1,
+      "16": 4.8
+    }
+  }
+}

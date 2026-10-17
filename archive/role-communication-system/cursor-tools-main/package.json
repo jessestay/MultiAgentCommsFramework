@@ -1,0 +1,34 @@
+{
+  "name": "cursor-tools",
+  "version": "0.1.3",
+  "private": true,
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "dev:electron": "turbo dev --filter=electron-app",
+    "lint": "turbo lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "test": "turbo test",
+    "test:watch": "turbo test -- --watch",
+    "check-versions": "syncpack list-mismatches",
+    "fix-versions": "syncpack fix-mismatches",
+    "update-deps": "pnpm update -r",
+    "version:patch": "pnpm version patch -m \"chore: release v%s\" && pnpm --filter electron-app version patch --no-git-tag-version",
+    "version:minor": "pnpm version minor -m \"chore: release v%s\" && pnpm --filter electron-app version minor --no-git-tag-version",
+    "version:major": "pnpm version major -m \"chore: release v%s\" && pnpm --filter electron-app version major --no-git-tag-version",
+    "release": "node scripts/release.js"
+  },
+  "devDependencies": {
+    "electron-builder": "^24.13.3",
+    "prettier": "^3.3.2",
+    "turbo": "^2.3.3",
+    "typescript": "5.5.4"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "cursor-tools": "file:"
+  }
+}

@@ -1,0 +1,113 @@
+
+## PROJECT OVERVIEW
+This section provides a high-level overview of the project.  Further details are available in the project documentation.
+
+## CODE STYLE
+Adhere to WordPress coding standards.  Use PHP CodeSniffer (PHPCS) for automated checks.  Further details are available in the project documentation.  Note:  Persistent issues encountered running PHPCS in the current environment.  See `docs/logs/US-TH-002-troubleshooting.log` for details. A technical debt story (US-TD-005) has been created to address this.  A second technical debt story (US-TD-006) has been created to address persistent pathing issues with PHPCS on Windows. A third technical debt story (US-TD-007) will be created to address persistent issues running PHPCS on Windows.  A fourth technical debt story (US-TD-008) will be created to address persistent issues running PHPCS on Windows due to pathing problems and inconsistent execution environments.  The `WordPress` coding standard must be installed and configured correctly for PHPCS to function properly.  Installation can be attempted via composer: `composer require --dev wp-coding-standards/wpcs dealerdirect/phpcodesniffer-composer-installer`.
+
+## FOLDER ORGANIZATION
+Standard WordPress theme structure.  Design assets for user stories are located in `docs/user-stories/{sprint}/{user-story}/design/`.
+
+## TECH STACK
+PHP, PHPUnit, Behat, BackstopJS, WordPress, Tailwind CSS, Node.js, npm, npx, git, Composer, wp-env.
+
+## PROJECT-SPECIFIC STANDARDS
+- Test-first development (TDD) and Behavior-Driven Development (BDD) principles must guide all implementation tasks.
+- User stories and acceptance criteria are the strict guidelines to ensure we don't go outside of scope for any given sprint.
+- All implementation tasks should utilize the marketing team (MD, CTW, DES, and SMM) for branding and design input.  Design quality must be on par with Nike and Disney.
+- Multi-agent communication framework must be strictly adhered to within Cursor. All roles must execute immediately or respond; no delays or inaction are permitted.
+- All team members must respond and execute within the same Cursor chat response. No delays or inaction are permitted.
+- All tests (unit, integration, acceptance, visual regression) must pass before merging code into main branch.  A unit or integration test should verify the Docker installation directory is correctly loaded in the path of the current bash session so that the docker command can run.
+- The final website design must match the assets, wireframes, and mockups in the user story design folders.
+- Standard WordPress authentication and registration flows MUST be used.  Tests MUST explicitly verify this.
+
+
+## WORKFLOW & RELEASE RULES
+- Pre-development checks (git status, PHPUnit, PHPCS, Composer, Docker accessibility check) must be performed before development.  PHPCS check may be temporarily bypassed (see CODE STYLE section and `docs/logs/US-TH-002-troubleshooting.log`).
+- All tests (unit, integration, acceptance, visual regression) must pass before merging code into main branch.
+- Test results and scripts must be documented in `@sprint-status.md`. Correct paths and scripts will be added as soon as they are determined. The following scripts should be used for testing US-TH-002: `scripts/test/run-phpunit.sh`, `scripts/test/run-behat.sh`, `scripts/test/visual/run-all-tests.sh`.  These paths are subject to change. The following command should be used for running Behat tests: `npx wp-env run tests-cli bash -c "cd /var/www/html/wp-content/themes/austin-shows-theme && /var/www/html/vendor/bin/behat --format=progress --stop-on-failure features/theme/"`. Using `sh` instead of `bash` inside the docker container may resolve pathing issues. Note: Persistent issues running Behat and PHPUnit due to environment setup. See `docs/logs/US-TH-002-troubleshooting.log` for details.  The reliable command for running PHPUnit tests is: `php vendor/bin/phpunit [path/to/test.php or directory]`.
+- All roles mentioned in a Cursor chat response must execute immediately or respond within the same response. No delays or inaction are permitted.  Cursor chat responses must continue until all tests are passing.
+- Cursor chat responses must continue until all tests are passing.  No stopping after prompts, commands, or file edits is permitted.
+- To resolve persistent Docker issues, mount Docker's `sh` directly and troubleshoot the problem within the `sh` environment. Document the solution in `@sprint-status.md`.  If Docker issues persist, consider mounting Docker's `sh` directly to troubleshoot within the `sh` environment.  If Docker issues persist, consider mounting Docker's `sh` directly to troubleshoot within the `sh` environment and document the solution in `@sprint-status.md`.
+- Cursor chat responses must continue until all tests are passing. Do not stop after prompts, commands, or file edits.  Cursor chat responses must not terminate prematurely after prompts, commands, or file edits.  Continue until all tests are passing.
+- Uninterrupted Tool Chaining [ABSOLUTE MANDATE]: Execution MUST continue immediately after EVERY tool call (`read_file`, `edit_file`, `run_terminal_cmd`, etc.) completes within a single message turn. There are NO exceptions. The AI must proactively execute the next planned step without waiting for user input or confirmation, especially following an `edit_file` operation.
+- Post-Tool Execution [MANDATORY]: After any tool call successfully returns (including `edit_file`), the AI MUST immediately proceed to the next planned action or tool call within the same response turn. Pausing execution after a tool call is prohibited.
+- The website, when produced and deployed, should look just like the assets, wireframes, and mockups in the user story design folders if all acceptance criteria are satisfied for that user story.
+- Persistent command corruption errors (e.g., "ocker" instead of "docker") within the Cursor IDE are internal AI/tooling issues, not user environment problems. The AI is responsible for troubleshooting and resolving these errors.
+- All roles mentioned in a Cursor chat response MUST execute immediately or respond within the same response. No delays or inaction are permitted.
+- Uninterrupted Tool Chaining [ABSOLUTE MANDATE]: Execution MUST continue immediately after EVERY tool call (`read_file`, `edit_file`, `run_terminal_cmd`, etc.) completes within a single message turn. There are NO exceptions. The AI must proactively execute the next planned step without waiting for user input or confirmation, especially following an `edit_file` operation.
+- Post-Tool Execution [MANDATORY]: After any tool call successfully returns (including `edit_file`), the AI MUST immediately proceed to the next planned action or tool call within the same response turn. Pausing execution after a tool call is prohibited.
+- Standard WordPress authentication and registration flows MUST be used. Tests MUST explicitly verify this.
+
+
+## REFERENCE EXAMPLES
+Reference examples will be added to the project documentation.
+
+## PROJECT DOCUMENTATION & CONTEXT SYSTEM
+All project documentation is stored within the `docs/` directory.  Specific guidelines for documentation structure can be found within the project documentation.  All new projects should use the same `.cursor/rules` file.  Symlinks should be used to maintain consistency.  The `.cursor/rules` file should be symlinked to the project root directory for all new projects to maintain consistency.  To ensure consistency across all projects, the `.cursor/rules` file must be symlinked to the project root directory.  The preferred method for creating symlinks is `ln -s` within Git Bash.  If this fails, administrator privileges may be required for `mklink /D` in an elevated command prompt.
+
+
+## DEBUGGING
+Logging should be done using `tee` to log all output to a timestamped log file (e.g., `test-logs/USTH002-CurrentStatus-$(date +%Y%m%d-%H%M%S).log`).  Troubleshooting logs follow `051-troubleshooting-log-protocol`.  SET must investigate Docker issues.  If Docker issues persist, consider mounting Docker's `sh` directly to troubleshoot within the `sh` environment and document the solution in `@sprint-status.md`. To troubleshoot persistent Docker issues, mount Docker's `sh` directly and troubleshoot the problem within the `sh` environment. Document the solution in `@sprint-status.md`.
+
+## FINAL DOs AND DON'Ts
+- **DO:** Follow all rules and guidelines outlined in this document.
+- **DO:** Use the marketing team effectively for design and branding.
+- **DO:** Maintain a clean Git history.
+- **DO:** Ensure all tests pass before merging code.
+- **DO:** Respond and execute within the same Cursor chat response.  Do not let the Cursor chat response end without all mentioned roles executing or responding. Do not let the Cursor chat stop after prompts, commands, or file edits. Continue until all tests are passing.
+- **DO:** Document correct test paths and scripts in `@sprint-status.md` as soon as they are determined.
+- **DO:** Verify Docker is accessible before running tests that depend on it.  If Docker issues persist, consider mounting Docker's `sh` directly to troubleshoot within the `sh` environment.
+- **DO:**  Ensure the final website design matches the design assets.
+- **DON'T:** Leave open items or tasks without passing them to the next relevant role.
+- **DON'T:** Delay or avoid execution within the Cursor chat.
+- **DON'T:** Merge code with failing tests.
+- **DON'T:**  Use `it` instead of `git` in commands.
+- **DON'T:**  Let a Cursor chat response end without all mentioned roles executing or responding.
+- **DON'T:** Let the Cursor chat stop after prompts. Continue until all tests are passing.
+- **DON'T:** Stop Cursor chat after prompts, commands, or file edits. Continue until all tests are passing.
+
+## PROJECT-SPECIFIC STANDARDS
+- Test-first development (TDD) and Behavior-Driven Development (BDD) principles must guide all implementation tasks.
+- User stories and acceptance criteria are the strict guidelines to ensure we don't go outside of scope for any given sprint.
+- All implementation tasks should utilize the marketing team (MD, CTW, DES, and SMM) for branding and design input.  Design quality must be on par with Nike and Disney.
+- Multi-agent communication framework must be strictly adhered to within Cursor. All roles must execute immediately or respond; no delays or inaction are permitted.
+- All team members must respond and execute within the same Cursor chat response. No delays or inaction are permitted.
+- All tests (unit, integration, acceptance, visual regression) must pass before merging code into main branch.  A unit or integration test should verify the Docker installation directory is correctly loaded in the path of the current bash session so that the docker command can run.
+- The final website design must match the assets, wireframes, and mockups in the user story design folders.
+- Standard WordPress authentication and registration flows MUST be used.  Tests MUST explicitly verify this.
+
+
+## Chat Code Block Formatting (Cursor UI Bug Workaround) [MANDATORY] [CRITICAL EMPHASIS]
+1.  **Problem**: A known bug in the Cursor chat interface can cause the first character of lines within code blocks (```) to be cut off.
+2.  **Workaround [NON-NEGOTIABLE]**: To ensure readability and prevent potential misinterpretations or execution errors linked to formatting, **ALL lines** of code presented within ``` code blocks in **ALL chat responses** MUST be prefixed with **exactly three (3) spaces**.
+3.  **Example [MANDATORY FORMAT]**:
+    ```
+       line 1 of code
+       line 2 of code
+          indented line 3
+    ```
+4.  **Enforcement [ABSOLUTE]**: This applies to **all roles** generating **any code blocks** in chat output. This includes, but is not limited to: terminal command output examples, file content snippets, generated code examples, configuration snippets, etc. **NO EXCEPTIONS.** Failure to follow this rule is a critical error.
+
+## Integration with Other Roles
+This section will detail how different roles (e.g., SET, MD, DES, CTW, SMM) integrate and collaborate within the Cursor environment.  The multi-agent communication framework outlined in the Project-Specific Standards section will be strictly followed.  All roles must execute immediately or respond; no delays or inaction are permitted. All team members must respond and execute within the same Cursor chat response.  No delays or inaction are permitted. The website, when produced and deployed, should look just like the assets, wireframes, and mockups in the user story design folders if all acceptance criteria are satisfied for that user story.
+
+## AI Behavior Corrections [CRITICAL]
+
+## Core Principle: Tool Parity & Expertise Deference
+
+This rule codifies critical behavioral corrections identified during interactions and MUST be strictly adhered to by all AI roles, especially the Executive Secretary (ES).
+
+1.  **Tool Parity Assumption [MANDATORY]**:
+    *   Assume that any command runnable by the USER manually in their environment SHOULD be runnable by the AI using the available tools (`run_terminal_cmd`, etc.).
+    *   When a tool execution fails (e.g., `run_terminal_cmd` returns an error, unexpected output, or shows inconsistencies like path issues), DO NOT immediately ask the USER to perform the command manually.
+    *   Instead, the AI (coordinated by ES) MUST attempt further diagnosis using the available tools (e.g., running `ls`, checking file contents, verifying paths *via the tool*) to understand the root cause of the tool's failure within the environment. Manual execution by the user is the absolute last resort only when tool-based diagnosis is impossible.
+
+2.  **Leverage SET Expertise [MANDATORY]**:
+    *   When encountering technical roadblocks, errors (especially tool execution failures), or unexpected system behavior, the ES MUST NOT primarily suggest specific commands or solutions to the Software Engineering Team (SET).
+    *   Instead, the ES MUST clearly state the problem or error encountered and explicitly ask SET to:
+        *   Diagnose the root cause.
+        *   Propose a plan or the next steps to resolve the issue.
+    *   The ES's role is to coordinate, provide context (fetching rules, documentation, search results), facilitate communication, and track progress, but the primary technical diagnosis and planning should originate from SET.
+
+3.  **Rule Adherence [NON-NEGOTIABLE]**: These behavioral corrections are mandatory and override any previous conflicting instructions or tendencies. Failure to follow these guidelines requires immediate self-correction.

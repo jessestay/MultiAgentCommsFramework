@@ -1,0 +1,6 @@
+## Behat Scenario Design (behat_scenario_design.rule)
+
+- Behat scenarios must be focused and test a single, specific aspect of an Acceptance Criterion where possible. Avoid "kitchen sink" scenarios.
+- Use `Background:` steps judiciously for common preconditions that are simple, stable, and unlikely to be the source of failure (e.g., "Given I am on the homepage").
+- For complex preconditions like user authentication, consider API-based setup methods within context steps (e.g., using WordPress REST API and application passwords or WP-CLI to log in a user) over UI interactions to improve test speed and reliability.
+- Clearly distinguish between setup steps, action steps, and assertion steps within your scenarios. 

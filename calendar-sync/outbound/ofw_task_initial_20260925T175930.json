@@ -1,0 +1,370 @@
+{
+  "brief_id": "ofw_write_initial_20260925T175930",
+  "issued_at": "2026-09-25T17:59:30+00:00",
+  "direction": "google_to_ofw",
+  "origin": "initial_reconciliation",
+  "idempotency": "per-spec sync_key, checked against OFW notes before create",
+  "spec_count": 20,
+  "specs": [
+    {
+      "op": "ofw_create",
+      "sync_key": "gcal_32omf98bnpc0esb03pifqu80s0_initial",
+      "google_event_id": "32omf98bnpc0esb03pifqu80s0",
+      "title": "Rebecca Parent Time - Fall Break (Part 1 of 2)",
+      "parent": "Rebecca",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2026-10-09T17:30:00-06:00",
+      "end": "2026-10-11T18:00:00-06:00",
+      "all_day": false,
+      "notes": "Rebecca Parent Time - Fall Break (Part 1 of 2); synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: 32omf98bnpc0esb03pifqu80s0\nsync_key: gcal_32omf98bnpc0esb03pifqu80s0_initial",
+      "preconditions": [
+        "If an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "COMPOSITE-KEY DEDUP (Sep 25, 2026): before creating, search OFW for an existing entry with the same title (case-insensitive) and same start/end date. If one exists \u2014 even WITHOUT this sync_key in its notes (e.g. created Sep 25, 2026 before sync markers were normalized) \u2014 return already_exists, do NOT create a duplicate, and report it as a pre-existing pair so the CEO can normalize its notes."
+      ]
+    },
+    {
+      "op": "ofw_create",
+      "sync_key": "gcal_v5i8t4lfmui6dsrcomusaogn3s_initial",
+      "google_event_id": "v5i8t4lfmui6dsrcomusaogn3s",
+      "title": "Jesse Parent Time - Columbus Day",
+      "parent": "Jesse",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2026-10-11T18:00:00-06:00",
+      "end": "2026-10-12T19:00:00-06:00",
+      "all_day": false,
+      "notes": "Jesse Parent Time - Columbus Day; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: v5i8t4lfmui6dsrcomusaogn3s\nsync_key: gcal_v5i8t4lfmui6dsrcomusaogn3s_initial",
+      "preconditions": [
+        "If an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "COMPOSITE-KEY DEDUP (Sep 25, 2026): before creating, search OFW for an existing entry with the same title (case-insensitive) and same start/end date. If one exists \u2014 even WITHOUT this sync_key in its notes (e.g. created Sep 25, 2026 before sync markers were normalized) \u2014 return already_exists, do NOT create a duplicate, and report it as a pre-existing pair so the CEO can normalize its notes."
+      ]
+    },
+    {
+      "op": "ofw_create",
+      "sync_key": "gcal_unji4p7ivi71gpjuvfp3so4bjc_20261031T220000Z_initial",
+      "google_event_id": "unji4p7ivi71gpjuvfp3so4bjc_20261031T220000Z",
+      "title": "Halloween - Jesse Parent Time",
+      "parent": "Jesse",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2026-10-31T16:00:00-06:00",
+      "end": "2026-10-31T21:00:00-06:00",
+      "all_day": false,
+      "notes": "Halloween - Jesse Parent Time; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: unji4p7ivi71gpjuvfp3so4bjc_20261031T220000Z\nsync_key: gcal_unji4p7ivi71gpjuvfp3so4bjc_20261031T220000Z_initial",
+      "preconditions": [
+        "If an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "COMPOSITE-KEY DEDUP (Sep 25, 2026): before creating, search OFW for an existing entry with the same title (case-insensitive) and same start/end date. If one exists \u2014 even WITHOUT this sync_key in its notes (e.g. created Sep 25, 2026 before sync markers were normalized) \u2014 return already_exists, do NOT create a duplicate, and report it as a pre-existing pair so the CEO can normalize its notes."
+      ]
+    },
+    {
+      "op": "ofw_create",
+      "sync_key": "gcal_4uu7trh09pvk04unr1mdn86am4_20261111T010000Z_initial",
+      "google_event_id": "4uu7trh09pvk04unr1mdn86am4_20261111T010000Z",
+      "title": "Veteran's Day Holiday - Rebecca Parent Time",
+      "parent": "Rebecca",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2026-11-10T18:00:00-07:00",
+      "end": "2026-11-11T19:00:00-07:00",
+      "all_day": false,
+      "notes": "Veteran's Day Holiday - Rebecca Parent Time; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: 4uu7trh09pvk04unr1mdn86am4_20261111T010000Z\nsync_key: gcal_4uu7trh09pvk04unr1mdn86am4_20261111T010000Z_initial",
+      "preconditions": [
+        "If an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "COMPOSITE-KEY DEDUP (Sep 25, 2026): before creating, search OFW for an existing entry with the same title (case-insensitive) and same start/end date. If one exists \u2014 even WITHOUT this sync_key in its notes (e.g. created Sep 25, 2026 before sync markers were normalized) \u2014 return already_exists, do NOT create a duplicate, and report it as a pre-existing pair so the CEO can normalize its notes."
+      ]
+    },
+    {
+      "op": "ofw_create",
+      "sync_key": "gcal_0j46gkka0iq3i2v1jhq09tgb6j_20270215_initial",
+      "google_event_id": "0j46gkka0iq3i2v1jhq09tgb6j_20270215",
+      "title": "Rebecca Parent Time - President'sDay",
+      "parent": "Rebecca",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2027-02-15",
+      "end": "2027-02-16",
+      "all_day": true,
+      "notes": "Rebecca Parent Time - President'sDay; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: 0j46gkka0iq3i2v1jhq09tgb6j_20270215\nsync_key: gcal_0j46gkka0iq3i2v1jhq09tgb6j_20270215_initial",
+      "preconditions": [
+        "If an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "COMPOSITE-KEY DEDUP (Sep 25, 2026): before creating, search OFW for an existing entry with the same title (case-insensitive) and same start/end date. If one exists \u2014 even WITHOUT this sync_key in its notes (e.g. created Sep 25, 2026 before sync markers were normalized) \u2014 return already_exists, do NOT create a duplicate, and report it as a pre-existing pair so the CEO can normalize its notes."
+      ]
+    },
+    {
+      "op": "ofw_create",
+      "sync_key": "gcal_26dqvcmovtjkorce44m440tu6o_20270301T220000Z_initial",
+      "google_event_id": "26dqvcmovtjkorce44m440tu6o_20270301T220000Z",
+      "title": "Juliet Birthday - Jesse Parent Time",
+      "parent": "Jesse",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2027-03-01T15:00:00-07:00",
+      "end": "2027-03-01T21:00:00-07:00",
+      "all_day": false,
+      "notes": "Juliet Birthday - Jesse Parent Time; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: 26dqvcmovtjkorce44m440tu6o_20270301T220000Z\nsync_key: gcal_26dqvcmovtjkorce44m440tu6o_20270301T220000Z_initial",
+      "preconditions": [
+        "If an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "COMPOSITE-KEY DEDUP (Sep 25, 2026): before creating, search OFW for an existing entry with the same title (case-insensitive) and same start/end date. If one exists \u2014 even WITHOUT this sync_key in its notes (e.g. created Sep 25, 2026 before sync markers were normalized) \u2014 return already_exists, do NOT create a duplicate, and report it as a pre-existing pair so the CEO can normalize its notes."
+      ]
+    },
+    {
+      "op": "ofw_create",
+      "sync_key": "gcal_ivbijolt0pa2qsc30tffspvmlo_initial",
+      "google_event_id": "ivbijolt0pa2qsc30tffspvmlo",
+      "title": "Jesse Parent Time - Spring Break",
+      "parent": "Jesse",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2027-03-19T18:00:00-06:00",
+      "end": "2027-03-28T19:00:00-06:00",
+      "all_day": false,
+      "notes": "Jesse Parent Time - Spring Break; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: ivbijolt0pa2qsc30tffspvmlo\nsync_key: gcal_ivbijolt0pa2qsc30tffspvmlo_initial",
+      "preconditions": [
+        "If an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "COMPOSITE-KEY DEDUP (Sep 25, 2026): before creating, search OFW for an existing entry with the same title (case-insensitive) and same start/end date. If one exists \u2014 even WITHOUT this sync_key in its notes (e.g. created Sep 25, 2026 before sync markers were normalized) \u2014 return already_exists, do NOT create a duplicate, and report it as a pre-existing pair so the CEO can normalize its notes."
+      ]
+    },
+    {
+      "op": "ofw_create",
+      "sync_key": "gcal_698ajn5c98t28vln04ccn8r1sa_20270320T210000Z_initial",
+      "google_event_id": "698ajn5c98t28vln04ccn8r1sa_20270320T210000Z",
+      "title": "Crystal Birthday - Jesse Parent Time",
+      "parent": "Jesse",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2027-03-20T15:00:00-06:00",
+      "end": "2027-03-20T21:00:00-06:00",
+      "all_day": false,
+      "notes": "Crystal Birthday - Jesse Parent Time; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: 698ajn5c98t28vln04ccn8r1sa_20270320T210000Z\nsync_key: gcal_698ajn5c98t28vln04ccn8r1sa_20270320T210000Z_initial",
+      "preconditions": [
+        "If an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "COMPOSITE-KEY DEDUP (Sep 25, 2026): before creating, search OFW for an existing entry with the same title (case-insensitive) and same start/end date. If one exists \u2014 even WITHOUT this sync_key in its notes (e.g. created Sep 25, 2026 before sync markers were normalized) \u2014 return already_exists, do NOT create a duplicate, and report it as a pre-existing pair so the CEO can normalize its notes."
+      ]
+    },
+    {
+      "op": "ofw_create",
+      "sync_key": "gcal_6jl3radh7hr3bc79mr1bhmdohm_20270405T210000Z_initial",
+      "google_event_id": "6jl3radh7hr3bc79mr1bhmdohm_20270405T210000Z",
+      "title": "Thomas Birthday - Jesse Parent Time",
+      "parent": "Jesse",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2027-04-05T15:00:00-06:00",
+      "end": "2027-04-05T21:00:00-06:00",
+      "all_day": false,
+      "notes": "Thomas Birthday - Jesse Parent Time; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: 6jl3radh7hr3bc79mr1bhmdohm_20270405T210000Z\nsync_key: gcal_6jl3radh7hr3bc79mr1bhmdohm_20270405T210000Z_initial",
+      "preconditions": [
+        "If an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "COMPOSITE-KEY DEDUP (Sep 25, 2026): before creating, search OFW for an existing entry with the same title (case-insensitive) and same start/end date. If one exists \u2014 even WITHOUT this sync_key in its notes (e.g. created Sep 25, 2026 before sync markers were normalized) \u2014 return already_exists, do NOT create a duplicate, and report it as a pre-existing pair so the CEO can normalize its notes."
+      ]
+    },
+    {
+      "op": "ofw_create",
+      "sync_key": "gcal_4usaa0tdr6h5k5h26gcrst07g2_20270428T210000Z_initial",
+      "google_event_id": "4usaa0tdr6h5k5h26gcrst07g2_20270428T210000Z",
+      "title": "Emily Birthday - Rebecca Parent Time",
+      "parent": "Rebecca",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2027-04-28T15:00:00-06:00",
+      "end": "2027-04-28T21:00:00-06:00",
+      "all_day": false,
+      "notes": "Emily Birthday - Rebecca Parent Time; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: 4usaa0tdr6h5k5h26gcrst07g2_20270428T210000Z\nsync_key: gcal_4usaa0tdr6h5k5h26gcrst07g2_20270428T210000Z_initial",
+      "preconditions": [
+        "If an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "COMPOSITE-KEY DEDUP (Sep 25, 2026): before creating, search OFW for an existing entry with the same title (case-insensitive) and same start/end date. If one exists \u2014 even WITHOUT this sync_key in its notes (e.g. created Sep 25, 2026 before sync markers were normalized) \u2014 return already_exists, do NOT create a duplicate, and report it as a pre-existing pair so the CEO can normalize its notes."
+      ]
+    },
+    {
+      "op": "ofw_create",
+      "sync_key": "gcal_3krlb461gf5tgjah44c0oerpo5_20270429T210000Z_initial",
+      "google_event_id": "3krlb461gf5tgjah44c0oerpo5_20270429T210000Z",
+      "title": "Emily Birthday - Jesse Parent Time",
+      "parent": "Jesse",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2027-04-29T15:00:00-06:00",
+      "end": "2027-04-29T21:00:00-06:00",
+      "all_day": false,
+      "notes": "Emily Birthday - Jesse Parent Time; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: 3krlb461gf5tgjah44c0oerpo5_20270429T210000Z\nsync_key: gcal_3krlb461gf5tgjah44c0oerpo5_20270429T210000Z_initial",
+      "preconditions": [
+        "If an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "COMPOSITE-KEY DEDUP (Sep 25, 2026): before creating, search OFW for an existing entry with the same title (case-insensitive) and same start/end date. If one exists \u2014 even WITHOUT this sync_key in its notes (e.g. created Sep 25, 2026 before sync markers were normalized) \u2014 return already_exists, do NOT create a duplicate, and report it as a pre-existing pair so the CEO can normalize its notes."
+      ]
+    },
+    {
+      "op": "ofw_create",
+      "sync_key": "gcal_7fhgcevd4nt3gloj8hv4ng3ctb_20270503T210000Z_initial",
+      "google_event_id": "7fhgcevd4nt3gloj8hv4ng3ctb_20270503T210000Z",
+      "title": "Alex Birthday - Rebecca Parent Time",
+      "parent": "Rebecca",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2027-05-03T15:00:00-06:00",
+      "end": "2027-05-03T21:00:00-06:00",
+      "all_day": false,
+      "notes": "Alex Birthday - Rebecca Parent Time; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: 7fhgcevd4nt3gloj8hv4ng3ctb_20270503T210000Z\nsync_key: gcal_7fhgcevd4nt3gloj8hv4ng3ctb_20270503T210000Z_initial",
+      "preconditions": [
+        "If an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "COMPOSITE-KEY DEDUP (Sep 25, 2026): before creating, search OFW for an existing entry with the same title (case-insensitive) and same start/end date. If one exists \u2014 even WITHOUT this sync_key in its notes (e.g. created Sep 25, 2026 before sync markers were normalized) \u2014 return already_exists, do NOT create a duplicate, and report it as a pre-existing pair so the CEO can normalize its notes."
+      ]
+    },
+    {
+      "op": "ofw_create",
+      "sync_key": "gcal_78pn0mc6c667jn485tisc34fsq_20270504T210000Z_initial",
+      "google_event_id": "78pn0mc6c667jn485tisc34fsq_20270504T210000Z",
+      "title": "Alex Birthday - Jesse Parent Time",
+      "parent": "Jesse",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2027-05-04T15:00:00-06:00",
+      "end": "2027-05-04T21:00:00-06:00",
+      "all_day": false,
+      "notes": "Alex Birthday - Jesse Parent Time; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: 78pn0mc6c667jn485tisc34fsq_20270504T210000Z\nsync_key: gcal_78pn0mc6c667jn485tisc34fsq_20270504T210000Z_initial",
+      "preconditions": [
+        "If an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "COMPOSITE-KEY DEDUP (Sep 25, 2026): before creating, search OFW for an existing entry with the same title (case-insensitive) and same start/end date. If one exists \u2014 even WITHOUT this sync_key in its notes (e.g. created Sep 25, 2026 before sync markers were normalized) \u2014 return already_exists, do NOT create a duplicate, and report it as a pre-existing pair so the CEO can normalize its notes."
+      ]
+    },
+    {
+      "op": "ofw_create",
+      "sync_key": "gcal_1g2cjt5ge18dlf1it8ib9u3ip7_20270509T150000Z_initial",
+      "google_event_id": "1g2cjt5ge18dlf1it8ib9u3ip7_20270509T150000Z",
+      "title": "Mother's Day - Rebecca Parent Time",
+      "parent": "Rebecca",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2027-05-09T09:00:00-06:00",
+      "end": "2027-05-09T19:00:00-06:00",
+      "all_day": false,
+      "notes": "Mother's Day - Rebecca Parent Time; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: 1g2cjt5ge18dlf1it8ib9u3ip7_20270509T150000Z\nsync_key: gcal_1g2cjt5ge18dlf1it8ib9u3ip7_20270509T150000Z_initial",
+      "preconditions": [
+        "If an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "COMPOSITE-KEY DEDUP (Sep 25, 2026): before creating, search OFW for an existing entry with the same title (case-insensitive) and same start/end date. If one exists \u2014 even WITHOUT this sync_key in its notes (e.g. created Sep 25, 2026 before sync markers were normalized) \u2014 return already_exists, do NOT create a duplicate, and report it as a pre-existing pair so the CEO can normalize its notes."
+      ]
+    },
+    {
+      "op": "ofw_create",
+      "sync_key": "gcal_6odta4bm42qt7e0leag31ea2vu_20270527T000000Z_initial",
+      "google_event_id": "6odta4bm42qt7e0leag31ea2vu_20270527T000000Z",
+      "title": "Memorial Day - Rebecca Parent Time",
+      "parent": "Rebecca",
+      "children": [
+        "Alex",
+        "Emily",
+        "Juliet"
+      ],
+      "start": "2027-05-26T18:00:00-06:00",
+      "end": "2027-05-29T19:00:00-06:00",
+      "all_day": false,
+      "notes": "Memorial Day - Rebecca Parent Time; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: 6odta4bm42qt7e0leag31ea2vu_20270527T000000Z\nsync_key: gcal_6odta4bm42qt7e0leag31ea2vu_20270527T000000Z_initial",
+      "preconditions": [
+        "If an OFW entry already carries this sync_key in notes, return already_exists \u2014 do not duplicate.",
+        "COMPOSITE-KEY DEDUP (Sep 25, 2026): before creating, search OFW for an existing entry with the same title (case-insensitive) and same start/end date. If one exists \u2014 even WITHOUT this sync_key in its notes (e.g. created Sep 25, 2026 before sync markers were normalized) \u2014 return already_exists, do NOT create a duplicate, and report it as a pre-existing pair so the CEO can normalize its notes."
+      ]
+    },
+    {
+      "op": "ofw_update",
+      "sync_key": "gcal_epingii4j08varn97o9q7ectbs_notesfix",
+      "google_event_id": "epingii4j08varn97o9q7ectbs",
+      "ofw_key": "CK-9fb3ce4a9ea7bcf2",
+      "title": "orthodontist Emily and Juliet",
+      "notes_only": true,
+      "notes": "orthodontist Emily and Juliet; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: epingii4j08varn97o9q7ectbs\nsync_key: gcal_epingii4j08varn97o9q7ectbs_notesfix",
+      "preconditions": [
+        "Notes-only normalization; do not touch other fields."
+      ]
+    },
+    {
+      "op": "ofw_update",
+      "sync_key": "gcal_fmeo2e8gtt5ttkfkjviqa703ds_notesfix",
+      "google_event_id": "fmeo2e8gtt5ttkfkjviqa703ds",
+      "ofw_key": "CK-c9d9b2f2d28c4a9d",
+      "title": "Rebecca Parent Time Fall Break Part 2",
+      "notes_only": true,
+      "notes": "Rebecca Parent Time - Fall Break (Part 2 of 2); synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: fmeo2e8gtt5ttkfkjviqa703ds\nsync_key: gcal_fmeo2e8gtt5ttkfkjviqa703ds_notesfix",
+      "preconditions": [
+        "Notes-only normalization; do not touch other fields."
+      ]
+    },
+    {
+      "op": "ofw_update",
+      "sync_key": "gcal_ltlca02hqd539b0p2lhn1s55kj_20261126T020000Z_notesfix",
+      "google_event_id": "ltlca02hqd539b0p2lhn1s55kj_20261126T020000Z",
+      "ofw_key": "CK-af106978da9cf57b",
+      "title": "Thanksgiving Holiday Jesse Parent Time",
+      "notes_only": true,
+      "notes": "Thanksgiving Holiday - Jesse Parent Time; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: ltlca02hqd539b0p2lhn1s55kj_20261126T020000Z\nsync_key: gcal_ltlca02hqd539b0p2lhn1s55kj_20261126T020000Z_notesfix",
+      "preconditions": [
+        "Notes-only normalization; do not touch other fields."
+      ]
+    },
+    {
+      "op": "ofw_update",
+      "sync_key": "gcal_2hco8b6ri5a28vnt9qre552spj_20261228T020000Z_notesfix",
+      "google_event_id": "2hco8b6ri5a28vnt9qre552spj_20261228T020000Z",
+      "ofw_key": "CK-2fe8962e48be7cdb",
+      "title": "Christmas Holiday - Jesse Parent Time",
+      "notes_only": true,
+      "notes": "Christmas Holiday - Jesse Parent Time; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: 2hco8b6ri5a28vnt9qre552spj_20261228T020000Z\nsync_key: gcal_2hco8b6ri5a28vnt9qre552spj_20261228T020000Z_notesfix",
+      "preconditions": [
+        "Notes-only normalization; do not touch other fields."
+      ]
+    },
+    {
+      "op": "ofw_update",
+      "sync_key": "gcal_rlqkernij3j3ph5cu2fqrm19a0_20270118_notesfix",
+      "google_event_id": "rlqkernij3j3ph5cu2fqrm19a0_20270118",
+      "ofw_key": "CK-ad007733cff7764b",
+      "title": "MLK Jr. Holiday - Jesse Parent Time",
+      "notes_only": true,
+      "notes": "MLK Jr. Holiday - Jesse Parent Time - 6pm Friday before to 7pm end of School holiday; synced from the verified shared Google Calendar \"Jesse and Rebecca Parent Time and Kids Schedule\" (Sep 25, 2026). MACF-SYNC: ofw-event | google-event-id: rlqkernij3j3ph5cu2fqrm19a0_20270118\nsync_key: gcal_rlqkernij3j3ph5cu2fqrm19a0_20270118_notesfix",
+      "preconditions": [
+        "Notes-only normalization; do not touch other fields."
+      ]
+    }
+  ]
+}

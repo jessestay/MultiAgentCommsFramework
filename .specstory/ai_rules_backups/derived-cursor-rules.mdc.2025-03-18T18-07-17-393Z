@@ -1,0 +1,77 @@
+
+## PROJECT OVERVIEW
+
+This project, AutomaticJesse, aims to automate various tasks and workflows using AI and a role-based system.  The system utilizes a multi-role architecture for handling diverse functionalities.  Further details on project goals and scope will be added here.
+
+
+## CODE STYLE
+
+* Consistent indentation (4 spaces).
+* Meaningful variable and function names.
+* Adherence to PEP 8 (Python) and relevant style guides for other languages.
+
+
+## FOLDER ORGANIZATION
+
+The project follows a modular structure, separating concerns into distinct folders.  Specific folder organization is detailed in the `FOLDER_ORGANIZATION.md` file within the `.cursor/rules` directory.
+
+
+## TECH STACK
+
+* Python (version 3.9+, 3.10 recommended, 3.11 also recommended for full functionality)
+* JavaScript (Node.js)
+* Electron (for desktop application)
+* React (for UI components)
+* Tailwind CSS (for styling)
+* PostgreSQL (for database)
+* SQLite (added as alternative to PostgreSQL)
+* pnpm (for package management)
+* spacy (Note: May have compatibility issues with Python 3.13.  See WORKFLOW & RELEASE RULES for details.)
+* Other libraries and tools as needed.
+
+
+## PROJECT-SPECIFIC STANDARDS
+
+* All roles must have clearly defined responsibilities (see `.cursor/rules/system/000-role-definitions.mdc`).
+* Role communication follows a predefined protocol (see `.cursor/rules/system/100-communication-protocol.mdc`). All role communications must be properly formatted with the designated color emoji (🔵 for ES, 🟠 for SET, 🟢 for CTW, 🟣 for DES). Each role must respond appropriately when addressed. Clear separation must be maintained between different roles' communications. The last mentioned role will be tracked and used as the default responder when no specific role is addressed.  The role addressed by the user should always be the one to finish the conversation.  All communications must follow the format: `🔵 **Executive Secretary (ES)**: Message content` and include proper role identification. Failure to follow these guidelines requires an audit of `.cursor/rules` files by SET.
+* All code must be thoroughly tested.
+
+
+## WORKFLOW & RELEASE RULES
+
+* Agile development methodology is employed.
+* Version control using Git.
+* Regular release cycles will be determined and documented here.  Addressing communication protocol lapses requires auditing `.cursor/rules` files. Audits of `.cursor/rules` files to address communication protocol lapses will be conducted by SET.  The audit will also include verification of proper role identification in all communications, including consistent use of the  `🔵 **Executive Secretary (ES)**: Message content` format. File access timeouts require investigation and resolution. The consistent timeouts accessing project files require immediate investigation and resolution. This includes investigating potential network issues, file permission problems, or resource constraints.
+* Addressing file access timeouts is required.  The consistent timeouts accessing project files require immediate investigation and resolution. This includes investigating potential network issues, file permission problems, or resource constraints.  A Python 3.13 compatible setup has been created to address installation issues with `spacy`.  See PROJECT DOCUMENTATION & CONTEXT SYSTEM for details.
+* Addressing error during `pip install -r requirements.txt` needs debugging by SET.
+
+
+## REFERENCE EXAMPLES
+
+* Refer to the `.cursor/rules` directory for examples and best practices.
+* Add new examples to this section as the project evolves.
+
+
+## PROJECT DOCUMENTATION & CONTEXT SYSTEM
+
+* Documentation is maintained using markdown files within the project's structure.
+* Specific documentation standards are outlined in `PROJECT_DOCUMENTATION.md` (to be created).
+* Version updates to documentation and related systems will be logged here.
+* Chat name generation guidelines added (see `.specstory/history/2025-03-17_21-46-chat-name-generation.md`).
+* Facebook Growth AI project documentation created: Quick Start Guide, PostgreSQL/SQLite alternatives, setup scripts, Sprint 5 documentation.  A Python 3.13 compatible setup has been created to address installation issues with `spacy`. See WORKFLOW & RELEASE RULES for details.
+
+
+## DEBUGGING
+
+* Standard debugging techniques should be used.
+* Specific debugging procedures for project components will be added here.  Addressing file access timeouts is required. The consistent timeouts accessing project files require immediate investigation and resolution.  This includes investigating potential network issues, file permission problems, or resource constraints.
+*  Error during `pip install -r requirements.txt` needs debugging by SET.  See WORKFLOW & RELEASE RULES for details.
+
+
+## FINAL DOs AND DON'Ts
+
+* **DO** follow the coding style guidelines.
+* **DO** write unit tests for all modules.
+* **DO** adhere to the project's workflow and release rules, including proper role-based communication and self-identification by role using the format `🔵 **Executive Secretary (ES)**: Message content`.
+* **DON'T** commit code that is not thoroughly tested.
+* **DON'T** introduce breaking changes without proper notification.

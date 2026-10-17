@@ -1,0 +1,15 @@
+[Unit]
+Description=Vikunja API (MACF task board)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/hatch/workspace/macf/vikunja/bin/vikunja web --config /home/hatch/workspace/macf/vikunja/config.yml
+WorkingDirectory=/home/hatch/workspace/macf/vikunja
+Restart=always
+RestartSec=5
+StandardOutput=append:/home/hatch/workspace/macf/vikunja/logs/web.log
+StandardError=append:/home/hatch/workspace/macf/vikunja/logs/web.log
+
+[Install]
+WantedBy=multi-user.target

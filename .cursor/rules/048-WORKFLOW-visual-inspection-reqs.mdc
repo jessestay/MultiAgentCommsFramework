@@ -1,0 +1,152 @@
+---
+description: Visual Inspection Requirements
+globs: 
+alwaysApply: false
+---
+# Visual Inspection Requirements [MANDATORY]
+
+## Overview
+This document defines the mandatory requirements for visual inspection of implementations by different stakeholders. These requirements MUST be followed for any user story with visual components requiring stakeholder approval.
+
+## Core Principles
+
+1. **Evidence-Based Review [MANDATORY]**:
+   - All visual reviews MUST be based on actual implementation evidence
+   - Reviewers MUST verify they examined the actual files, not just descriptions
+   - Reviews without evidence examination are INVALID
+
+2. **Multi-Faceted Inspection [REQUIRED]**:
+   - All visual reviews MUST include ALL THREE inspection methods:
+     1. Source code examination
+     2. Screenshot analysis
+     3. Live HTML verification
+   - Skipping any inspection method invalidates the review
+
+## Stakeholder-Specific Requirements
+
+### Designer (DES) Review Requirements
+
+1. **Source Code Examination [MANDATORY]**:
+   - MUST directly examine CSS files to verify color variables, typography, spacing
+   - MUST check HTML templates for proper semantic structure
+   - MUST verify responsive breakpoints in CSS files
+   - MUST confirm implementation of accessibility features
+   - MUST reference specific lines/sections of code in review feedback
+
+2. **Screenshot Analysis [MANDATORY]**:
+   - MUST examine screenshots of ALL key pages in BOTH mobile and desktop versions
+   - MUST compare screenshots with original wireframes/mockups
+   - MUST verify visual hierarchy, spacing, and alignment
+   - MUST analyze brand consistency across views
+   - MUST provide specific feedback on visual elements with screenshot references
+
+3. **Live HTML Verification [MANDATORY]**:
+   - MUST use curl or similar tool to retrieve full HTML output
+   - MUST verify proper rendering of CSS variables in computed styles
+   - MUST check HTML structure matches design expectations
+   - MUST confirm all required elements are present
+   - MUST verify no rendering errors or warnings exist
+
+### Marketing Director (MD) Review Requirements
+
+1. **Source Code Examination [MANDATORY]**:
+   - MUST verify brand messaging in templates
+   - MUST check meta tags and SEO elements
+   - MUST verify schema markup implementation
+   - MUST confirm brand voice consistency
+   - MUST reference specific content areas with line numbers
+
+2. **Screenshot Analysis [MANDATORY]**:
+   - MUST verify brand story is visually communicated
+   - MUST analyze content presentation and hierarchy
+   - MUST compare with target audience expectations
+   - MUST evaluate competitive differentiation
+   - MUST provide specific marketing-focused feedback
+
+3. **Live HTML Verification [MANDATORY]**:
+   - MUST use curl to verify page load performance
+   - MUST check SEO elements in live HTML
+   - MUST verify social sharing tags
+   - MUST confirm schema.org markup is correct
+   - MUST ensure brand message delivery is uninterrupted
+
+### Copy/Technical Writer (CTW) Review Requirements
+
+1. **Source Code Examination [MANDATORY]**:
+   - MUST verify proper text implementation in templates
+   - MUST check for text overflow issues in CSS
+   - MUST verify internationalization/localization readiness
+   - MUST confirm proper text handling for various lengths
+   - MUST reference specific content issues with line numbers
+
+2. **Screenshot Analysis [MANDATORY]**:
+   - MUST verify readability across device sizes
+   - MUST check typographic hierarchy
+   - MUST analyze text-to-background contrast
+   - MUST verify consistent terminology use
+   - MUST provide specific content improvement recommendations
+
+3. **Live HTML Verification [MANDATORY]**:
+   - MUST use curl to check content in context
+   - MUST verify proper encoding of special characters
+   - MUST check heading structure and semantic HTML
+   - MUST confirm accessible text alternatives
+   - MUST ensure content is properly formatted in HTML output
+
+## Review Documentation Requirements
+
+For each review, stakeholders MUST document:
+
+1. **Files Reviewed**: Specific list of files examined
+2. **Screenshots Analyzed**: Which screenshots were viewed
+3. **HTML Verification**: Results of HTML verification
+4. **Line References**: Specific line references for feedback
+5. **Specific Recommendations**: Clear, actionable improvements
+
+## Implementation Verification
+
+After each review:
+
+1. Each specific review task MUST be recorded as completed
+2. Evidence of completion MUST be documented
+3. Any failing criteria MUST block approval
+4. Approval MUST specify which criteria were verified
+5. Approval CANNOT be granted without ALL verification steps
+
+## Example Review Documentation Format
+
+```markdown
+# [ROLE] Review of [US-ID]
+
+## Files Reviewed
+1. `path/to/file.css` - [specific elements examined]
+2. `path/to/template.php` - [specific elements examined]
+
+## Screenshots Analyzed
+1. Desktop Homepage - Compared with wireframe v2.3
+2. Mobile Event Detail - Verified responsive layout
+
+## HTML Verification
+Executed: `curl http://localhost/page-path > output.html`
+Findings: [specific observations from HTML analysis]
+
+## Specific Observations
+1. In `file.css` (lines 45-60): [observation]
+2. In screenshot "homepage-desktop.png": [observation]
+3. In HTML output: [observation]
+
+## Recommendations
+1. [Specific recommendation with file/line reference]
+2. [Specific recommendation with screenshot reference]
+3. [Specific recommendation with HTML reference]
+
+## Approval Decision
+☐ Approved
+☐ Approved with recommendations
+☐ Requires changes
+☐ Pending review
+```
+
+## Enforcement
+
+These requirements are MANDATORY for all stakeholder reviews involving visual inspection. Reviews that fail to follow these requirements MUST be rejected and repeated with proper evidence and documentation.

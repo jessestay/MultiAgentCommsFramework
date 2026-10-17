@@ -1,0 +1,17 @@
+---
+description: Provides a template of instructions for initiating new projects within the Multi-agent Communications Framework, including rule familiarization, user story creation, and initial documentation setup.
+globs: []
+alwaysApply: false
+topic: Documentation Standards
+version: 1.0.0
+---
+# USE THIS FOR ALL NEW PROJECTS, ONCE YOU HAVE THE TEAM CREATE A RELEASE PLAN:
+
+First, I want you to read ALL of the .cursor/rules files and subdirectories so you're fully implementing the Multi-agent Communications Framework and scope of each of your role responsibilities and experties, as well as agile methodologies we are practicing.
+
+Next, regarding this plan, it looks good. I would only add that I want to build this as something we can re-use that will be useful in the future. Rely on UFL to suggest ways this could be useful down the road so we're not neglecting anything in the first release.
+
+Last, I want the team to brainstorm and come up with a list of user stories to add to the backlog, as specific as possible, to meet all aspects of the release plan. Add acceptance criteria, as detailed as possible, and definition of done for each. Then attach behat BDD tests to each acceptance criteria for each user story. Use the standard directory structure as documented in .cursor/rules and make sure that standard directory structure is documented in the project documentation as well. Then, create a standard sprint-status.md in the docs folder, per the standard directory structure, with a status of no sprints started, but referencing the release plan that was just created and where all the files and user stories and tests are.
+
+
+Once that's done we'll have our first sprint planning meeting to pick our first user stories and get started.

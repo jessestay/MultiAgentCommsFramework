@@ -1,0 +1,282 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Improved Terminal Command Execution Framework
+
+## Overview
+This framework improves terminal command execution within the Cursor IDE, particularly addressing PowerShell console buffer issues and command visibility.
+
+## Core Execution Principles
+
+1. **Command Clarity**
+   - Use simple, atomic commands
+   - Avoid complex command chaining when possible
+   - Write explicit output indicators
+   - Prefer script files over direct complex commands
+
+2. **Output Visibility**
+   - Redirect important output to files, especially for verbose commands like test runners (e.g., `phpunit ... > phpunit_output.log 2>&1`) or dependency managers in verbose mode (e.g., `composer install -vvv > composer_output.log 2>&1`). This ensures full capture of potentially truncated or garbled interactive output.
+   - Add clear starting and completion markers
+   - Use echo statements for progress indication
+   - Create dedicated log files for complex operations
+
+3. **Error Handling**
+   - Capture and log errors explicitly
+   - Provide meaningful error messages
+   - Have fallback mechanisms when commands fail
+   - Document common error scenarios and solutions
+
+4. **PowerShell-Specific Guidelines**
+   - Avoid PSReadLine when experiencing buffer issues
+   - Break long commands into multiple shorter commands
+   - Use simplified syntax without advanced formatting
+   - Consider CMD alternatives for file operations
+
+5. **Script-Based Approach**
+   - Create dedicated scripts for multi-step operations
+   - Include clear progress indicators in scripts
+   - Use simple parameter passing to scripts
+   - Verify script completion through explicit indicators
+
+6. **Newline Padding for Command Visibility & Notes on Execution Interruptions [REVISED]**
+   To mitigate potential terminal execution/visibility bugs where command output is not captured or commands appear to hang (often indicated by "Command was interrupted" messages), especially for longer-running processes or those with significant output (like `phpcs`, `phpcbf`, test runners):
+   - **Preferred Method**: Embed literal newline characters (`\n`) directly into the command string before and after the main command. This attempts to flush output buffers and create visual separation.
+     ```bash
+     # Example with literal newlines:
+        \n\n    actual_command_with_args > output.log 2>&1\n\n
+     ```
+   - **Alternative**: If direct newlines cause issues with specific shell interpretations, `printf '\n';` can be used. `echo;` is a less preferred alternative.
+     ```bash
+     # Example with printf:
+        printf '\n'; printf '\n';    actual_command_with_args > output.log 2>&1; printf '\n'; printf '\n'
+     ```
+   - **Output Redirection is Key**: Due to observed "Command was interrupted" behavior within the IDE's terminal tool (which may be due to internal timeouts or handling of non-interactive processes), **always redirect command output (STDOUT and STDERR) to a file.** This is the most reliable way to capture full results regardless of interruptions to the interactive stream. The AI will then read this file to determine outcomes.
+   - **Judicious Use**: Apply padding techniques when visibility issues are suspected. The primary goal is always to ensure the command executes and its complete output is captured to a file for analysis.
+
+7. **[CRITICAL] Mandatory Three-Space Command Prefix [NON-NEGOTIABLE]**
+   Due to persistent, unpredictable command corruption issues observed during execution (e.g., `ocker` instead of `docker`), **ALL** commands passed to the `run_terminal_cmd` tool **MUST** be prefixed with **EXACTLY THREE (3) LEADING SPACES**. 
+   - **THIS IS NOT OPTIONAL.**
+   - **THIS APPLIES TO ALL ROLES.**
+   - **Failure to add the three spaces is a direct violation of this rule.**
+   - **Correct Example**: `   docker ps`
+   - **Incorrect Example**: `docker ps`
+   This is a strictly enforced troubleshooting measure to prevent command corruption.
+
+8. **`is_background` Parameter [MANDATORY]**
+   When calling the `run_terminal_cmd` tool, the `is_background` parameter **MUST ALWAYS** be set to `false`. This ensures the system waits for command completion before proceeding.
+
+## Test Command Execution [MANDATORY]
+
+The following guidelines MUST be followed when running test commands:
+
+1. **Test Command Format**
+   ```bash
+   # Basic test command with output redirection
+   npm run test:all | tee test-output.log
+   
+   # Specific user story tests with timestamps
+   echo "[$(date)] Starting tests for US-{ID}" && npm run test:acceptance -- --story=US-{ID} | tee -a test-logs/US-{ID}-$(date +%Y%m%d).log
+   
+   # Run PHPCS on test files with explicit output
+   vendor/bin/phpcs --standard=WordPress tests/ > phpcs-test-output.log 2>&1
+   ```
+
+2. **Test Result Visibility**
+   - Always use `tee` to display AND capture output
+   - Use date stamps in log file names
+   - Create dedicated log directory for test outputs
+   - Use clear section markers in logs
+
+3. **Test Suite Execution**
+   ```bash
+   # Full test suite execution with progress indicators
+   echo "=== Starting full test suite ===" && \
+   echo "[1/5] Running PHPCS validation..." && \
+   vendor/bin/phpcs --standard=WordPress . > phpcs-output.log 2>&1 && \
+   echo "[2/5] Running unit tests..." && \
+   npm run test:unit | tee unit-test-output.log && \
+   echo "[3/5] Running integration tests..." && \
+   npm run test:integration | tee integration-test-output.log && \
+   echo "[4/5] Running acceptance tests..." && \
+   npm run test:acceptance | tee acceptance-test-output.log && \
+   echo "[5/5] Running visual tests..." && \
+   npm run test:visual | tee visual-test-output.log && \
+   echo "=== Full test suite completed ==="
+   ```
+
+4. **User Story Test Script**
+   ```bash
+   #!/bin/bash
+   # test-user-story.sh
+   
+   US_ID=$1
+   DATE=$(date +%Y%m%d-%H%M%S)
+   LOG_DIR="test-logs"
+   
+   mkdir -p $LOG_DIR
+   
+   echo "=== Testing User Story $US_ID - $(date) ==="
+   
+   # Run PHPCS on story-specific files
+   echo "[1/4] Running code standards validation..."
+   vendor/bin/phpcs --standard=WordPress tests/acceptance/$US_ID/ > $LOG_DIR/$US_ID-phpcs-$DATE.log 2>&1
+   PHPCS_EXIT=$?
+   
+   # Run unit tests
+   echo "[2/4] Running unit tests..."
+   npm run test:unit -- --story=$US_ID | tee $LOG_DIR/$US_ID-unit-$DATE.log
+   UNIT_EXIT=$?
+   
+   # Run acceptance tests
+   echo "[3/4] Running acceptance tests..."
+   npm run test:acceptance -- --story=$US_ID | tee $LOG_DIR/$US_ID-acceptance-$DATE.log
+   ACCEPTANCE_EXIT=$?
+   
+   # Generate report
+   echo "[4/4] Generating test report..."
+   echo "Test Results for $US_ID - $(date)" > $LOG_DIR/$US_ID-report-$DATE.txt
+   echo "PHPCS: $([ $PHPCS_EXIT -eq 0 ] && echo 'PASS' || echo 'FAIL')" >> $LOG_DIR/$US_ID-report-$DATE.txt
+   echo "Unit Tests: $([ $UNIT_EXIT -eq 0 ] && echo 'PASS' || echo 'FAIL')" >> $LOG_DIR/$US_ID-report-$DATE.txt
+   echo "Acceptance Tests: $([ $ACCEPTANCE_EXIT -eq 0 ] && echo 'PASS' || echo 'FAIL')" >> $LOG_DIR/$US_ID-report-$DATE.txt
+   
+   # Final result
+   if [[ $PHPCS_EXIT -eq 0 && $UNIT_EXIT -eq 0 && $ACCEPTANCE_EXIT -eq 0 ]]; then
+     echo "=== All tests PASSED for $US_ID ==="
+     exit 0
+   else
+     echo "=== Some tests FAILED for $US_ID - See logs for details ==="
+     exit 1
+   fi
+   ```
+
+5. **Test Environment Setup**
+   ```bash
+   # Set up test environment with output indication
+   echo "Setting up test environment..."
+   npm install && \
+   composer install && \
+   echo "Creating test database..." && \
+   ./bin/setup-test-db.sh | tee setup-db.log && \
+   echo "Test environment ready"
+   ```
+
+## Implementation for SET Role
+
+The Software Engineering Team (SET) role will follow these guidelines when executing terminal commands:
+
+1. **For Simple Commands**
+   ```
+   command
+   echo "Command completed successfully"
+   ```
+
+2. **For Commands With Important Output**
+   ```
+   command > output.txt
+   echo "Command output saved to output.txt"
+   ```
+
+3. **For Multi-Step Operations**
+   - Create a script file (.bat, .ps1)
+   - Add clear progress indicators
+   - Execute the script instead of running commands directly
+
+4. **For PowerShell Operations**
+   - Use simple commands that avoid buffer manipulation
+   - Break complex commands into multiple simpler ones
+   - Consider CMD alternatives when PowerShell has issues
+
+5. **For File Operations**
+   - Use dedicated scripts with clear feedback
+   - Prefer command-line tools with simple output
+   - Implement verification steps
+
+## AI Self-Correction for Command Execution [NEW - CRITICAL]
+
+1.  **Verify Command String**: Before submitting ANY command via `run_terminal_cmd`, the AI MUST internally verify the command string, especially the executable name (e.g., `docker`, `git`, `npx`, `php`).
+2.  **Treat Corruption as Internal Error**: If a command fails with an error like `bash: ocker: command not found` or similar misspellings/corruptions of common executables, the AI MUST first assume an internal command generation error or a tool execution glitch within the Cursor IDE environment. **This type of error is NOT solvable by the user.**
+3.  **Immediate Retry**: The AI MUST immediately retry the command with the corrected string without blaming the user environment for this specific type of error.
+4.  **Troubleshoot Persistent Corruption [MANDATORY]**: If the command corruption error persists even after the immediate retry, the AI MUST NOT stop or blame the environment. Instead, the AI MUST proactively troubleshoot the *execution method itself*. This includes trying variations like:
+    *   Adding/removing interactive flags (`-it`).
+    *   Using different shell wrappers (e.g., `powershell.exe -Command "..."` on Windows, as per `003-docker-shell-access`).
+    *   Simplifying the command structure.
+    *   Attempting direct shell access (e.g., `docker exec ... sh`) to run commands interactively if `docker exec ... [command]` fails repeatedly.
+    The AI MUST continue attempting different execution strategies until a method is found that avoids the command corruption.
+5.  **Log Internal Correction**: Log the self-correction attempts and troubleshooting steps taken to resolve persistent corruption.
+
+## Chat Code Block Formatting (Cursor UI Bug Workaround) [MANDATORY] [CRITICAL EMPHASIS]
+
+1.  **Problem**: A known bug in the Cursor chat interface can cause the first character of lines within code blocks (```) to be cut off.
+2.  **Workaround [NON-NEGOTIABLE]**: To ensure readability and prevent potential misinterpretations or execution errors linked to formatting, **ALL lines** of code presented within ``` code blocks in **ALL chat responses** MUST be prefixed with **exactly three (3) spaces**.
+3.  **Example [MANDATORY FORMAT]**:
+    ```
+       line 1 of code
+       line 2 of code
+          indented line 3
+    ```
+4.  **Enforcement [ABSOLUTE]**: This applies to **all roles** generating **any code blocks** in chat output. This includes, but is not limited to: terminal command output examples, file content snippets, generated code examples, configuration snippets, etc. **NO EXCEPTIONS.** Failure to follow this rule is a critical error.
+
+## Integration with Other Roles
+
+- **ES**: Coordinates overall execution strategy and validates test results
+- **CTW**: Documents command patterns and formats test result documentation
+- **DES**: Ensures user-friendly output formatting
+- **SET**: Implements and executes commands following these guidelines
+
+## Specific Command Patterns
+
+### File Operations
+```batch
+@echo off
+echo Starting file operation...
+copy source destination
+IF %ERRORLEVEL% EQU 0 (
+    echo File operation completed successfully
+) ELSE (
+    echo File operation failed with error %ERRORLEVEL%
+)
+```
+
+### WordPress Plugin Installation
+```batch
+@echo off
+echo === Starting WordPress Plugin Installation ===
+echo [1/4] Creating plugin directory...
+mkdir plugin_dir
+echo [2/4] Copying plugin files...
+xcopy source destination /E /I /Y
+echo [3/4] Setting permissions...
+attrib -R destination\*.* /S
+echo [4/4] Installation complete!
+echo =======================================
+echo Plugin installed successfully. Please activate in WordPress admin.
+```
+
+### Test Result Verification
+```powershell
+$result = Measure-Command { Your-Command }
+Write-Output "Command completed in $($result.TotalSeconds) seconds"
+```
+
+## Specific Command Examples & Workarounds
+
+*   **Behat (wp-env)**: `npx wp-env run tests-cli bash -c "cd /var/www/html/wp-content/themes/austin-shows-theme && /var/www/html/vendor/bin/behat --format=progress --stop-on-failure features/theme/"` (Using `sh` instead of `bash` might help with pathing issues).
+*   **PHPUnit (Direct)**: `php vendor/bin/phpunit [path/to/test.php or directory]`
+*   **Windows PowerShell Wrappers**: For reliable execution of Docker commands on Windows, use PowerShell wrappers (e.g., `powershell.exe -Command "docker exec <container_id> php /var/www/html/vendor/bin/phpunit ..."`). Apply this to all Docker commands on Windows.
+*   **Direct Docker Shell Access**: If commands fail unpredictably within Docker, especially on Windows, use direct shell access for diagnosis: `docker exec -it <container_id> sh` or `docker exec -it <container_id> bash`.
+
+## Implementation Notes
+
+These guidelines are designed to improve command execution visibility and reliability within the Cursor IDE. By following these patterns, the system will provide clearer feedback on command progress and completion status. 
+
+
+
+
+**Remember the mandatory three-space prefix for all `run_terminal_cmd` calls.** 

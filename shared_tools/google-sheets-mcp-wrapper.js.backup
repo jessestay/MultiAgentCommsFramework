@@ -1,0 +1,940 @@
+#!/usr/bin/env node
+/**
+ * Google Sheets MCP Wrapper for n8n
+ * 
+ * This script provides a stdio-based MCP server that calls n8n workflows
+ * for Google Sheets operations.
+ */
+
+const http = require('http');
+const fs = require('fs');
+
+const N8N_API_URL = process.env.N8N_API_URL || 'http://localhost:5678';
+const N8N_API_KEY = process.env.N8N_API_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiMDFkMmI5ZS1mOTdkLTQ5YWYtYjE4MC1lODViMjQ3MDVjZGYiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzYwNTk0OTYyfQ.nN128ZrRjHEyXH00qPzkt2jxqucZV4SCDBVeOZMS4RI';
+const DEBUG_LOG_PATH = process.env.GOOGLE_SHEETS_MCP_DEBUG_LOG || '/home/stay/GithubRepos/Rockit/mcp-debug-google-sheets.log';
+
+function logDebug(message, details = null) {
+  try {
+    const entry = {
+      timestamp: new Date().toISOString(),
+      message,
+      ...(details ? { details } : {})
+    };
+    fs.appendFileSync(DEBUG_LOG_PATH, JSON.stringify(entry) + '\n');
+  } catch (err) {
+    // Ignore logging failures
+  }
+}
+
+logDebug('google-sheets MCP wrapper starting', {
+  apiUrl: N8N_API_URL
+});
+
+const READ_WORKFLOW_ID = 'Til8l82bixXS5FGM';
+const WRITE_WORKFLOW_ID = 'v0H6jklgpuDndd0H';
+const MCP_SERVER_WORKFLOW_ID = 'NP3LA2iOlZubV7DA';
+const MCP_SERVER_TRIGGER_PATH = 'b6d67a89-19e2-44f2-8a07-9ed84c7633c1'; // path from MCP Server Trigger node
+const MCP_SERVER_TRIGGER_WEBHOOK_ID = '864f42f8-105a-433d-b460-fc2c6e25d1c7'; // webhookId from MCP Server Trigger node
+
+// Track if MCP Server Trigger has been initialized
+let mcpServerInitialized = false;
+
+// MCP uses newline-delimited JSON over stdio
+let buffer = '';
+
+// Ensure stdin is readable and set encoding
+process.stdin.setEncoding('utf8');
+process.stdin.resume();
+
+process.stdin.on('data', (chunk) => {
+  buffer += chunk;
+  
+  // Process complete lines (newline-delimited JSON)
+  const lines = buffer.split('\n');
+  buffer = lines.pop() || ''; // Keep incomplete line in buffer
+  
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (trimmedLine) {
+      try {
+        const message = JSON.parse(trimmedLine);
+        
+        // Validate basic message structure
+        if (!message.jsonrpc || message.jsonrpc !== '2.0') {
+          // Can't send error without valid id, skip invalid messages
+          continue;
+        }
+        
+        // Handle requests (messages with method) and notifications (messages with method but no id)
+        if (message.method) {
+          // Handle notifications (messages without id) - these don't require responses
+          if (message.id === undefined || message.id === null) {
+            if (message.method === 'notifications/initialized') {
+              // This is expected after initialize - just acknowledge silently
+              logDebug('Received initialized notification', {});
+              continue;
+            } else {
+              // Unknown notification - log but don't respond (notifications don't require responses)
+              logDebug('Received unknown notification', { method: message.method });
+              continue;
+            }
+          }
+          
+          // Handle requests (messages with id) - these require responses
+          handleMessage(message).catch((error) => {
+            sendErrorResponse(message.id, -32000, error.message || 'Internal error');
+          });
+        }
+      } catch (e) {
+        // Invalid JSON - can't send error without valid id, so skip
+        // The protocol requires id for error responses
+        continue;
+      }
+    }
+  }
+});
+
+process.stdin.on('end', () => {
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  process.exit(0);
+});
+
+process.on('uncaughtException', (error) => {
+  // Don't try to send response for uncaught exceptions as it might fail
+  // Just log to stderr and exit
+  process.stderr.write(`Fatal error: ${error.message}\n`);
+  if (error.stack) {
+    process.stderr.write(`Stack: ${error.stack}\n`);
+  }
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (error) => {
+  // Don't try to send response for unhandled rejections as it might fail
+  // Just log to stderr and exit
+  process.stderr.write(`Unhandled rejection: ${error.message || String(error)}\n`);
+  process.exit(1);
+});
+
+async function handleMessage(message) {
+  try {
+    if (message.method === 'initialize') {
+      sendResponse({
+        jsonrpc: '2.0',
+        id: message.id,
+        result: {
+          protocolVersion: '2024-11-05',
+          capabilities: {
+            tools: {}
+          },
+          serverInfo: {
+            name: 'google-sheets-mcp',
+            version: '1.0.0'
+          }
+        }
+      });
+      logDebug('Handled initialize', { id: message.id });
+    } else if (message.method === 'tools/list') {
+      sendResponse({
+        jsonrpc: '2.0',
+        id: message.id,
+        result: {
+          tools: [
+            {
+              name: 'read_google_sheet',
+              description: 'Read data from a Google Sheet. Provide sheetId, sheetName (optional, defaults to Sheet1), and range (optional, defaults to A1:Z1000).',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  sheetId: {
+                    type: 'string',
+                    description: 'The Google Sheet ID'
+                  },
+                  sheetName: {
+                    type: 'string',
+                    description: 'The sheet name within the spreadsheet (optional, defaults to Sheet1)'
+                  },
+                  range: {
+                    type: 'string',
+                    description: 'The range to read (optional, defaults to A1:Z1000)'
+                  }
+                },
+                required: ['sheetId']
+              }
+            },
+            {
+              name: 'write_google_sheet',
+              description: 'Write or update data in a Google Sheet. Provide sheetId, sheetName, data (array of objects), and matchingColumns (array of column names to match for updates).',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  sheetId: {
+                    type: 'string',
+                    description: 'The Google Sheet ID'
+                  },
+                  sheetName: {
+                    type: 'string',
+                    description: 'The sheet name within the spreadsheet'
+                  },
+                  data: {
+                    type: 'array',
+                    description: 'Array of objects to write/update'
+                  },
+                  matchingColumns: {
+                    type: 'array',
+                    description: 'Array of column names to match for updates (e.g., ["test_case"])'
+                  }
+                },
+                required: ['sheetId', 'sheetName', 'data']
+              }
+            }
+          ]
+        }
+      });
+      logDebug('Handled tools/list', { id: message.id });
+    } else if (message.method === 'tools/call') {
+      if (!message.params) {
+        sendResponse({
+          jsonrpc: '2.0',
+          id: message.id,
+          error: {
+            code: -32602,
+            message: 'Invalid params: params object is required'
+          }
+        });
+        logDebug('tools/call missing params', { id: message.id });
+        return;
+      }
+      
+      const { name, arguments: args } = message.params;
+      
+      if (!name) {
+        sendResponse({
+          jsonrpc: '2.0',
+          id: message.id,
+          error: {
+            code: -32602,
+            message: 'Invalid params: tool name is required'
+          }
+        });
+        logDebug('tools/call missing name', { id: message.id });
+        return;
+      }
+      
+      if (name === 'read_google_sheet') {
+        await callN8nWorkflow(READ_WORKFLOW_ID, args || {}, message.id);
+        logDebug('Invoked read_google_sheet', { id: message.id });
+      } else if (name === 'write_google_sheet') {
+        await callN8nWorkflow(WRITE_WORKFLOW_ID, args || {}, message.id);
+        logDebug('Invoked write_google_sheet', { id: message.id });
+      } else {
+        sendResponse({
+          jsonrpc: '2.0',
+          id: message.id,
+          error: {
+            code: -32601,
+            message: `Unknown tool: ${name}`
+          }
+        });
+        logDebug('Unknown tool requested', { id: message.id, name });
+      }
+    } else {
+      sendResponse({
+        jsonrpc: '2.0',
+        id: message.id,
+        error: {
+          code: -32601,
+          message: `Unknown method: ${message.method}`
+        }
+      });
+      logDebug('Unknown method', { method: message.method });
+    }
+  } catch (error) {
+    sendResponse({
+      jsonrpc: '2.0',
+      id: message.id,
+      error: {
+        code: -32000,
+        message: error.message
+      }
+    });
+    logDebug('handleMessage threw error', { id: message.id, error: error.message });
+  }
+}
+
+
+/**
+ * Send message to MCP Server Trigger webhook with initialization
+ * Uses a single HTTP POST request that includes both initialize and tools/call
+ * by sending them as newline-delimited JSON in the request body
+ */
+async function sendMCPMessageWithInit(webhookPath, toolName, arguments_) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(`${N8N_API_URL}/webhook/${webhookPath}`);
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream, application/json'
+      }
+    };
+
+    const req = http.request(url, options, (res) => {
+      let buffer = '';
+      let initResponse = null;
+      let toolResponse = null;
+      
+      res.on('data', (chunk) => {
+        buffer += chunk.toString();
+        
+        // Process SSE lines
+        if (res.headers['content-type']?.includes('text/event-stream')) {
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const jsonData = line.substring(6);
+                const event = JSON.parse(jsonData);
+                
+                // Handle initialize response
+                if (event.id === 0 && event.result) {
+                  initResponse = event;
+                }
+                
+                // Handle tools/call response
+                if (event.id === 1 && (event.result || event.error)) {
+                  toolResponse = event;
+                  if (event.result) {
+                    resolve(event.result);
+                    return;
+                  } else if (event.error) {
+                    reject(new Error(event.error.message || 'MCP Server Trigger error'));
+                    return;
+                  }
+                }
+              } catch (e) {
+                // Continue parsing other lines
+              }
+            }
+          }
+        } else {
+          // Try to parse as JSON
+          try {
+            const result = JSON.parse(buffer);
+            if (result.jsonrpc === '2.0') {
+              if (result.id === 0 && result.result) {
+                initResponse = result;
+              } else if (result.id === 1 && (result.result || result.error)) {
+                toolResponse = result;
+                if (result.result) {
+                  resolve(result.result);
+                  return;
+                } else if (result.error) {
+                  reject(new Error(result.error.message || 'MCP Server Trigger error'));
+                  return;
+                }
+              }
+            }
+          } catch (e) {
+            // Not JSON yet, wait for more data
+          }
+        }
+      });
+      
+      res.on('end', () => {
+        if (toolResponse) {
+          if (toolResponse.result) {
+            resolve(toolResponse.result);
+          } else if (toolResponse.error) {
+            reject(new Error(toolResponse.error.message || 'MCP Server Trigger error'));
+          }
+        } else if (initResponse && !toolResponse) {
+          // Got init but no tool response - might need to retry
+          reject(new Error('Initialized but no tool response received'));
+        } else {
+          reject(new Error(`Webhook error (${res.statusCode}): ${buffer}`));
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(new Error(`Webhook request failed: ${error.message}`));
+    });
+
+    // Send tools/call message (webhook should handle initialization automatically or we'll get an error)
+    const toolMessage = {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: toolName,
+        arguments: arguments_
+      }
+    };
+    
+    req.write(JSON.stringify(toolMessage));
+    req.end();
+  });
+}
+
+/**
+ * Initialize MCP Server Trigger webhook (legacy function, kept for fallback)
+ */
+async function initializeMCPTrigger(webhookPath) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(`${N8N_API_URL}/webhook/${webhookPath}`);
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json, text/event-stream'
+      }
+    };
+
+    const req = http.request(url, options, (res) => {
+      let buffer = '';
+      
+      res.on('data', (chunk) => {
+        buffer += chunk.toString();
+        
+        // For SSE, process complete lines as they arrive
+        if (res.headers['content-type']?.includes('text/event-stream')) {
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // Keep incomplete line
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const jsonData = line.substring(6);
+                const event = JSON.parse(jsonData);
+                if (event.jsonrpc === '2.0' && event.result) {
+                  mcpServerInitialized = true;
+                  resolve(event.result);
+                  return;
+                } else if (event.error) {
+                  // If already initialized, that's okay
+                  if (event.error.message && event.error.message.includes('already initialized')) {
+                    mcpServerInitialized = true;
+                    resolve({ initialized: true });
+                    return;
+                  } else {
+                    reject(new Error(event.error.message || 'MCP Server Trigger initialization error'));
+                    return;
+                  }
+                }
+              } catch (e) {
+                // Continue parsing other lines
+              }
+            }
+          }
+        }
+      });
+      
+      res.on('end', () => {
+        try {
+          if (res.statusCode === 200 || res.statusCode === 201) {
+            // If we already resolved from SSE, don't process again
+            if (buffer) {
+              // Try to parse as JSON (non-SSE response)
+              try {
+                const result = JSON.parse(buffer);
+                if (result.jsonrpc === '2.0' && result.result) {
+                  mcpServerInitialized = true;
+                  resolve(result.result);
+                } else if (result.error) {
+                  // If already initialized, that's okay
+                  if (result.error.message && result.error.message.includes('already initialized')) {
+                    mcpServerInitialized = true;
+                    resolve({ initialized: true });
+                  } else {
+                    reject(new Error(result.error.message || 'MCP Server Trigger initialization error'));
+                  }
+                } else {
+                  mcpServerInitialized = true;
+                  resolve({ initialized: true });
+                }
+              } catch (e) {
+                // If not JSON, try to parse as SSE
+                const lines = buffer.split('\n');
+                for (const line of lines) {
+                  if (line.startsWith('data: ')) {
+                    try {
+                      const jsonData = line.substring(6);
+                      const event = JSON.parse(jsonData);
+                      if (event.jsonrpc === '2.0' && event.result) {
+                        mcpServerInitialized = true;
+                        resolve(event.result);
+                        return;
+                      }
+                    } catch (e2) {
+                      // Continue
+                    }
+                  }
+                }
+                // If no valid SSE events, assume success
+                mcpServerInitialized = true;
+                resolve({ initialized: true });
+              }
+            }
+          } else {
+            reject(new Error(`Initialization error (${res.statusCode}): ${buffer}`));
+          }
+        } catch (e) {
+          reject(new Error(`Failed to parse initialization response: ${e.message}`));
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(new Error(`Initialization request failed: ${error.message}`));
+    });
+
+    // Send initialize message
+    req.write(JSON.stringify({
+      jsonrpc: '2.0',
+      id: 0,
+      method: 'initialize',
+      params: {
+        protocolVersion: '2024-11-05',
+        capabilities: {},
+        clientInfo: {
+          name: 'google-sheets-mcp-wrapper',
+          version: '1.0.0'
+        }
+      }
+    }));
+    req.end();
+  });
+}
+
+/**
+ * Call MCP Server Trigger webhook with tool name and arguments
+ * Tries newline-delimited JSON first, falls back to separate requests
+ */
+async function callMCPTriggerWebhook(webhookPath, toolName, arguments_) {
+  // Try sending both initialize and tools/call in a single request (newline-delimited JSON)
+  try {
+    return await sendMCPMessageWithInit(webhookPath, toolName, arguments_);
+  } catch (ndjsonError) {
+    // If that fails, try separate requests
+    process.stderr.write(`Newline-delimited JSON failed, trying separate requests: ${ndjsonError.message}\n`);
+  }
+  
+  // Fallback: Separate HTTP POST requests with initialization
+  if (!mcpServerInitialized) {
+    try {
+      await initializeMCPTrigger(webhookPath);
+    } catch (error) {
+      // If initialization fails, try to proceed anyway (might already be initialized)
+      if (!error.message.includes('already initialized')) {
+        // Log but don't fail - might work anyway
+        process.stderr.write(`Warning: MCP Server Trigger initialization failed: ${error.message}\n`);
+      }
+    }
+  }
+  
+  return new Promise((resolve, reject) => {
+    const url = new URL(`${N8N_API_URL}/webhook/${webhookPath}`);
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json, text/event-stream'
+      }
+    };
+
+    const req = http.request(url, options, (res) => {
+      let buffer = '';
+      
+      res.on('data', (chunk) => {
+        buffer += chunk.toString();
+        
+        // For SSE, process complete lines as they arrive
+        if (res.headers['content-type']?.includes('text/event-stream')) {
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // Keep incomplete line
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const jsonData = line.substring(6);
+                const event = JSON.parse(jsonData);
+                if (event.result) {
+                  resolve(event.result);
+                  return;
+                } else if (event.error) {
+                  reject(new Error(event.error.message || 'MCP Server Trigger error'));
+                  return;
+                }
+              } catch (e) {
+                // Continue parsing other lines
+              }
+            }
+          }
+        }
+      });
+      
+      res.on('end', () => {
+        try {
+          if (res.statusCode === 200 || res.statusCode === 201) {
+            // If we already resolved/rejected from SSE, don't process again
+            if (buffer) {
+              // Try to parse as JSON
+              try {
+                const result = JSON.parse(buffer);
+                if (result.jsonrpc === '2.0') {
+                  if (result.result) {
+                    resolve(result.result);
+                  } else if (result.error) {
+                    // If "Server not initialized", try to initialize and retry
+                    if (result.error.message && result.error.message.includes('not initialized')) {
+                      mcpServerInitialized = false;
+                      // Retry once after initialization
+                      return initializeMCPTrigger(webhookPath)
+                        .then(() => callMCPTriggerWebhook(webhookPath, toolName, arguments_))
+                        .then(resolve)
+                        .catch(reject);
+                    }
+                    reject(new Error(result.error.message || 'MCP Server Trigger error'));
+                  } else {
+                    resolve(result);
+                  }
+                } else {
+                  resolve(result);
+                }
+              } catch (e) {
+                // If not JSON, might be SSE - try to parse remaining buffer
+                const lines = buffer.split('\n');
+                for (const line of lines) {
+                  if (line.startsWith('data: ')) {
+                    try {
+                      const jsonData = line.substring(6);
+                      const event = JSON.parse(jsonData);
+                      if (event.result) {
+                        resolve(event.result);
+                        return;
+                      } else if (event.error) {
+                        reject(new Error(event.error.message || 'MCP Server Trigger error'));
+                        return;
+                      }
+                    } catch (e2) {
+                      // Continue
+                    }
+                  }
+                }
+                // If no valid SSE events, return raw data
+                resolve({ output: buffer });
+              }
+            }
+          } else {
+            reject(new Error(`Webhook error (${res.statusCode}): ${buffer}`));
+          }
+        } catch (e) {
+          reject(new Error(`Failed to parse webhook response: ${e.message}`));
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(new Error(`Webhook request failed: ${error.message}`));
+    });
+
+    // MCP Server Trigger expects JSON-RPC format
+    req.write(JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: toolName,
+        arguments: arguments_
+      }
+    }));
+    req.end();
+  });
+}
+
+/**
+ * Get workflow from n8n API
+ */
+async function getWorkflow(workflowId) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(`${N8N_API_URL}/api/v1/workflows/${workflowId}`);
+    const options = {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'X-N8N-API-KEY': N8N_API_KEY
+      }
+    };
+
+    const req = http.request(url, options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      res.on('end', () => {
+        try {
+          if (res.statusCode === 200) {
+            const result = JSON.parse(data);
+            resolve(result);
+          } else {
+            reject(new Error(`n8n API error (${res.statusCode}): ${data}`));
+          }
+        } catch (e) {
+          reject(new Error(`Failed to parse n8n response: ${e.message}`));
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(new Error(`n8n API request failed: ${error.message}`));
+    });
+
+    req.end();
+  });
+}
+
+/**
+ * Execute sub-workflow directly via n8n API (bypassing MCP Server Trigger)
+ * Note: This endpoint works for workflows with Manual Triggers or executeWorkflowTrigger
+ * when called from parent workflows using the Execute Workflow node
+ */
+async function executeSubWorkflowViaAPI(workflowId, inputData) {
+  return new Promise((resolve, reject) => {
+    // Use the n8n REST API workflow execution endpoint (same as n8n-workflows-mcp-wrapper)
+    const url = new URL(`${N8N_API_URL}/rest/workflows/${workflowId}/execute`);
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-N8N-API-KEY': N8N_API_KEY
+      }
+    };
+
+    const req = http.request(url, options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      res.on('end', () => {
+        try {
+          if (res.statusCode === 200 || res.statusCode === 201) {
+            const result = JSON.parse(data);
+            resolve(result);
+          } else {
+            // If execution endpoint fails, the workflow might have Schedule/Evaluation triggers
+            // In this case, we should call the parent workflow's MCP Server Trigger webhook instead
+            reject(new Error(`n8n API error (${res.statusCode}): ${data}`));
+          }
+        } catch (e) {
+          reject(new Error(`Failed to parse n8n response: ${e.message}`));
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(new Error(`n8n API request failed: ${error.message}`));
+    });
+
+    // Pass input data directly in the request body (n8n REST API format)
+    req.write(JSON.stringify(inputData || {}));
+    req.end();
+  });
+}
+
+async function callN8nWorkflow(workflowId, inputData, messageId) {
+  // Map workflow IDs to tool names
+  const workflowToToolMap = {
+    [READ_WORKFLOW_ID]: 'read_google_sheet',
+    [WRITE_WORKFLOW_ID]: 'write_google_sheet'
+  };
+  
+  const toolName = workflowToToolMap[workflowId];
+  
+  if (!toolName) {
+    sendResponse({
+      jsonrpc: '2.0',
+      id: messageId,
+      error: {
+        code: -32000,
+        message: `Unknown workflow ID: ${workflowId}`
+      }
+    });
+    return;
+  }
+  
+  // Try using webhookId first, fall back to path if that doesn't work
+  let webhookPath = MCP_SERVER_TRIGGER_WEBHOOK_ID;
+  let result;
+  let lastError;
+  
+  try {
+    result = await callMCPTriggerWebhook(webhookPath, toolName, inputData);
+  } catch (error) {
+    lastError = error;
+    // If webhookId fails, try using path
+    if (error.message.includes('not registered') || error.message.includes('404')) {
+      webhookPath = MCP_SERVER_TRIGGER_PATH;
+      try {
+        result = await callMCPTriggerWebhook(webhookPath, toolName, inputData);
+      } catch (error2) {
+        lastError = error2;
+        // If both fail, try calling sub-workflow directly
+        try {
+          result = await executeSubWorkflowDirectly(workflowId, inputData);
+        } catch (error3) {
+          sendResponse({
+            jsonrpc: '2.0',
+            id: messageId,
+            error: {
+              code: -32000,
+              message: `Failed to execute workflow: ${error3.message}`
+            }
+          });
+          return;
+        }
+      }
+    } else {
+      sendResponse({
+        jsonrpc: '2.0',
+        id: messageId,
+        error: {
+          code: -32000,
+          message: `Failed to execute workflow: ${error.message}`
+        }
+      });
+      return;
+    }
+  }
+  
+  // Extract the output from the result
+  let output = result;
+  if (result && typeof result === 'object') {
+    // If result has content array (MCP format), extract text
+    if (result.content && Array.isArray(result.content) && result.content.length > 0) {
+      const textContent = result.content.find(c => c.type === 'text');
+      if (textContent && textContent.text) {
+        try {
+          output = JSON.parse(textContent.text);
+        } catch (e) {
+          output = textContent.text;
+        }
+      }
+    } else if (result.data && Array.isArray(result.data) && result.data.length > 0) {
+      // Execution result format - extract the output from the last node
+      const lastNodeOutput = result.data[result.data.length - 1];
+      if (lastNodeOutput && lastNodeOutput[0] && lastNodeOutput[0].json) {
+        output = lastNodeOutput[0].json;
+      }
+    }
+  }
+  
+  sendResponse({
+    jsonrpc: '2.0',
+    id: messageId,
+    result: {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(output, null, 2)
+        }
+      ]
+    }
+  });
+}
+
+/**
+ * Execute sub-workflow directly via n8n API (fallback when MCP Server Trigger doesn't work)
+ * This attempts to call the sub-workflow as if it were called by the toolWorkflow node
+ */
+async function executeSubWorkflowDirectly(workflowId, inputData) {
+  // For workflows with executeWorkflowTrigger, we can't call them directly
+  // But we can try to format the input data to match what the toolWorkflow node would pass
+  // and call via the n8n API execution endpoint
+  
+  // Try the /api/v1/executions/workflow endpoint
+  return new Promise((resolve, reject) => {
+    const url = new URL(`${N8N_API_URL}/api/v1/executions/workflow`);
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-N8N-API-KEY': N8N_API_KEY
+      }
+    };
+
+    const req = http.request(url, options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      res.on('end', () => {
+        try {
+          if (res.statusCode === 200 || res.statusCode === 201) {
+            const result = JSON.parse(data);
+            resolve(result);
+          } else {
+            reject(new Error(`n8n API error (${res.statusCode}): ${data}`));
+          }
+        } catch (e) {
+          reject(new Error(`Failed to parse n8n response: ${e.message}`));
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(new Error(`n8n API request failed: ${error.message}`));
+    });
+
+    // Format input data as array of items (n8n execution format)
+    const executionData = {
+      workflowId: workflowId,
+      data: [inputData]
+    };
+    
+    req.write(JSON.stringify(executionData));
+    req.end();
+  });
+}
+
+function sendResponse(response) {
+  // Ensure response has required fields
+  if (!response.jsonrpc) {
+    response.jsonrpc = '2.0';
+  }
+  
+  // Use process.stdout.write to ensure output goes to stdout, not stderr
+  const output = JSON.stringify(response) + '\n';
+  process.stdout.write(output);
+  logDebug('Sent response', { id: response.id, hasError: !!response.error });
+  // Note: Node.js stdout is automatically flushed, no need for flush()
+}
+
+function sendErrorResponse(id, code, message) {
+  // MCP protocol requires id to be string or number, not null
+  // If id is null/undefined, we can't send a proper error response
+  if (id === null || id === undefined) {
+    // Log to stderr instead
+    process.stderr.write(`Error (code ${code}): ${message}\n`);
+    logDebug('Dropped error response due to missing id', { code, message });
+    return;
+  }
+  
+  logDebug('Sending error response', { id, code, message });
+  sendResponse({
+    jsonrpc: '2.0',
+    id: id,
+    error: {
+      code: code,
+      message: message
+    }
+  });
+}
+

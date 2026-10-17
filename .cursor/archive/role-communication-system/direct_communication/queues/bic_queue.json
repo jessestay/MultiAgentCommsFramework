@@ -1,0 +1,18 @@
+[
+  {
+    "id": "7d227e9b-ced4-45b3-936d-ff8ba42034dc",
+    "source_role": "ES",
+    "target_role": "BIC",
+    "content": "[ES]: @BIC: Our user has an urgent need to pay rent by Monday. Please provide 3-5 quick income generation strategies that could help meet this immediate financial need. Focus on options that can produce results within 2-3 days.",
+    "timestamp": "2025-03-06T14:13:41.626520",
+    "read": false
+  },
+  {
+    "id": "39b3391e-35e4-4e52-a38b-03d4aec236fd",
+    "source_role": "ES",
+    "target_role": "BIC",
+    "content": "[ES]: @BIC: User needs rent money by Monday. Please suggest 3-5 quick income strategies.",
+    "timestamp": "2025-03-06T14:13:49.867274",
+    "read": false
+  }
+]

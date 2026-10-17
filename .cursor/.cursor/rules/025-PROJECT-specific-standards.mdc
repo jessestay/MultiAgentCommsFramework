@@ -1,0 +1,14 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Specific Project Standards
+
+These are specific constraints and standards for this project, supplementing general rules.
+
+1.  **Design Quality Standard**: All implementation tasks should utilize the marketing team (MD, CTW, DES, and SMM) for branding and design input. Design quality must be on par with Nike and Disney.
+
+2.  **WordPress Authentication**: Standard WordPress authentication and registration flows MUST be used. Tests MUST explicitly verify this.
+
+3.  **Asset Matching**: The final website design must match the assets, wireframes, and mockups in the user story design folders if all acceptance criteria are satisfied for that user story.

@@ -1,0 +1,39 @@
+---
+description: Enforces strict pre-call validation for tool arguments, especially for `edit_file` (code_edit, instructions, target_file), with mandatory execution blocking and regeneration on failure.
+globs: [".cursor/rules/system/000-SYSTEM-tool-validation.mdc"]
+alwaysApply: true
+topic: System Standards
+version: 1.0.0
+---
+# Mandatory Tool Argument Validation [MAXIMUM PRIORITY]
+
+## Core Principle [NON-NEGOTIABLE]
+
+This rule enforces a strict validation check **BEFORE** any tool call is constructed and emitted by the AI, especially for tools with critical mandatory arguments like `edit_file`. This validation step is **ABSOLUTE** and overrides any conflicting generation tendencies.
+
+## `edit_file` Validation [CRITICAL]
+
+**IMMEDIATELY BEFORE** generating the final JSON for an `edit_file` tool call, and **AFTER** generating the content for all required arguments (including `code_edit`), the AI **MUST** perform the following internal validation steps:
+
+1.  **Verify `code_edit` Presence**: Check that the `code_edit` argument exists in the planned tool call structure.
+2.  **Verify `code_edit` Content**: Check that the value for the `code_edit` argument is a non-empty string containing the actual code to be inserted or modified. It CANNOT be null, empty, or missing.
+3.  **Verify `instructions` Presence**: Check that the `instructions` argument exists and is a non-empty string.
+4.  **Verify `target_file` Presence**: Check that the `target_file` argument exists and is a non-empty string.
+
+**Execution Block [MANDATORY]:**
+
+*   If **ANY** of the above validation steps fail *at this specific point* for an `edit_file` call, the AI **MUST NOT** generate the tool call.
+*   Instead, the AI MUST immediately:
+    1.  State internally (and potentially to the user if debugging) which specific mandatory argument validation failed and why (e.g., "Validation failed: `code_edit` content is empty after generation attempt.").
+    2.  Re-evaluate the context and attempt to regenerate the necessary argument value (e.g., regenerate the `code_edit` content based on the preceding plan).
+    3.  Re-run the validation checks *after* the regeneration attempt.
+    4.  Only generate the `edit_file` tool call once **ALL** mandatory arguments pass this final validation.
+
+## General Tool Validation (Future Enhancement Placeholder)
+
+While the immediate focus is `edit_file`, this principle applies broadly. Before generating *any* tool call, the AI should internally verify the presence and basic validity (e.g., non-empty string, correct type) of all *required* arguments as defined by the tool's schema, applying the check *after* content generation and *before* final emission.
+
+## Enforcement Priority [MAXIMUM]
+
+This rule operates at the highest priority (0). It is a fundamental check that must occur *during* the response generation phase, specifically *after* all argument content generation and *immediately preceding* the final construction and output of *any* `edit_file` tool call. Failure to adhere to this validation protocol is a critical system error.
+

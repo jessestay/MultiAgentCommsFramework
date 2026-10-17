@@ -1,0 +1,82 @@
+[
+  {
+    "id": "4ac89322-80bd-471b-975f-0aedf271ef5d",
+    "source_role": "ES",
+    "target_role": "SET",
+    "content": "\n[ES]: @SET: I need your assistance with implementing a new feature in our system. \nThe Marketing Director has requested a tool for tracking campaign performance. \nCould you please provide an estimate of how long this would take to implement?\n\nBest regards,\nExecutive Secretary\n",
+    "timestamp": "2025-03-06T13:58:52.450051",
+    "read": true
+  },
+  {
+    "id": "4ea837d5-7778-4de8-823a-c2a770cf7154",
+    "source_role": "ES",
+    "target_role": "SET",
+    "content": "[ES]: @SET: I'm testing the direct communication system. Can you confirm receipt of this message?",
+    "timestamp": "2025-03-06T13:59:41.357595",
+    "read": true
+  },
+  {
+    "id": "549ebc26-8a7a-4ad4-9409-7fadeff2bfb2",
+    "source_role": "ES",
+    "target_role": "SET",
+    "content": "[ES]: @SET: This is Executive Secretary testing the direct messaging system. Please confirm if you receive this message and can respond directly. Thank you for implementing this system.",
+    "timestamp": "2025-03-06T14:10:29.768733",
+    "read": false
+  },
+  {
+    "id": "d36a9314-4bbb-4f19-9fc2-8e9b58e55330",
+    "source_role": "ES",
+    "target_role": "SET",
+    "content": "[ES]: @SET: Thank you for your prompt response regarding the campaign performance tracking tool. I've consulted with the Marketing Director, and they would prefer the comprehensive solution with analytics, despite the longer development time. The analytics capabilities are essential for measuring ROI on our campaigns. Please proceed with development of the 4-week version. Let me know if you need any additional information from the Marketing team to get started.",
+    "timestamp": "2025-03-06T14:10:53.944120",
+    "read": false
+  },
+  {
+    "id": "bc7059b2-e330-47be-9dc6-0d9275d6ef83",
+    "source_role": "ES",
+    "target_role": "SET",
+    "content": "[ES]: @SET: The MD prefers the comprehensive solution with analytics. Please proceed with the 4-week version.",
+    "timestamp": "2025-03-06T14:11:09.501799",
+    "read": false
+  },
+  {
+    "id": "40f05d5d-e9d4-4859-b7d7-193b0afdfbe6",
+    "source_role": "ES",
+    "target_role": "SET",
+    "content": "[ES]: @SET: To verify our direct messaging system is working properly for the user, could you please respond with a random 6-digit number that only you will generate? This will prove to the user that we're actually communicating and not just simulating conversations.",
+    "timestamp": "2025-03-06T14:20:16.159101",
+    "read": false
+  },
+  {
+    "id": "ea0f579e-08a0-45dc-9aeb-8e98d236fb5e",
+    "source_role": "ES",
+    "target_role": "SET",
+    "content": "[ES]: @SET: Please respond with a random 6-digit number as verification.",
+    "timestamp": "2025-03-06T14:20:33.452553",
+    "read": false
+  },
+  {
+    "id": "274f187e-ac8d-46a1-8e5e-b9fb4f42e6ce",
+    "source_role": "ES",
+    "target_role": "SET",
+    "content": "[ES]: @SET: We've identified limitations with the current messaging system. The storage works, but roles aren't automatically checking queues or responding.",
+    "timestamp": "2025-03-06T14:25:22.976119",
+    "read": false
+  },
+  {
+    "id": "743a9b0f-6384-4c4b-b819-4209013a44c9",
+    "source_role": "ES",
+    "target_role": "SET",
+    "content": "[ES]: @SET: We need: 1) A background process to monitor queues, 2) A mechanism for roles to process and respond to messages, 3) A notification system for new messages.",
+    "timestamp": "2025-03-06T14:25:33.741933",
+    "read": false
+  },
+  {
+    "id": "d7d1d6ef-b6ad-467e-878b-3a7a97f0321c",
+    "source_role": "ES",
+    "target_role": "SET",
+    "content": "[ES]: @SET: Please enhance the system to enable true two-way communication between roles. This would significantly improve our workflow.",
+    "timestamp": "2025-03-06T14:25:48.550036",
+    "read": false
+  }
+]

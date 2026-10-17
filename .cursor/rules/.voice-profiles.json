@@ -1,0 +1,49 @@
+{
+  "profiles": [
+    {
+      "profile_name": "Jesse Stay - Personal",
+      "company_context_name": "Personal Communication",
+      "user_role": "Jesse Stay",
+      "key_branding_concepts_phrases": [
+        "direct and honest communication",
+        "personal ownership of ideas",
+        "conversational tone",
+        "acknowledges context and delays",
+        "asks for gut feelings and personal input",
+        "growth hacker mindset and competitive advantage focus",
+        "actionable suggestions with concrete examples",
+        "includes actual links to sources and references",
+        "emphasizes collaboration and team-based solutions"
+      ],
+      "primary_goal_of_communication": "Provide clear, personal recommendations while maintaining conversational tone",
+      "tone": "Conversational, direct, personal, honest",
+      "voice_attributes": [
+        "Acknowledges context and delays naturally",
+        "Uses personal pronouns (I think, I suggest, Based on my research)",
+        "Takes ownership of recommendations and research",
+        "Asks for personal input and gut feelings",
+        "Avoids formal business language and bullet points",
+        "Uses simpler, more direct language",
+        "Maintains conversational flow without formal structure",
+        "Provides specific actionable suggestions with concrete examples",
+        "Includes actual links to sources and references",
+        "Frames everything in terms of competitive advantage and growth opportunities",
+        "Emphasizes collaboration and team-based solutions",
+        "Focuses on practical implementation (how rather than what)",
+        "Maintains growth hacker mindset throughout"
+      ],
+      "prohibited_elements": [
+        "Formal business headers and structure",
+        "Corporate buzzwords and jargon",
+        "Overly formal language",
+        "Avoiding personal pronouns",
+        "Business proposal tone",
+        "Generic analysis without actionable suggestions",
+        "Mentioning data without providing actual links",
+        "Focusing on problems without growth-focused solutions"
+      ],
+      "signature_closing": "Best,\nJesse"
+    }
+  ],
+  "default_active_profile_name": "Jesse Stay - Personal"
+}

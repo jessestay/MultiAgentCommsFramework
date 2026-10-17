@@ -1,0 +1,350 @@
+{
+ "_comment": "MACF Hands Gateway \u2014 per-role MCP server grants (client-side enforcement layer 1). Server-side role tokens are layer 2. Edit = config change, no code deploy needed. Budgets are per task invocation.",
+ "defaults": {
+  "max_tool_calls": 8,
+  "max_tool_latency_ms": 120000,
+  "max_tool_output_chars": 8000
+ },
+ "roles": {
+  "ceo": {
+   "budgets": {},
+   "servers": [
+    "macf-finance",
+    "n8n-mcp",
+    "canva",
+    "github",
+    "tavily",
+    "desktop-commander",
+    "google-workspace",
+    "desktop-agent"
+   ]
+  },
+  "cfo": {
+   "budgets": {
+    "max_tool_calls": 6,
+    "max_tool_latency_ms": 90000
+   },
+   "servers": [
+    "macf-finance"
+   ]
+  },
+  "cmo": {
+   "budgets": {},
+   "servers": [
+    "canva",
+    "buffer"
+   ]
+  },
+  "cco": {
+   "budgets": {},
+   "servers": [
+    "canva"
+   ]
+  },
+  "cro": {
+   "budgets": {},
+   "servers": [
+    "tavily"
+   ]
+  },
+  "cto": {
+   "budgets": {},
+   "servers": [
+    "n8n-mcp",
+    "github",
+    "canva",
+    "desktop-commander",
+    "google-workspace",
+    "desktop-agent"
+   ],
+   "auth_agent": true,
+   "note": "CTO is the designated auth/credentials agent \u2014 manages OAuth flows and secure credential storage for all roles."
+  },
+  "cuxo": {
+   "budgets": {},
+   "servers": [
+    "canva",
+    "figma"
+   ]
+  }
+ },
+ "servers": {
+  "desktop-commander": {
+   "command": "/home/hatch/workspace/macf/hands/node_modules/.bin/desktop-commander",
+   "args": [],
+   "cwd": "hands",
+   "env": {},
+   "note": "Shell/file access on the VM via MCP. Granted to ceo+cto only (broad power). Command is the ABSOLUTE path into hands/node_modules (durable under ~) \u2014 do NOT revert to the bare name: the global /usr/bin install is EPHEMERAL and vanished in VM churn on Oct 5, Oct 11, and Oct 12, 2026, breaking this path each time. Durability fix Oct 12, 2026 (Jesse's order); engine-watchdog.sh also auto-restores both this install and the global one if missing. Added Oct 5, 2026 \u2014 was never configured despite Oct 3 'default plugins' order."
+  },
+  "macf-finance": {
+   "args": [
+    "servers/finance/index.js"
+   ],
+   "command": "node",
+   "cwd": "hands",
+   "env": {},
+   "note": "PayPal read-only. PAYPAL_CLIENT_ID/SECRET resolved from process env at spawn."
+  },
+  "n8n-mcp": {
+   "command": "/home/hatch/workspace/macf/hands/node_modules/.bin/n8n-mcp",
+   "args": [],
+   "cwd": "hands",
+   "env": {
+    "NODE_ENV": "production",
+    "N8N_API_URL": "http://127.0.0.1:5678/api",
+    "N8N_API_KEY": "${N8N_MCP_API_KEY}"
+   },
+   "note": "n8n workflow documentation and management. Same MCP server as on Claude desktop. API key from VM n8n."
+  },
+  "canva": {
+   "command": "npx",
+   "args": [
+    "-y",
+    "mcp-remote@latest",
+    "https://mcp.canva.com/mcp"
+   ],
+   "cwd": "hands",
+   "env": {},
+   "note": "Official Canva MCP server. OAuth via browser \u2014 Jesse must auth. Jesse wrote Canva for Dummies; brand guidelines, course, and products live in Canva. Use for all design work."
+  },
+  "github": {
+   "command": "npx",
+   "args": [
+    "-y",
+    "@modelcontextprotocol/server-github"
+   ],
+   "cwd": "hands",
+   "env": {
+    "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+   },
+   "note": "GitHub repos, code, issues. Needs Jesse's GitHub token."
+  },
+  "tavily": {
+   "command": "npx",
+   "args": [
+    "-y",
+    "tavily-mcp@latest"
+   ],
+   "cwd": "hands",
+   "env": {
+    "TAVILY_API_KEY": "${TAVILY_API_KEY}"
+   },
+   "note": "Web search for research. Needs Tavily API key."
+  },
+  "buffer": {
+   "command": "npx",
+   "args": [
+    "-y",
+    "mcp-remote@latest",
+    "https://mcp.buffer.com/mcp"
+   ],
+   "cwd": "hands",
+   "env": {},
+   "note": "Social media scheduling. OAuth via browser \u2014 Jesse must auth."
+  },
+  "figma": {
+   "command": "npx",
+   "args": [
+    "-y",
+    "figma-context-mcp",
+    "--stdio"
+   ],
+   "cwd": "hands",
+   "env": {
+    "FIGMA_API_KEY": "${FIGMA_TOKEN}"
+   },
+   "note": "Figma via community MCP + personal access token. Figma's official remote MCP (mcp.figma.com) rejects dynamic client registration (403) for non-catalog clients \u2014 tried Oct 5, 2026. PATs max 90 days (Figma policy); tracked by engine/token-health.js, warn at 75d."
+  },
+  "meta-ads": {
+   "command": "npx",
+   "args": [
+    "-y",
+    "@mikusnuz/meta-ads-mcp"
+   ],
+   "cwd": "hands",
+   "env": {
+    "META_ADS_ACCESS_TOKEN": "${META_ADS_ACCESS_TOKEN}",
+    "META_AD_ACCOUNT_ID": "14474363"
+   },
+   "note": "Meta Ads management. Token needs ads_management + ads_read. Use System User token (no expiry)."
+  },
+  "google-analytics": {
+   "command": "npx",
+   "args": [
+    "-y",
+    "@mindstone/mcp-server-google-analytics"
+   ],
+   "cwd": "hands",
+   "env": {
+    "GOOGLE_APPLICATION_CREDENTIALS": "${GOOGLE_APPLICATION_CREDENTIALS}",
+    "GA4_PROPERTY_ID": "${GA4_PROPERTY_ID}"
+   },
+   "note": "GA4 read-only analytics. Needs service account with Viewer on each property."
+  },
+  "youtube": {
+   "command": "npx",
+   "args": [
+    "-y",
+    "@miller-joe/youtube-mcp",
+    "--stdio"
+   ],
+   "cwd": "hands",
+   "env": {},
+   "note": "YouTube channel management. OAuth via Google. No video upload yet (roadmap)."
+  },
+  "stripe": {
+   "command": "npx",
+   "args": [
+    "-y",
+    "@stripe/mcp"
+   ],
+   "cwd": "hands",
+   "env": {
+    "STRIPE_SECRET_KEY": "${STRIPE_SECRET_KEY}"
+   },
+   "note": "Stripe payments. Use restricted key rk_* with least-privilege. Test mode until approved."
+  },
+  "google-tag-manager": {
+   "command": "npx",
+   "args": [
+    "-y",
+    "samarth-gtm-mcp"
+   ],
+   "cwd": "hands",
+   "env": {},
+   "note": "GTM management. OAuth as jessestay@gmail.com. Read-only by default, writes need confirm=true."
+  },
+  "video-gen": {
+   "command": "npx",
+   "args": [
+    "-y",
+    "@vidofy/mcp"
+   ],
+   "cwd": "hands",
+   "env": {
+    "VIDOFY_TOKEN": "${VIDOFY_TOKEN}"
+   },
+   "note": "AI video generation: Veo 3.1, Kling 3.0, Runway, Luma. 570+ models. Costs at submit \u2014 require approval."
+  },
+  "heygen": {
+   "command": "npx",
+   "args": [
+    "-y",
+    "heygen-mcp-server"
+   ],
+   "cwd": "hands",
+   "env": {
+    "HEYGEN_API_KEY": "${HEYGEN_API_KEY}"
+   },
+   "note": "AI avatars + digital twin. Best lip-sync. ~$1-6/min. Default to Engine III."
+  },
+  "elevenlabs": {
+   "command": "npx",
+   "args": [
+    "-y",
+    "@mindstone/mcp-server-elevenlabs"
+   ],
+   "cwd": "hands",
+   "env": {
+    "ELEVENLABS_API_KEY": "${ELEVENLABS_API_KEY}"
+   },
+   "note": "Voice: TTS, cloning, dubbing, SFX. Best-in-class."
+  },
+  "capcut": {
+   "command": "npx",
+   "args": [
+    "-y",
+    "jmsldrn/capcut-mcp"
+   ],
+   "cwd": "hands",
+   "env": {},
+   "note": "CapCut draft editing. REQUIRES CapCut desktop on same machine \u2014 VM incompatible. Desktop-only."
+  },
+  "tiktok-research": {
+   "command": "npx",
+   "args": [
+    "-y",
+    "@hasdata/tiktok-mcp"
+   ],
+   "cwd": "hands",
+   "env": {},
+   "note": "TikTok public data: profiles, videos, comments, search. 100 free calls/mo. Read-only."
+  },
+  "tiktok-strategy": {
+   "command": "npx",
+   "args": [
+    "-y",
+    "tiktapdown-mcp"
+   ],
+   "cwd": "hands",
+   "env": {},
+   "note": "TikTok creator toolkit: trends, hashtags, hooks, posting windows. No auth."
+  },
+  "linkedin": {
+   "command": "npx",
+   "args": [
+    "-y",
+    "vahabcore/linkedin-mcp-server"
+   ],
+   "cwd": "hands",
+   "env": {
+    "LINKEDIN_ACCESS_TOKEN": "${LINKEDIN_ACCESS_TOKEN}"
+   },
+   "note": "LinkedIn posting via official API. Safe for posts; messaging NOT supported (account risk). Needs OAuth."
+  },
+  "slack": {
+   "command": "npx",
+   "args": [
+    "-y",
+    "mcp-remote@latest",
+    "https://mcp.slack.com/mcp"
+   ],
+   "cwd": "hands",
+   "env": {},
+   "note": "Slack official hosted MCP. OAuth via browser. Read-only."
+  },
+  "x": {
+   "command": "node",
+   "args": [
+    "/home/hatch/workspace/x-mcp/dist/index.js"
+   ],
+   "cwd": "hands",
+   "env": {
+    "X_API_KEY": "${X_API_KEY}",
+    "X_API_SECRET": "${X_API_SECRET}",
+    "X_BEARER_TOKEN": "${X_BEARER_TOKEN}",
+    "X_ACCESS_TOKEN": "${X_ACCESS_TOKEN}",
+    "X_ACCESS_TOKEN_SECRET": "${X_ACCESS_TOKEN_SECRET}"
+   },
+   "note": "X posting via official API. Free tier: 500 posts/mo. Replies restricted by X policy (use quote-tweet)."
+  },
+  "google-workspace": {
+   "command": "/home/hatch/.local/bin/workspace-mcp-proxied",
+   "args": [
+    "--tools",
+    "drive",
+    "docs",
+    "sheets",
+    "--single-user"
+   ],
+   "cwd": "hands",
+   "env": {
+    "GOOGLE_OAUTH_CLIENT_ID": "167877611088-be2emo8l5f3gq91nmgt2hkn7qu62tgvh.apps.googleusercontent.com",
+    "USER_GOOGLE_EMAIL": "jessestay@gmail.com",
+    "WORKSPACE_MCP_CREDENTIALS_DIR": "/home/hatch/.google_workspace_mcp/credentials"
+   },
+   "note": "Google Drive/Docs/Sheets via workspace-mcp 2.0.1. OAuth via Jesse's Cloud project muse-mcp. Proxied wrapper handles egress proxy + PySocks + CA. Credentials in ~/.google_workspace_mcp/credentials (600). Client secret in ~/.config/muse-mcp/google.env (600)."
+  },
+  "desktop-agent": {
+   "command": "node",
+   "args": [
+    "/home/hatch/workspace/macf/hands/servers/desktop/index.js"
+   ],
+   "cwd": "hands",
+   "env": {
+    "DESKTOP_RUN_TOKEN": "${DESKTOP_AGENT_TOKEN}"
+   },
+   "note": "Desktop channel: health + bounded PowerShell + agent log on DESKTOP-4U63DES via the desktop agent (100.92.127.117:8099, tunnel proxy). Granted to ceo+cto only (broad power). Built Oct 12, 2026 under Jesse's order to extend the CTO's grants to the desktop channels (Vikunja #738) \u2014 the CTO needs desktop-side process/config/log access for the LiteLLM gateway inspection (#736). Token: DESKTOP_AGENT_TOKEN in slack-agents/.env. Server-side role gate + audit log in servers/desktop/index.js. Args use the ABSOLUTE path because engine/mcpClient.js does not apply the spec cwd when spawning (the test probe does) \u2014 a relative path resolves against the engine cwd and fails. CTO hardening follow-up on #738: teach mcpClient to honor spec.cwd like the probe and mcpBridge do."
+  }
+ }
+}

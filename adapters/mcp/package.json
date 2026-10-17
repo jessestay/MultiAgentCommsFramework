@@ -1,0 +1,21 @@
+{
+  "name": "@macf/adapter-mcp",
+  "version": "1.0.0",
+  "description": "MACF MCP adapter — exposes the agent team to Cursor, Claude Code, and Claude Desktop",
+  "main": "index.js",
+  "bin": {
+    "macf-mcp": "index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "dotenv": "^16.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "google-sheets-mcp",
+  "type": "http",
+  "description": "MCP server proxying Google Sheets via n8n",
+  "baseUrl": "http://localhost:5678/webhook",
+  "endpoints": {
+    "read": "/mcp/sheets/read"
+  },
+  "usage": {
+    "read": "GET /mcp/sheets/read?sheetId=<SPREADSHEET_ID>&sheetName=<TAB_NAME>&range=A1:Z100"
+  },
+  "notes": "Requires n8n workflow \"MCP - Google Sheets Service\" active and Google Sheets credentials configured in n8n."
+}
+

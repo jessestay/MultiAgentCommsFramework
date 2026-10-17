@@ -1,0 +1,17 @@
+{
+  "name": "jesse-slack-agents",
+  "version": "2.0.0",
+  "description": "Multi-agent autonomous Slack system for Jesse Stay",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.27.0"
+  },
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel deploy --prod"
+  }
+}
+

@@ -1,0 +1,447 @@
+---
+description: Code Quality Tool Standards including exclusions, PHPCBF usage, AI generation standards, and developer environment setup.
+globs: 
+alwaysApply: true
+---
+# Code Quality Tool Standards [MANDATORY]
+
+## AI File Editing Standards [ABSOLUTE ENFORCEMENT]
+
+When the AI system (any role) modifies existing files using tools like `edit_file`:
+
+1.  **Line Endings [CRITICAL]**: ALL generated code snippets and modifications MUST use Unix-style line endings (LF: `\n`). The system MUST NOT introduce Windows-style line endings (CRLF: `\r\n`), even if the surrounding code uses them.
+2.  **Indentation (PHP) [CRITICAL]**: ALL generated PHP code modifications MUST use spaces for indentation, adhering to the project standard (typically 4 spaces per PSR-12/WordPress). The system MUST NOT introduce tabs for indentation in PHP files, even if the surrounding code uses them.
+3.  **Indentation (Other Languages)**: For languages other than PHP, indentation should follow the established standard for that language within the project (e.g., spaces for JS/CSS/HTML, potentially tabs if explicitly defined elsewhere as the standard for a specific file type).
+4.  **Override Existing Incorrect Formatting**: If the code surrounding the edit location uses incorrect line endings (CRLF) or indentation (tabs in PHP), the AI-generated edit MUST still use the correct standard (LF, spaces for PHP). Do not perpetuate incorrect formatting.
+
+## AI Code Generation Standards [MANDATORY] [NEW - Merged from system/]
+
+When generating code, the AI (all roles, especially SET) MUST adhere to the following standards to minimize initial errors:
+
+1.  **Indentation**: Use 4 spaces for indentation. Tabs are strictly prohibited.
+2.  **Line Endings**: Use LF (`\n`) line endings. CRLF (`\r\n`) must not be used.
+3.  **Brace Style**: Follow WordPress Coding Standards brace style (opening braces for classes and functions on a new line).
+4.  **Naming Conventions**: Adhere to WordPress naming conventions (`snake_case` for variables, properties, function names; `StudlyCaps` for class names). Ensure private/protected properties prefixed with `_` also follow `snake_case` (e.g., `$_my_private_variable`).
+5.  **Docblocks**: Generate complete PHPDoc blocks for all files, classes, methods, and functions, including `@param`, `@return`, `@throws`, and `@var` tags where appropriate. Ensure short and long descriptions are present and tags are correctly formatted.
+6.  **Spacing**: Follow WordPress standards for spacing around operators, parentheses, and control structures.
+7.  **`use` Statements**: Avoid unnecessary `use` statements for classes in the global namespace (e.g., `Exception`, `stdClass`).
+8.  **Comments**: Ensure inline comments end with appropriate punctuation (period, exclamation mark, question mark).
+9.  **Security**: Apply basic security practices, such as escaping output, especially in generated PHP templates or when handling user input (even if placeholders).
+
+## Excluded Directories and Files [CRITICAL]
+
+When running ANY code quality tool (PHPCS, PHPCBF, ESLint, etc.), the following directories and files MUST ALWAYS be excluded:
+
+1. **Third-Party Dependencies**:
+   - `vendor/`
+   - `node_modules/`
+   - `composer-cache/`
+   - `bower_components/`
+   - `third-party/`
+   - Any directory containing external libraries
+
+2. **Generated Files**:
+   - `dist/`
+   - `build/`
+   - `out/`
+   - `coverage/`
+   - `*.min.js`
+   - `*.min.css`
+
+3. **Test Artifacts**:
+   - `test-reports/`
+   - `test-screenshots/`
+   - `test-output/`
+   - `temp/`
+
+4. **Version Control**:
+   - `.git/`
+   - `.svn/`
+
+5. **Environment and Configuration**:
+   - `.github/`
+   - `.vscode/`
+   - `.cursor/`
+   - `.docker/`
+
+## PHPCS/PHPCBF Configuration [REQUIRED]
+
+All PHPCS XML configuration files MUST include these exclusions:
+
+```xml
+<!-- Standard Exclusions -->
+<exclude-pattern>*/vendor/*</exclude-pattern>
+<exclude-pattern>*/node_modules/*</exclude-pattern>
+<exclude-pattern>*/composer-cache/*</exclude-pattern>
+<exclude-pattern>*/bower_components/*</exclude-pattern>
+<exclude-pattern>*/third-party/*</exclude-pattern>
+<exclude-pattern>*/dist/*</exclude-pattern>
+<exclude-pattern>*/build/*</exclude-pattern>
+<exclude-pattern>*/coverage/*</exclude-pattern>
+<exclude-pattern>*/test-reports/*</exclude-pattern>
+<exclude-pattern>*/test-screenshots/*</exclude-pattern>
+<exclude-pattern>*/temp/*</exclude-pattern>
+<exclude-pattern>*/.git/*</exclude-pattern>
+<exclude-pattern>*/.github/*</exclude-pattern>
+<exclude-pattern>*/.vscode/*</exclude-pattern>
+<exclude-pattern>*/.cursor/*</exclude-pattern>
+<exclude-pattern>*/.docker/*</exclude-pattern>
+<exclude-pattern>*.min.js</exclude-pattern>
+<exclude-pattern>*.min.css</exclude-pattern>
+<exclude-pattern>*.js</exclude-pattern>
+<exclude-pattern>*.css</exclude-pattern>
+<exclude-pattern>*.html</exclude-pattern>
+```
+
+## Command Line Exclusions [REQUIRED]
+
+When running code quality tools via command line, always include appropriate exclusion flags:
+
+```bash
+# PHPCS Example
+phpcs --standard=WordPress --ignore=*/vendor/*,*/node_modules/*,*/dist/*,*/build/*,*.js,*.css,*.html .
+
+# PHPCBF Example
+phpcbf --standard=WordPress --ignore=*/vendor/*,*/node_modules/*,*/dist/*,*/build/*,*.js,*.css,*.html .
+
+# ESLint Example
+eslint --ignore-pattern 'node_modules/' --ignore-pattern 'vendor/' --ignore-pattern 'dist/' .
+```
+
+## PHPCBF Usage Guidelines [MANDATORY]
+
+When running PHPCBF to automatically fix code standards issues:
+
+1. **Always Apply Exclusions**: NEVER run PHPCBF without proper exclusion patterns
+2. **Verification Required**: Run PHPCS after PHPCBF to verify fixes
+3. **Standard Command Format**:
+   ```bash
+   # Fix code standards with complete exclusions
+   vendor/bin/phpcbf --standard=WordPress --ignore=*/vendor/*,*/node_modules/*,*/dist/*,*/build/*,*/temp/*,*/.git/*,*/.github/*,*/.cursor/*,*/.docker/*,*.js,*.css,*.html .
+
+   # Verify fixes
+   vendor/bin/phpcs --standard=WordPress --ignore=*/vendor/*,*/node_modules/*,*/dist/*,*/build/*,*/temp/*,*/.git/*,*/.github/*,*/.cursor/*,*/.docker/*,*.js,*.css,*.html .
+   ```
+
+4. **Targeted Fixing**: For specific files or directories:
+   ```bash
+   # Fix specific file
+   vendor/bin/phpcbf --standard=WordPress path/to/file.php
+
+   # Fix specific directory
+   vendor/bin/phpcbf --standard=WordPress --ignore=*/vendor/*,*/node_modules/* path/to/directory/
+   ```
+
+5. **Execution Verification**: ES MUST verify SET has correctly applied exclusions before and after running PHPCBF
+
+## Test Files Quality Standards [MANDATORY]
+
+All test files MUST adhere to the same quality standards as production code:
+
+1. **Test File Standards**:
+   - Test files MUST follow WordPress Coding Standards
+   - Test files MUST pass PHPCS validation
+   - Test files MUST use consistent naming conventions
+   - Test files MUST include proper documentation
+
+2. **Test-Specific PHPCS Rules**:
+   - Use WordPress-Extra ruleset for test files
+   - Test method names can use snake_case (exception to camelCase rule)
+   - Test class names MUST follow standard naming conventions
+
+3. **Test File Validation Process**:
+   ```bash
+   # Validate test files specifically
+   vendor/bin/phpcs --standard=WordPress tests/
+
+   # Fix test files
+   vendor/bin/phpcbf --standard=WordPress tests/
+   ```
+
+4. **Documentation Requirements for Test Files**:
+   - All test files MUST have file-level docblocks
+   - All test classes MUST have class-level docblocks
+   - All test methods MUST have method-level docblocks
+   - All test methods MUST include @covers annotation where applicable
+
+5. **Verification Process**:
+   - PHPCS MUST be run on test files before committing
+   - CI pipeline MUST verify test file quality
+   - Code reviews MUST include test file quality checks
+
+## Non-Critical Issues [ACCEPTABLE]
+
+The following issues are considered non-critical and can be permitted, while still allowing tests to pass acceptance criteria:
+
+1. **Line Ending Inconsistencies**:
+   - Mixed line endings (LF vs CRLF) are acceptable as long as files are otherwise functional
+   - Line ending warnings should be noted but do not need to block test passes
+
+2. **Non-Critical Spacing**:
+   - Minor spacing inconsistencies that don't affect code readability or functionality
+   - Extra whitespace at end of lines or extra blank lines at end of files
+   - Indentation variations that don't impact readability or function
+
+3. **Documentation Formatting**:
+   - Minor documentation formatting issues that don't affect content clarity
+   - Punctuation inconsistencies in inline comments
+   - Comment alignment variations
+
+4. **Acceptable Warnings vs. Critical Errors**:
+   - PHPCS errors that impact functionality MUST be fixed
+   - Warnings about stylistic preferences may be accepted if they don't impact functionality
+   - The focus should be on fixing issues that affect code operation, security, or maintainability
+
+5. **Configuration for Excluding Non-Critical Issues**:
+   ```bash
+   # Exclude non-critical issues when running PHPCS
+   vendor/bin/phpcs --standard=WordPress --ignore=*/vendor/*,*/node_modules/* --severity=5 .
+
+   # Alternatively, exclude specific sniffs
+   vendor/bin/phpcs --standard=WordPress --ignore=*/vendor/*,*/node_modules/* --exclude=Generic.Files.LineEndings,Generic.WhiteSpace.DisallowTabIndent .
+   ```
+
+## Implementation in Scripts [MANDATORY]
+
+All scripts that run code quality tools MUST be updated to include these exclusions. The Software Engineering Team (SET) is responsible for:
+
+1. Reviewing all existing scripts
+2. Adding appropriate exclusions
+3. Documenting the exclusions
+4. Testing the updated scripts
+5. Ensuring all future scripts follow these standards
+6. MUST run PHPCS after PHPCBF to verify fixes were correctly applied
+7. MUST NEVER run PHPCBF without proper exclusions
+
+## Script Templates
+
+### PHPCS/PHPCBF Script Template
+
+```bash
+#!/bin/bash
+
+# Define standard exclusions
+EXCLUDES="*/vendor/*,*/node_modules/*,*/dist/*,*/build/*,*/temp/*,*/.git/*,*/.github/*,*/.cursor/*,*/.docker/*,*.js,*.css,*.html"
+
+# Optional: Define non-critical sniffs to exclude
+NON_CRITICAL="Generic.Files.LineEndings,Generic.WhiteSpace.DisallowTabIndent"
+
+# Run PHPCS with exclusions and optionally ignore non-critical issues
+vendor/bin/phpcs --standard=WordPress --ignore=$EXCLUDES --exclude=$NON_CRITICAL .
+
+# Run PHPCBF with exclusions
+vendor/bin/phpcbf --standard=WordPress --ignore=$EXCLUDES .
+```
+
+## User Story Acceptance Criteria for Code Quality [CLARIFIED]
+
+For a user story to pass code quality requirements:
+
+1. **Critical Requirements** (MUST pass for acceptance):
+   - No PHPCS/PHPCBF errors that affect functionality or security
+   - Consistent naming conventions for classes, methods, and variables
+   - All public methods properly documented
+   - No syntax errors or deprecated function usage
+   - Code operates as expected and performs its intended function
+
+2. **Non-Critical Issues** (May exist while still passing acceptance criteria):
+   - Line ending inconsistencies (LF vs CRLF)
+   - Minor whitespace variations
+   - Stylistic formatting preferences
+   - Comment formatting inconsistencies
+   - Warnings that don't affect code operation or maintainability
+
+## Customization Per Project
+
+Projects may add additional exclusions based on specific needs, but the standard exclusions MUST always be included.
+
+## Role Requirements [CRITICAL]
+
+### Software Engineering Team (SET)
+
+1. MUST use these exclusions when running any code quality tool
+2. MUST verify exclusions are properly configured before running tools
+3. MUST update existing scripts to include these exclusions
+4. MUST document any project-specific exclusions
+5. MUST run PHPCS after PHPCBF to verify fixes were correctly applied
+6. MUST NEVER run PHPCBF without proper exclusions
+7. MUST ensure test files meet the same quality standards as production code
+8. MUST distinguish between critical and non-critical issues
+
+### Executive Secretary (ES)
+
+1. MUST verify all code quality scripts include appropriate exclusions
+2. MUST coordinate updates to existing scripts
+3. MUST maintain documentation of exclusion standards
+4. MUST EXPLICITLY check that SET has applied proper exclusions BEFORE running PHPCBF
+5. MUST VERIFY results after PHPCBF is run to ensure code was fixed correctly
+6. MUST TAKE RESPONSIBILITY for ensuring exclusions are correctly applied
+7. MUST confirm that test files have passed PHPCS validation
+8. MUST ensure team distinguishes between critical and non-critical issues
+
+## Enforcement
+
+These standards are enforced at the HIGHEST PRIORITY level for all code quality tools.
+
+## PHPCS/PHPCBF Execution Process [REQUIRED]
+
+When the user requests fixing code quality issues:
+
+1. ES coordinates the process and delegates to SET
+2. SET confirms understanding of the exclusion requirements
+3. SET constructs the appropriate command with ALL required exclusions
+4. SET distinguishes between critical vs. non-critical issues
+5. ES verifies the command before execution
+6. SET runs PHPCBF with proper exclusions
+7. SET runs PHPCS to verify fixes
+8. ES validates that exclusions were properly applied
+9. ES confirms all critical issues are resolved
+10. ES provides a complete summary of the fixes, noting any remaining non-critical issues
+
+This process is NON-NEGOTIABLE and must be followed without exception.
+
+## Developer Environment Settings [NEW - Merged from system/100]
+
+To ensure consistency across developers, the following settings should be configured:
+
+### Global Git Configuration
+
+Verify and, if necessary, apply the following global Git settings using `git config --global`:
+
+1.  **Line Endings (`core.autocrlf`)**: Set to `input` for cross-platform compatibility.
+    ```bash
+    git config --global core.autocrlf input
+    ```
+2.  **Whitespace (`core.whitespace`)**: Configure to manage indentation and trailing whitespace.
+    ```bash
+    git config --global core.whitespace tab-in-indent,trailing-space,cr-at-eol
+    ```
+
+### VS Code Workspace Configuration (`.vscode/settings.json` or `*.code-workspace`)
+
+Verify and, if necessary, add or correct the following settings within the project's workspace configuration file:
+
+```json
+{
+    "settings": {
+        // ... other settings ...
+
+        // Editor Configuration
+        "editor.detectIndentation": false, // Prevent auto-detection
+        "editor.insertSpaces": true,     // Use Spaces (Override for PHP)
+        "editor.tabSize": 4,              // Standard tab size
+        "files.trimTrailingWhitespace": true, // Remove trailing whitespace
+        "files.eol": "\n",                // Use LF line endings
+
+        // PHP Specific Formatting
+        "[php]": {
+            "editor.defaultFormatter": "valeryanm.vscode-phpcs", // Use phpcs formatter
+            "editor.formatOnSave": true,                     // Format PHP on save
+            "editor.insertSpaces": true,                     // Ensure PHP uses spaces
+            "editor.tabSize": 4                              // Ensure PHP uses 4 spaces
+        }
+
+        // ... other settings ...
+    }
+}
+```
+
+**Note**: The VS Code settings ensure LF line endings and spaces for indentation, particularly overriding defaults for PHP files to align with WordPress standards.
+
+## Whole-Codebase Linting and Formatting [CRITICAL NEW REQUIREMENT]
+
+Code quality tools MUST be run on the entire codebase at once rather than file-by-file to improve efficiency and ensure consistent standards. This applies to all linting and formatting tools, including but not limited to PHPCS, PHPCBF, ESLint, Stylelint, and Prettier.
+
+### PHP Code Quality Tools
+
+When running PHP code quality checks:
+
+```bash
+# Check entire codebase with PHPCS
+phpcs --standard=WordPress --ignore=*/vendor/*,*/node_modules/*,*/dist/*,*/build/*,*/temp/*,*/.git/*,*/.github/*,*/.cursor/*,*/.docker/*,*.js,*.css,*.html .
+
+# Fix entire codebase with PHPCBF
+phpcbf --standard=WordPress --ignore=*/vendor/*,*/node_modules/*,*/dist/*,*/build/*,*/temp/*,*/.git/*,*/.github/*,*/.cursor/*,*/.docker/*,*.js,*.css,*.html .
+```
+
+### JavaScript Code Quality Tools
+
+For JavaScript files, ESLint MUST be used with the appropriate configuration:
+
+```bash
+# Check entire JS codebase with ESLint
+eslint --ignore-pattern 'node_modules/' --ignore-pattern 'vendor/' --ignore-pattern 'dist/' --ignore-pattern 'build/' --ext .js,.jsx,.ts,.tsx .
+
+# Fix entire JS codebase with ESLint
+eslint --ignore-pattern 'node_modules/' --ignore-pattern 'vendor/' --ignore-pattern 'dist/' --ignore-pattern 'build/' --ext .js,.jsx,.ts,.tsx --fix .
+```
+
+### CSS Code Quality Tools
+
+For CSS files, Stylelint MUST be used with the appropriate configuration:
+
+```bash
+# Check entire CSS codebase with Stylelint
+stylelint "**/*.css" --ignore-path .gitignore
+
+# Fix entire CSS codebase with Stylelint
+stylelint "**/*.css" --ignore-path .gitignore --fix
+```
+
+### Code Formatting with Prettier
+
+Prettier should be used for consistent formatting of JS, CSS, JSON, and other supported files:
+
+```bash
+# Check formatting with Prettier
+prettier --check "**/*.{js,jsx,ts,tsx,css,scss,json,md}" --ignore-path .gitignore
+
+# Fix formatting with Prettier
+prettier --write "**/*.{js,jsx,ts,tsx,css,scss,json,md}" --ignore-path .gitignore
+```
+
+### Implementation Requirements
+
+1. **Never Run on Single Files**: Tools MUST NOT be run on individual files except in rare cases where targeted fixes are required.
+2. **Required NPM Dependencies**: Projects using JS/CSS MUST include ESLint, Stylelint, and Prettier in their dependencies.
+3. **Configuration Files**: Each project MUST include appropriate configuration files:
+   - `.eslintrc.js` or `.eslintrc.json` for ESLint
+   - `.stylelintrc.js` or `.stylelintrc.json` for Stylelint
+   - `.prettierrc.js` or `.prettierrc.json` for Prettier
+4. **NPM Scripts**: Package.json MUST include scripts for running these tools:
+   ```json
+   "scripts": {
+     "lint:php": "phpcs --standard=WordPress --ignore=*/vendor/*,*/node_modules/*,*/dist/*,*/build/*,*.js,*.css,*.html .",
+     "fix:php": "phpcbf --standard=WordPress --ignore=*/vendor/*,*/node_modules/*,*/dist/*,*/build/*,*.js,*.css,*.html .",
+     "lint:js": "eslint --ext .js,.jsx,.ts,.tsx .",
+     "fix:js": "eslint --ext .js,.jsx,.ts,.tsx --fix .",
+     "lint:css": "stylelint \"**/*.css\"",
+     "fix:css": "stylelint \"**/*.css\" --fix",
+     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,css,scss,json,md}\"",
+     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,css,scss,json,md}\"",
+     "lint": "npm run lint:php && npm run lint:js && npm run lint:css && npm run format:check",
+     "fix": "npm run fix:php && npm run fix:js && npm run fix:css && npm run format"
+   }
+   ```
+
+5. **Pre-commit Hooks**: Projects SHOULD use Husky and lint-staged to run linting before commits:
+   ```json
+   "lint-staged": {
+     "*.php": ["phpcs --standard=WordPress --ignore=*.js,*.css,*.html"],
+     "*.{js,jsx,ts,tsx}": ["eslint --fix", "prettier --write"],
+     "*.{css,scss}": ["stylelint --fix", "prettier --write"],
+     "*.{json,md}": ["prettier --write"]
+   }
+   ```
+
+### Role Responsibilities
+
+1. **SET**: Responsible for implementing and maintaining all linting configurations.
+2. **ES**: Responsible for verifying SET has properly configured and run linting tools on the entire codebase.
+3. **ALL ROLES**: MUST adhere to the requirement of running tools on the entire codebase rather than file-by-file.
+
+## PHPCS Configuration & Troubleshooting Notes
+
+*   **Standard**: Adhere strictly to WordPress coding standards.
+*   **Installation**: The `WordPress` standard must be installed for PHPCS. Attempt via composer: `composer require --dev wp-coding-standards/wpcs dealerdirect/phpcodesniffer-composer-installer`.
+*   **Known Issues**: Persistent issues running PHPCS have been logged (`docs/logs/US-TH-002-troubleshooting.log`) and tracked in technical debt stories (US-TD-005, US-TD-006, US-TD-007, US-TD-008), particularly pathing issues on Windows. PHPCS checks may be temporarily bypassed if these issues block critical work, but fixing them remains a priority.

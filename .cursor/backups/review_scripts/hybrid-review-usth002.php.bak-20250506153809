@@ -1,0 +1,293 @@
+<?php
+/**
+ * US-TH-002 Hybrid AI-Assisted Review Process
+ *
+ * This script leverages the hybrid review framework to generate AI-assisted
+ * stakeholder reviews for US-TH-002 (Austin Shows Branded Theme).
+ */
+
+// Define constants
+define( 'USER_STORY_ID', 'US-TH-002' );
+
+// Load the framework
+require_once __DIR__ . '/../../.cursor/frameworks/reviews/src/autoload.php';
+
+use AustinShows\Reviews\ReviewManager;
+use AustinShows\Reviews\StakeholderReviewProcessor;
+use AustinShows\Reviews\OpenAI\VisionAnalyzer;
+
+// Display banner
+echo "================================================\n";
+echo " US-TH-002 Hybrid AI-Assisted Review Process\n";
+echo "================================================\n";
+echo 'Started at: ' . date( 'Y-m-d H:i:s' ) . "\n\n";
+
+// Parse arguments
+$action = isset( $argv[1] ) ? $argv[1] : 'help';
+
+// Initialize the framework components
+try {
+	$reviewManager  = new ReviewManager( USER_STORY_ID );
+	$visionAnalyzer = new VisionAnalyzer();
+	$processor      = new StakeholderReviewProcessor( USER_STORY_ID, $reviewManager, $visionAnalyzer );
+} catch ( Exception $e ) {
+	echo '❌ Error initializing review framework: ' . $e->getMessage() . "\n";
+	exit( 1 );
+}
+
+// Process action
+try {
+	switch ( $action ) {
+		case 'check':
+			checkReviewStatus( $reviewManager );
+			break;
+
+		case 'designer':
+			processDesignerReview( $processor );
+			break;
+
+		case 'marketing':
+			processMarketingReview( $processor );
+			break;
+
+		case 'reset':
+			resetReviewStatus( $reviewManager );
+			break;
+
+		case 'help':
+		default:
+			displayHelp();
+			exit( 0 );
+	}
+} catch ( Exception $e ) {
+	echo '❌ Error during review process: ' . $e->getMessage() . "\n";
+	exit( 1 );
+}
+
+echo "\n✅ Review process completed successfully.\n";
+exit( 0 );
+
+/**
+ * Display help information
+ */
+function displayHelp() {
+	echo "Usage: php hybrid-review-usth002.php [action]\n";
+	echo "\n";
+	echo "Actions:\n";
+	echo "  check                   Check current review status\n";
+	echo "  designer                Generate AI-assisted Designer review\n";
+	echo "  marketing               Generate AI-assisted Marketing Director review\n";
+	echo "  reset                   Reset all review statuses to pending\n";
+	echo "  help                    Display this help information\n";
+	echo "\n";
+	echo "Example:\n";
+	echo "  php hybrid-review-usth002.php designer\n";
+}
+
+/**
+ * Check current review status
+ *
+ * @param ReviewManager $reviewManager Review manager
+ */
+function checkReviewStatus( ReviewManager $reviewManager ) {
+	echo 'Checking review status for ' . USER_STORY_ID . "...\n";
+
+	$status = $reviewManager->getReviewStatus();
+
+	echo "\nCurrent review status:\n";
+	echo "-------------------------\n";
+
+	foreach ( $status['stakeholders'] as $role => $roleStatus ) {
+		printf( "%-20s: %s\n", $role, $roleStatus );
+	}
+
+	printf( "%-20s: %s\n", 'User', $status['user'] );
+	printf( "%-20s: %s\n", 'Overall Status', $status['overall'] );
+
+	echo "\n";
+}
+
+/**
+ * Process designer review
+ *
+ * @param StakeholderReviewProcessor $processor Review processor
+ */
+function processDesignerReview( StakeholderReviewProcessor $processor ) {
+	echo 'Processing Designer review for ' . USER_STORY_ID . "...\n";
+
+	// Find implementation files for theme
+	$themeFiles = findThemeFiles();
+
+	// Find screenshots
+	$screenshots = findScreenshots();
+
+	if ( empty( $screenshots ) ) {
+		echo "⚠️  Warning: No screenshots found. Please add screenshots to:\n";
+		echo '   docs/user-stories/sprint-3/' . USER_STORY_ID . "/screenshots/\n";
+		echo "   (recommended: single-event-desktop.png, single-event-mobile.png, archive-events-desktop.png, archive-events-mobile.png)\n\n";
+
+		if ( ! confirm( 'Do you want to continue without screenshots?' ) ) {
+			echo "Operation canceled.\n";
+			exit( 0 );
+		}
+	}
+
+	// Process the review
+	$reviewFile = $processor->processDesignerReview( $themeFiles, $screenshots );
+
+	echo "\n✅ Designer review generated successfully.\n";
+	echo "Review file: $reviewFile\n";
+	echo "\nNext steps:\n";
+	echo "1. Open the review file in a text editor\n";
+	echo "2. Review the AI-generated analysis\n";
+	echo "3. Complete the assessment sections\n";
+	echo "4. Update the review checklist\n";
+	echo "5. Add your name to the human validation statement\n";
+	echo "6. Make a decision (approve/reject)\n";
+	echo "7. Approve using 'php drive-reviews.php designer-approve'\n";
+}
+
+/**
+ * Process marketing review
+ *
+ * @param StakeholderReviewProcessor $processor Review processor
+ */
+function processMarketingReview( StakeholderReviewProcessor $processor ) {
+	echo 'Processing Marketing Director review for ' . USER_STORY_ID . "...\n";
+
+	// Find implementation files for theme
+	$themeFiles = findThemeFiles();
+
+	// Find screenshots
+	$screenshots = findScreenshots();
+
+	if ( empty( $screenshots ) ) {
+		echo "⚠️  Warning: No screenshots found. Please add screenshots to:\n";
+		echo '   docs/user-stories/sprint-3/' . USER_STORY_ID . "/screenshots/\n";
+		echo "   (recommended: single-event-desktop.png, single-event-mobile.png, archive-events-desktop.png, archive-events-mobile.png)\n\n";
+
+		if ( ! confirm( 'Do you want to continue without screenshots?' ) ) {
+			echo "Operation canceled.\n";
+			exit( 0 );
+		}
+	}
+
+	// Process the review
+	$reviewFile = $processor->processMarketingDirectorReview( $themeFiles, $screenshots );
+
+	echo "\n✅ Marketing Director review generated successfully.\n";
+	echo "Review file: $reviewFile\n";
+	echo "\nNext steps:\n";
+	echo "1. Open the review file in a text editor\n";
+	echo "2. Review the AI-generated analysis\n";
+	echo "3. Complete the assessment sections\n";
+	echo "4. Update the review checklist\n";
+	echo "5. Add your name to the human validation statement\n";
+	echo "6. Make a decision (approve/reject)\n";
+	echo "7. Approve using 'php drive-reviews.php marketing-approve'\n";
+}
+
+/**
+ * Reset review status
+ *
+ * @param ReviewManager $reviewManager Review manager
+ */
+function resetReviewStatus( ReviewManager $reviewManager ) {
+	echo 'Resetting review status for ' . USER_STORY_ID . "...\n";
+
+	if ( ! confirm( "⚠️  This will reset ALL review statuses to 'pending'. Continue?" ) ) {
+		echo "Operation canceled.\n";
+		exit( 0 );
+	}
+
+	$reviewManager->resetAllReviewStatuses();
+
+	echo "✅ All review statuses reset to 'pending'.\n";
+}
+
+/**
+ * Find theme files for US-TH-002
+ *
+ * @return array Theme files
+ */
+function findThemeFiles() {
+	$files     = array();
+	$basePaths = array(
+		__DIR__ . '/../../austin-shows-theme',
+		__DIR__ . '/../../assets',
+		__DIR__ . '/../../src',
+	);
+
+	$extensions = array( 'php', 'css', 'js', 'html' );
+
+	echo "Searching for theme files...\n";
+
+	foreach ( $basePaths as $basePath ) {
+		if ( ! is_dir( $basePath ) ) {
+			continue;
+		}
+
+		// Find files recursively in the base path
+		$directoryIterator = new RecursiveDirectoryIterator( $basePath );
+		$iterator          = new RecursiveIteratorIterator( $directoryIterator );
+
+		foreach ( $iterator as $file ) {
+			if ( $file->isFile() ) {
+				$extension = $file->getExtension();
+
+				if ( in_array( $extension, $extensions ) ) {
+					$files[] = $file->getPathname();
+				}
+			}
+		}
+	}
+
+	echo 'Found ' . count( $files ) . " implementation files.\n";
+
+	return $files;
+}
+
+/**
+ * Find screenshots for US-TH-002
+ *
+ * @return array Screenshots (name => path)
+ */
+function findScreenshots() {
+	$screenshots    = array();
+	$screenshotsDir = __DIR__ . '/../../docs/user-stories/sprint-3/' . USER_STORY_ID . '/screenshots';
+
+	if ( ! is_dir( $screenshotsDir ) ) {
+		echo "Screenshots directory not found: $screenshotsDir\n";
+		return $screenshots;
+	}
+
+	$files = scandir( $screenshotsDir );
+
+	foreach ( $files as $file ) {
+		$extension = pathinfo( $file, PATHINFO_EXTENSION );
+
+		if ( in_array( strtolower( $extension ), array( 'jpg', 'jpeg', 'png', 'gif' ) ) ) {
+			$name                 = pathinfo( $file, PATHINFO_FILENAME );
+			$screenshots[ $name ] = $screenshotsDir . '/' . $file;
+		}
+	}
+
+	echo 'Found ' . count( $screenshots ) . " screenshots.\n";
+
+	return $screenshots;
+}
+
+/**
+ * Ask for confirmation
+ *
+ * @param string $question Question to ask
+ * @return bool User confirmed
+ */
+function confirm( $question ) {
+	echo $question . ' (y/n) ';
+	$handle = fopen( 'php://stdin', 'r' );
+	$line   = fgets( $handle );
+	fclose( $handle );
+
+	return strtolower( trim( $line ) ) === 'y';
+}

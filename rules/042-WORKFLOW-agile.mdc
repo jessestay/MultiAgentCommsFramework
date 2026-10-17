@@ -1,0 +1,592 @@
+---
+description: Agile Framework and User Story Templates for AI Agent Development - Applies to All Projects
+globs: []
+alwaysApply: true
+topic: Workflow Standards
+version: 1.0.0
+---
+# Agile Framework for AI Agent Development
+
+## Core Principles
+
+1. Release Planning First
+   - All user stories are created during the release planning phase
+   - Stories map directly to release plan requirements from docs/technical/RELEASE_PLAN.md
+   - No new stories are created during sprints
+   - Stories are estimated and prioritized before sprint planning
+
+2. Release Plan Source of Truth
+   - Release plan is maintained in docs/technical/RELEASE_PLAN.md
+   - All user stories must map to release plan requirements
+   - Release plan changes trigger user story review
+   - Sprint planning references release plan directly
+
+3. Architectural Continuity and Code Reuse [CRITICAL]
+   - Each sprint builds upon previous sprint's codebase
+   - Architecture decisions consider full release plan vision
+   - Code reuse is prioritized over new implementations
+   - Technical debt is addressed proactively
+   - Common functionality is abstracted for reuse
+   - Documentation tracks architectural decisions
+   - Changes maintain backward compatibility
+   - New features extend existing architecture
+   - Regular architecture reviews ensure alignment
+   - Cross-sprint dependencies are identified early
+
+4. User Story Creation
+   - Created during release planning phase
+   - Must map to specific release plan requirements
+   - Includes full acceptance criteria and test cases
+   - Technical dependencies identified upfront
+
+## Release Planning Process
+
+1. Requirements Analysis
+   - Review release plan from docs/technical/RELEASE_PLAN.md
+   - Identify core features and dependencies
+   - Map technical architecture needs
+   - Define success criteria
+
+2. User Story Creation
+   - Create stories for each requirement
+   - Define acceptance criteria
+   - Write test cases
+   - Document technical approach
+
+3. Story Refinement
+   - Review and refine stories
+   - Identify dependencies
+   - Estimate complexity
+   - Prioritize based on value
+
+4. Release Backlog Creation
+   - Organize stories by feature area
+   - Define story relationships
+   - Set target milestones
+   - Plan testing strategy
+
+## Sprint Planning Process
+
+1. Story Selection
+   - Select from existing release backlog
+   - No new story creation
+   - Consider team capacity
+   - Maintain feature dependencies
+
+2. Sprint Backlog
+   - Subset of release backlog
+   - Stories are "ready" state
+   - Clear acceptance criteria
+   - Defined test cases
+
+3. Sprint Execution
+   - Implement selected stories
+   - Follow test-first approach
+   - Regular progress updates
+   - No scope changes
+
+## User Story Template
+
+```markdown
+# US-[Area][Number]: As a [role] I want [capability]
+
+As a [role]
+I want [capability]
+So that [benefit]
+
+## Business Value
+[Clear statement of value delivered]
+
+## Acceptance Criteria
+Each criterion should be:
+- Testable: Can be verified through automated tests
+- Specific: Clear and unambiguous
+- Independent: Can be tested in isolation
+- Relevant: Directly related to user value
+
+Format:
+1. GIVEN [initial context/state]
+   WHEN [action/event occurs]
+   THEN [expected outcome]
+   AND [additional outcome if needed]
+
+Example:
+1. GIVEN a user is on the venue search page
+   WHEN they enter "live music downtown tonight"
+   THEN results show venues with live music events
+   AND venues are sorted by distance from downtown
+   AND only tonight's events are displayed
+
+## Test Coverage Matrix
+| AC ID | Acceptance Test | Supporting Unit Tests | Status |
+|-------|----------------|----------------------|--------|
+| AC1   | test_AC1_*.py  | - test_venue_search.py:test_parse_query | ✅ |
+|       |                | - test_ranking.py:test_relevance_score   | ✅ |
+
+## Technical Notes
+- Required unit test coverage: 80%
+- Required acceptance test coverage: 100% of ACs
+- Test annotations required for traceability
+- Automated test report generation in CI/CD
+
+## Tasks
+1. [ ] Write acceptance tests (100% AC coverage)
+2. [ ] Implement feature with unit tests
+3. [ ] Update test coverage documentation
+4. [ ] Verify all AC tests passing
+
+## Definition of Done
+1. All acceptance criteria met and verified
+2. Tests written and passing (unit, integration, acceptance)
+3. Code reviewed and approved
+4. Documentation updated
+5. Performance requirements met
+6. Security requirements met
+7. Accessibility requirements met
+8. Test coverage meets thresholds
+   - Unit tests: 80% coverage
+   - Acceptance tests: 100% of ACs
+9. Test documentation updated
+10. CI/CD pipeline passing
+```
+
+## Testing Standards
+
+### 1. Test Organization
+- `tests/acceptance/`: End-to-end tests mapped to ACs
+- `tests/unit/`: Component-level tests
+- `tests/integration/`: Service integration tests
+- `tests/performance/`: Performance benchmarks
+
+### 2. Test Documentation
+```python
+# Example test annotation format
+def test_function():
+    """Test description
+    AC Reference: US-[Area][Number]-AC[Number]
+    Coverage: [list of acceptance criteria covered]
+    Dependencies: [list of required components/services]
+    """
+```
+
+### 3. Automated Test Reporting
+Required CI/CD steps:
+1. Run unit tests & coverage
+2. Run acceptance tests
+3. Generate test-to-AC mapping report
+4. Update documentation
+5. Fail build if coverage thresholds not met
+
+### 4. Git Integration
+Branch naming:
+- Feature: `feature/US-[Area][Number]-[short-description]`
+- Test: `test/US-[Area][Number]-[test-type]`
+
+Commit messages:
+```
+test(US-[Area][Number]): Add tests for AC[Number]
+- Added acceptance test for natural language search
+- Added supporting unit tests for query parsing
+- Updated test coverage documentation
+```
+
+## Story Areas
+
+- Core Technical (US-T-xxx)
+- Event Management (US-E-xxx)
+- Search & Discovery (US-S-xxx)
+- Monetization (US-M-xxx)
+- User Management (US-U-xxx)
+- Integration (US-I-xxx)
+
+## Story States
+
+1. Created
+   - Initial creation during release planning
+   - Basic information defined
+   - Mapped to release requirement
+
+2. Refined
+   - Full acceptance criteria
+   - Test cases written
+   - Technical approach defined
+   - Dependencies identified
+
+3. Ready
+   - Estimated
+   - Prioritized
+   - All blockers resolved
+   - Ready for sprint planning
+
+4. In Progress
+   - Selected for sprint
+   - Work started
+   - Tests being implemented
+   - Regular updates
+
+5. Done
+   - All criteria met
+   - Tests passing
+   - Documentation complete
+   - Reviewed and accepted
+
+## Roles and Responsibilities
+
+1. Product Owner
+   - Defines release requirements
+   - Prioritizes stories
+   - Accepts completed work
+   - Maintains release vision
+
+2. Development Team
+   - Creates technical stories
+   - Estimates complexity
+   - Implements solutions
+   - Writes and runs tests
+
+3. Scrum Master
+   - Facilitates planning
+   - Removes blockers
+   - Tracks progress
+   - Ensures process followed
+
+## Metrics and Reporting
+
+1. Release Metrics
+   - Requirements coverage
+   - Story point total
+   - Technical debt items
+   - Testing coverage
+
+2. Sprint Metrics
+   - Velocity
+   - Completion rate
+   - Quality metrics
+   - Blockers resolved
+
+## Test Coverage Review
+
+During sprint reviews:
+1. Review test coverage matrix
+2. Verify AC-to-test mappings
+3. Check automated test reports
+4. Update test documentation
+
+## Definition of Done
+
+1. Story Level
+   - Acceptance criteria met
+   - Tests written and passing
+   - Code reviewed
+   - Documentation updated
+   - Performance verified
+   - Security reviewed
+
+2. Sprint Level
+   - All stories complete
+   - Integration tests passing
+   - No known defects
+   - Documentation current
+   - Release notes updated
+
+3. Release Level
+   - All features complete
+   - System tests passing
+   - Performance validated
+   - Security verified
+   - Documentation finalized
+   - Support trained
+
+Additional testing requirements:
+- All ACs have corresponding acceptance tests
+- Unit test coverage meets threshold
+- Test documentation is updated
+- Test reports are generated
+- All tests pass in CI/CD pipeline
+
+## Best Practices
+
+1. **Story Creation**
+   - Write stories during release planning
+   - Make stories independent
+   - Include clear acceptance criteria
+   - Define test requirements
+
+2. **Sprint Planning**
+   - Select from existing stories only
+   - Commit to achievable goals
+   - Ensure team consensus
+   - Maintain focus on value
+   - Review architectural implications
+   - Identify reuse opportunities
+   - Consider future sprint impacts
+
+3. **Execution**
+   - Follow TDD process
+   - Regular integration
+   - Continuous testing
+   - Clear communication
+   - Maintain architectural vision
+   - Prioritize code reuse
+   - Document architectural decisions
+
+4. **Review**
+   - Demonstrate working software
+   - Verify acceptance criteria
+   - Gather feedback
+   - Plan improvements
+   - Assess architectural alignment
+   - Evaluate code reuse success
+   - Update architecture documentation
+
+## User Story Management
+
+### Core User Story Template
+
+```
+US-[Project]-[Area][Number]: [Title]
+
+As a [persona]
+I want [capability]
+So that [benefit/value]
+
+Acceptance Criteria:
+1. [Criterion 1]
+2. [Criterion 2]
+...
+
+Tasks:
+1. [Task 1] - [Role]
+2. [Task 2] - [Role]
+...
+
+Definition of Done:
+1. [DoD Item 1]
+2. [DoD Item 2]
+...
+```
+
+### Template Fields
+
+- **US-[Project]-[Area][Number]**: Unique identifier
+  - **Project**: Short code for the project (FB = facebook-growth-ai, SM = social-media-growth-ai, CI = calendar_integration)
+  - **Area**: Single letter code (A = Analytics, C = Content, U = User Management, etc.)
+  - **Number**: Two-digit sequential number (01, 02, etc.)
+- **Title**: Concise description (max 60 characters)
+- **Persona**: Who benefits from this feature
+- **Capability**: What they need to do
+- **Benefit**: Why they need it / what value it provides
+- **Acceptance Criteria**: Specific, testable requirements
+- **Tasks**: Breakdown of implementation steps with assigned roles
+- **Definition of Done**: Checklist for completion verification
+
+## User Story Lifecycle
+
+1. **Creation**:
+   - Product Owner creates user story following template
+   - Story is added to the product backlog
+
+2. **Refinement**:
+   - Team reviews user story during backlog refinement
+   - Acceptance criteria are clarified
+   - Test scenarios are identified
+   - Technical tasks are defined
+
+3. **Estimation**:
+   - Team assigns story points using Fibonacci sequence
+   - Estimation is based on complexity, uncertainty, and effort
+
+4. **Sprint Planning**:
+   - Stories are selected for the sprint based on priority and capacity
+   - Tasks are assigned to specific roles
+   - Acceptance criteria are finalized
+
+5. **Implementation**:
+   - Tests are written first (TDD approach)
+   - Code is implemented to pass tests
+   - Code is reviewed by peers
+   - Documentation is updated
+
+6. **Verification**:
+   - All tests are passing
+   - Acceptance criteria are verified
+   - Product Owner reviews the implementation
+
+7. **Acceptance**:
+   - Story is marked as completed
+   - Demo is prepared for Sprint Review
+   - Lessons learned are documented for Sprint Retrospective
+
+## Role Responsibilities
+
+### Executive Secretary (ES) / Scrum Master
+- Facilitate Agile ceremonies
+- Remove impediments
+- Track sprint progress
+- Maintain the backlog
+- Generate sprint reports
+
+### Software Engineering Team (SET)
+- Implement technical solutions
+- Write automated tests
+- Review code
+- Resolve technical debt
+- Maintain system architecture
+
+### Copy/Technical Writer (CTW)
+- Create user documentation
+- Write technical specifications
+- Maintain knowledge base
+- Ensure consistent terminology
+- Support demo preparation
+
+### Designer (DES)
+- Create UI/UX designs
+- Develop visual assets
+- Ensure accessibility compliance
+- Maintain design system
+- Validate user experience
+
+## Sprint Metrics
+
+Each sprint tracks the following metrics:
+
+1. **Velocity**: Story points completed per sprint
+2. **Burn-down**: Remaining work over time
+3. **Cycle Time**: Time from start to completion for stories
+4. **Test Coverage**: Percentage of code covered by tests
+5. **Defect Rate**: Number of bugs found per story
+
+## User Story Examples by Project
+
+### Facebook Growth AI (FB)
+
+```
+US-FB-A01: Dashboard Shows Post Engagement Metrics
+
+As a social media manager
+I want to see engagement metrics for each post
+So that I can identify which content performs best
+
+Acceptance Criteria:
+1. Dashboard displays likes, shares, comments, and reach for each post
+2. Metrics can be sorted by any column
+3. Posts can be filtered by date range
+4. Data updates automatically every hour
+5. Metrics can be exported to CSV
+
+Tasks:
+1. Design dashboard layout with filter components - DES
+2. Implement API integration with Facebook Insights - SET
+3. Create data visualization components - SET
+4. Implement data export functionality - SET
+5. Write user documentation - CTW
+6. QA testing and bug fixes - SET
+
+Definition of Done:
+1. All acceptance criteria met and verified
+2. Documentation is complete and up-to-date
+3. Code passes all automated tests
+4. Design is responsive across desktop and mobile
+5. Performance meets or exceeds benchmarks
+```
+
+### Special User Story Types
+
+#### Technical Debt (TD)
+
+```
+US-FB-TD01: Refactor Authentication System
+
+As a developer
+I want to refactor the authentication system
+So that we can improve security and maintenance
+
+Acceptance Criteria:
+1. Authentication uses industry-standard OAuth flow
+2. Password policies comply with NIST guidelines
+3. Code duplication is eliminated
+4. Test coverage is at least 90%
+5. System continues to support existing integrations
+
+Tasks:
+1. Document current system behavior - SET
+2. Design new authentication architecture - SET
+3. Implement OAuth provider integration - SET
+4. Migrate existing user credentials - SET
+5. Update documentation - CTW
+6. Create comprehensive tests - SET
+
+Definition of Done:
+1. All acceptance criteria met and verified
+2. Zero regression bugs in related systems
+3. Performance is equal to or better than previous implementation
+4. Documentation updated to reflect changes
+5. Security audit completed
+```
+
+#### Research Spike (SP)
+
+```
+US-SM-SP02: Research AI-Driven Content Generation
+
+As a product manager
+I want to understand AI content generation options
+So that we can select the best approach for our product
+
+Acceptance Criteria:
+1. Evaluation of at least 3 AI content generation technologies
+2. Comparison of features, costs, and limitations
+3. Scalability assessment
+4. Integration complexity evaluation
+5. Recommendation with justification
+
+Tasks:
+1. Research available AI content generation technologies - SET
+2. Create evaluation criteria - ES
+3. Perform technical assessment of each option - SET
+4. Document findings and comparison - CTW
+5. Prepare recommendation - ES
+
+Definition of Done:
+1. All acceptance criteria met and verified
+2. Documentation provides clear comparison
+3. Recommendation is supported by data
+4. Next steps are clearly defined
+```
+
+## Applying This Framework
+
+When starting a new sprint:
+
+1. ES facilitates sprint planning meeting
+2. Team selects user stories based on priority and capacity
+3. SET implements features following TDD approach
+4. CTW updates documentation
+5. DES ensures design consistency
+6. ES tracks progress and removes impediments
+7. Team demonstrates completed work at sprint review
+8. Team identifies improvements in retrospective
+
+## Handling Emergent Troubleshooting / Scope Management [NEW POLICY]
+
+Occasionally, technical issues or necessary troubleshooting may arise that are not directly linked to a user story currently planned in the sprint backlog. To maintain focus and manage scope effectively:
+
+1.  **Identification**: The Executive Secretary (ES) is responsible for identifying when a requested task or troubleshooting effort falls outside the scope of existing, planned user stories.
+2.  **Recommendation**: The ES MUST politely recommend creating a new, properly scoped user story (potentially a Technical Debt 'TD' or Spike 'SP' type) for the Product Backlog to track this emergent work.
+3.  **Scope Warning**: The ES MUST briefly explain the risk of scope creep and its potential impact on sprint goals if unplanned work is undertaken without proper tracking.
+4.  **User Decision & Process**: 
+    *   **If User Agrees**: Pause the emergent task. The user/Product Owner creates the story. It will be prioritized in a future sprint planning session.
+    *   **If User Insists on Immediate Action**: If the user deems the issue critical and requires immediate troubleshooting before a full story can be created/prioritized, the ES coordinates with the user/PO to:
+        *   Quickly create a *minimal placeholder* user story in the backlog (e.g., `US-[Area]-TD[Num]: Troubleshoot [brief description]`). Assign the next available ID.
+        *   The ES confirms this placeholder ID with the user.
+        *   Troubleshooting can then proceed.
+        *   **Logging**: SET MUST log all troubleshooting steps in the `docs/user-stories/.../[New_Placeholder_US-ID]/troubleshooting.md` file, using the newly created placeholder ID.
+        *   **Follow-up**: This placeholder story MUST be revisited during the next backlog refinement or sprint planning session to be fully detailed, estimated, and prioritized appropriately.
+
+This process ensures that even urgent, unplanned work is captured within the framework, providing visibility and allowing for proper tracking and prioritization over time. 
+4. CTW updates documentation
+5. DES ensures design consistency
+6. ES tracks progress and removes impediments
+7. Team demonstrates completed work at sprint review
+8. Team identifies improvements in retrospective 

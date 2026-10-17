@@ -1,0 +1,186 @@
+{
+  "brief_id": "ofw_write_20260928T144404",
+  "completed_at": "2026-09-28T15:00:36+00:00",
+  "results": [
+    {
+      "sync_key": "gcal_32omf98bnpc0esb03pifqu80s0_initial",
+      "op": "ofw_create",
+      "status": "already_exists",
+      "google_event_id": "32omf98bnpc0esb03pifqu80s0",
+      "ofw_key": "CK-15cdd2534a16f99e",
+      "title": "Rebecca Parent Time - Fall Break (Part 1 of 2)",
+      "evidence": "Browser verified entry exists with exact title + start/end dates; no duplicate created."
+    },
+    {
+      "sync_key": "gcal_v5i8t4lfmui6dsrcomusaogn3s_initial",
+      "op": "ofw_create",
+      "status": "already_exists",
+      "google_event_id": "v5i8t4lfmui6dsrcomusaogn3s",
+      "ofw_key": "CK-6cf9a871ab621ad9",
+      "title": "Jesse Parent Time - Columbus Day",
+      "evidence": "Browser verified entry exists with exact title + start/end dates; no duplicate created."
+    },
+    {
+      "sync_key": "gcal_unji4p7ivi71gpjuvfp3so4bjc_20261031T220000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists",
+      "google_event_id": "unji4p7ivi71gpjuvfp3so4bjc_20261031T220000Z",
+      "ofw_key": "CK-a2849b705fadbcab",
+      "title": "Halloween - Jesse Parent Time",
+      "evidence": "Browser verified entry exists with exact title + start/end dates; no duplicate created."
+    },
+    {
+      "sync_key": "gcal_4uu7trh09pvk04unr1mdn86am4_20261111T010000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists",
+      "google_event_id": "4uu7trh09pvk04unr1mdn86am4_20261111T010000Z",
+      "ofw_key": "CK-9791a44009ee544d",
+      "title": "Veteran's Day Holiday - Rebecca Parent Time",
+      "evidence": "Browser verified entry exists with exact title + start/end dates; no duplicate created."
+    },
+    {
+      "sync_key": "gcal_0j46gkka0iq3i2v1jhq09tgb6j_20270215_initial",
+      "op": "ofw_create",
+      "status": "already_exists",
+      "google_event_id": "0j46gkka0iq3i2v1jhq09tgb6j_20270215",
+      "ofw_key": "CK-794fd7236ab23902",
+      "title": "Rebecca Parent Time - President'sDay",
+      "evidence": "Browser verified entry exists with exact title + start/end dates; no duplicate created."
+    },
+    {
+      "sync_key": "gcal_26dqvcmovtjkorce44m440tu6o_20270301T220000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists",
+      "google_event_id": "26dqvcmovtjkorce44m440tu6o_20270301T220000Z",
+      "ofw_key": "CK-86327eb10dcb4438",
+      "title": "Juliet Birthday - Jesse Parent Time",
+      "evidence": "Browser verified entry exists with exact title + start/end dates; no duplicate created."
+    },
+    {
+      "sync_key": "gcal_ivbijolt0pa2qsc30tffspvmlo_initial",
+      "op": "ofw_create",
+      "status": "already_exists",
+      "google_event_id": "ivbijolt0pa2qsc30tffspvmlo",
+      "ofw_key": "CK-b9704cb4039f3c46",
+      "title": "Jesse Parent Time - Spring Break",
+      "evidence": "Browser verified entry exists with exact title + start/end dates; no duplicate created."
+    },
+    {
+      "sync_key": "gcal_698ajn5c98t28vln04ccn8r1sa_20270320T210000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists",
+      "google_event_id": "698ajn5c98t28vln04ccn8r1sa_20270320T210000Z",
+      "ofw_key": "CK-15363f6d4a599a2e",
+      "title": "Crystal Birthday - Jesse Parent Time",
+      "evidence": "Browser verified entry exists with exact title + start/end dates; no duplicate created."
+    },
+    {
+      "sync_key": "gcal_6jl3radh7hr3bc79mr1bhmdohm_20270405T210000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists",
+      "google_event_id": "6jl3radh7hr3bc79mr1bhmdohm_20270405T210000Z",
+      "ofw_key": "CK-19e837157a05822f",
+      "title": "Thomas Birthday - Jesse Parent Time",
+      "evidence": "Browser verified entry exists with exact title + start/end dates; no duplicate created."
+    },
+    {
+      "sync_key": "gcal_4usaa0tdr6h5k5h26gcrst07g2_20270428T210000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists",
+      "google_event_id": "4usaa0tdr6h5k5h26gcrst07g2_20270428T210000Z",
+      "ofw_key": "CK-aff9fe30ecdc5c7a",
+      "title": "Emily Birthday - Rebecca Parent Time",
+      "evidence": "Browser verified entry exists with exact title + start/end dates; no duplicate created."
+    },
+    {
+      "sync_key": "gcal_3krlb461gf5tgjah44c0oerpo5_20270429T210000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists",
+      "google_event_id": "3krlb461gf5tgjah44c0oerpo5_20270429T210000Z",
+      "ofw_key": "CK-3561fc247c81ee62",
+      "title": "Emily Birthday - Jesse Parent Time",
+      "evidence": "Browser verified entry exists with exact title + start/end dates; no duplicate created."
+    },
+    {
+      "sync_key": "gcal_7fhgcevd4nt3gloj8hv4ng3ctb_20270503T210000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists",
+      "google_event_id": "7fhgcevd4nt3gloj8hv4ng3ctb_20270503T210000Z",
+      "ofw_key": "CK-d6dba0d89faf08fa",
+      "title": "Alex Birthday - Rebecca Parent Time",
+      "evidence": "Browser verified entry exists with exact title + start/end dates; no duplicate created."
+    },
+    {
+      "sync_key": "gcal_78pn0mc6c667jn485tisc34fsq_20270504T210000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists",
+      "google_event_id": "78pn0mc6c667jn485tisc34fsq_20270504T210000Z",
+      "ofw_key": "CK-227a25b218ac914e",
+      "title": "Alex Birthday - Jesse Parent Time",
+      "evidence": "Browser verified entry exists with exact title + start/end dates; no duplicate created."
+    },
+    {
+      "sync_key": "gcal_1g2cjt5ge18dlf1it8ib9u3ip7_20270509T150000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists",
+      "google_event_id": "1g2cjt5ge18dlf1it8ib9u3ip7_20270509T150000Z",
+      "ofw_key": "CK-460c51e9d87e0d7f",
+      "title": "Mother's Day - Rebecca Parent Time",
+      "evidence": "Browser verified entry exists with exact title + start/end dates; no duplicate created."
+    },
+    {
+      "sync_key": "gcal_6odta4bm42qt7e0leag31ea2vu_20270527T000000Z_initial",
+      "op": "ofw_create",
+      "status": "already_exists",
+      "google_event_id": "6odta4bm42qt7e0leag31ea2vu_20270527T000000Z",
+      "ofw_key": "CK-094baeb587bab955",
+      "title": "Memorial Day - Rebecca Parent Time",
+      "evidence": "Browser verified entry exists with exact title + start/end dates; no duplicate created."
+    },
+    {
+      "sync_key": "gcal_epingii4j08varn97o9q7ectbs_notesfix",
+      "op": "ofw_update",
+      "status": "already_exists",
+      "google_event_id": "epingii4j08varn97o9q7ectbs",
+      "ofw_key": "CK-9fb3ce4a9ea7bcf2",
+      "title": "orthodontist Emily and Juliet",
+      "evidence": "Entry exists (title+dates verified) but notes empty = not sync-owned; left completely untouched per standing rule."
+    },
+    {
+      "sync_key": "gcal_fmeo2e8gtt5ttkfkjviqa703ds_notesfix",
+      "op": "ofw_update",
+      "status": "ok",
+      "google_event_id": "fmeo2e8gtt5ttkfkjviqa703ds",
+      "ofw_key": "CK-c9d9b2f2d28c4a9d",
+      "title": "Rebecca Parent Time Fall Break Part 2",
+      "evidence": "Notes replaced with shortened sync format; Event updated confirmed; sync_key line verified verbatim on re-open."
+    },
+    {
+      "sync_key": "gcal_ltlca02hqd539b0p2lhn1s55kj_20261126T020000Z_notesfix",
+      "op": "ofw_update",
+      "status": "ok",
+      "google_event_id": "ltlca02hqd539b0p2lhn1s55kj_20261126T020000Z",
+      "ofw_key": "CK-af106978da9cf57b",
+      "title": "Thanksgiving Holiday Jesse Parent Time",
+      "evidence": "Notes replaced with shortened sync format; Event updated confirmed; sync_key line verified verbatim on re-open."
+    },
+    {
+      "sync_key": "gcal_2hco8b6ri5a28vnt9qre552spj_20261228T020000Z_notesfix",
+      "op": "ofw_update",
+      "status": "ok",
+      "google_event_id": "2hco8b6ri5a28vnt9qre552spj_20261228T020000Z",
+      "ofw_key": "CK-2fe8962e48be7cdb",
+      "title": "Christmas Holiday - Jesse Parent Time",
+      "evidence": "Notes replaced with shortened sync format; Event updated confirmed; sync_key line verified verbatim on re-open."
+    },
+    {
+      "sync_key": "gcal_rlqkernij3j3ph5cu2fqrm19a0_20270118_notesfix",
+      "op": "ofw_update",
+      "status": "ok",
+      "google_event_id": "rlqkernij3j3ph5cu2fqrm19a0_20270118",
+      "ofw_key": "CK-ad007733cff7764b",
+      "title": "MLK Jr. Holiday - Jesse Parent Time",
+      "evidence": "Notes replaced with shortened sync format; Event updated confirmed; sync_key line verified verbatim on re-open."
+    }
+  ]
+}

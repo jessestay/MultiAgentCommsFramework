@@ -1,0 +1,3 @@
+[submodule ".cursor"]
+	path = .cursor
+	url = https://jessestay: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@github.com/jessestay/MultiAgentCommsFramework.git

@@ -1,0 +1,382 @@
+---
+description: Defines the mandatory workflow for creating and editing Canva documents using MCP tools. This ensures consistent, branded proposals and documents with proper content.
+alwaysApply: false
+---
+# Canva MCP Document Creation Workflow [MANDATORY]
+
+## Overview
+
+This rule defines the **MANDATORY** process for creating, editing, and managing Canva documents using MCP tools. All roles MUST follow this workflow when generating branded documents in Canva.
+
+## Token Expiration Handling [CRITICAL - MANDATORY]
+
+**ABSOLUTE REQUIREMENT**: If ANY Canva MCP tool returns an authentication error (e.g., "Access token is invalid", "Token expired", "Authentication failed", or similar), the AI MUST:
+
+### Immediate Actions [NON-NEGOTIABLE]
+
+1. **STOP all Canva MCP operations immediately**
+2. **Inform the user clearly**: "The Canva MCP token has expired. Re-authentication is required."
+3. **Provide re-authentication instructions**:
+   ```
+   To re-authenticate Canva MCP:
+   1. Run in terminal: npx -y mcp-remote@latest https://mcp.canva.com/mcp
+   2. Complete the OAuth flow in your browser
+   3. Reload MCP servers in Cursor (Cmd/Ctrl+Shift+P → "Reload MCP Servers")
+   4. Confirm authentication is complete
+   ```
+4. **DO NOT attempt any further Canva MCP calls** until user confirms re-authentication is complete
+
+### Token File Locations (For Manual Cleanup If Needed)
+
+If automatic re-authentication fails, these files may need to be deleted:
+- `~/.mcp-auth/mcp-remote-*/` - Contains token files
+- Look for `*_tokens.json` and `*_code_verifier.txt` files
+
+### Verification After Re-Authentication
+
+After user confirms re-authentication:
+1. Test with `mcp_Canva_list-brand-kits` to verify token works
+2. If still failing, instruct user to restart Cursor completely
+3. Only proceed with document work once authentication is confirmed
+
+---
+
+## Pre-Requisites
+
+Before starting any Canva document creation:
+
+1. **Content File Required**: A `[PROJECT]_CANVA_CONTENT.md` file MUST exist with ALL text content
+2. **Brand Kit ID**: Know the brand kit ID (check `canva_designs.json` or use `list-brand-kits`)
+3. **Contact Info**: Always use these Stay N Alive defaults unless specified:
+   - Phone: `+1 801-853-8339`
+   - Email: `jesse@staynalive.com`
+   - Website: `staynalive.com`
+   - **NO PHYSICAL ADDRESS** - Never include street addresses
+
+## Workflow Steps [MANDATORY ORDER]
+
+### Step 1: Content Preparation
+
+**Before ANY Canva work**, create or verify the content file:
+
+```markdown
+# [Project Name] - Canva Content Guide
+
+## Contact Information
+- Company: Stay N Alive
+- Phone: +1 801-853-8339
+- Email: jesse@staynalive.com
+- Website: staynalive.com
+
+## PAGE 1 - [Title]
+[Exact text for each element]
+
+## PAGE 2 - [Title]
+[Exact text for each element]
+...
+```
+
+**Location**: `docs/[PROJECT]_CANVA_CONTENT.md`
+
+### Step 2: Generate Design
+
+Use `mcp_Canva_generate-design` with these MANDATORY parameters:
+
+```json
+{
+  "design_type": "proposal|presentation|document",
+  "brand_kit_id": "[from canva_designs.json]",
+  "query": "[COMPREHENSIVE prompt - see template below]"
+}
+```
+
+**Query Template Structure**:
+```
+Create a [PAGE_COUNT]-page [TYPE] using [BRAND] brand colors.
+
+CRITICAL CONTACT INFO - USE ONLY THESE EXACT VALUES:
+- Phone: +1 801-853-8339
+- Email: jesse@staynalive.com
+- Website: staynalive.com
+- NO PHYSICAL ADDRESS
+
+DESIGN REQUIREMENTS:
+- ALL text MUST be native Canva text layers
+- NO embedded text in images/graphics
+- Use clean stock photos without text
+- Use simple single-color icons only
+
+=== PAGE 1: [TITLE] ===
+[Full content from content guide]
+
+=== PAGE 2: [TITLE] ===
+[Full content from content guide]
+...
+```
+
+### Step 3: Create Editable Version
+
+```
+mcp_Canva_create-design-from-candidate
+- job_id: [from generate-design response]
+- candidate_id: [chosen candidate ID]
+```
+
+### Step 4: Verify Content
+
+```
+mcp_Canva_get-design-content
+- design_id: [from create-design-from-candidate]
+- content_types: ["richtexts"]
+```
+
+**Compare against content file and create verification checklist**:
+- [ ] Phone number correct
+- [ ] Email correct
+- [ ] No placeholder addresses
+- [ ] All page titles present
+- [ ] Key sections accurate
+
+### Step 5: Document Results
+
+Update `canva_designs.json` with:
+- design_id
+- edit_url
+- view_url
+- status
+- manual_fixes_needed (if any)
+- verified_content
+
+### Step 6: Manual Fixes (If Needed)
+
+Document any required manual fixes in `canva_designs.json`:
+
+```json
+"manual_fixes_needed": [
+  {
+    "page": 2,
+    "action": "DELETE",
+    "text": "123 Anywhere St., Any City",
+    "location": "Contact section"
+  }
+]
+```
+
+## Known Limitations
+
+| MCP Can Do | MCP Cannot Do |
+|------------|---------------|
+| Generate designs with AI | Edit specific text elements |
+| Read all text content | Replace text in existing designs |
+| Export to PDF/PNG | Use Autofill API (needs Enterprise) |
+| Upload assets | Search brand templates |
+
+## Placeholder Address Issue
+
+**KNOWN ISSUE**: Canva's AI often inserts placeholder addresses like "123 Anywhere St., Any City" regardless of instructions. 
+
+**Workaround**:
+1. Include "NO PHYSICAL ADDRESS" multiple times in prompt
+2. Accept that manual deletion may be required
+3. Document placeholder locations in `canva_designs.json`
+
+## File Structure
+
+```
+project/
+├── docs/
+│   ├── [PROJECT]_CANVA_CONTENT.md    # Source content (REQUIRED)
+│   └── technical/
+│       └── CANVA_MCP_WORKFLOW_PROCESS.md
+├── canva_designs.json                 # Design tracking
+└── templates/
+    └── canva_proposal_content_template.md
+```
+
+## Design Tracking Schema
+
+```json
+{
+  "projects": {
+    "[project_name]": {
+      "[design_name]_v[N]": {
+        "design_id": "string",
+        "edit_url": "string",
+        "view_url": "string",
+        "created": "YYYY-MM-DD",
+        "status": "current|deprecated|draft",
+        "page_count": number,
+        "notes": "string",
+        "manual_fixes_needed": [],
+        "verified_content": {}
+      }
+    }
+  },
+  "brand_kit": {
+    "id": "string",
+    "name": "string",
+    "colors": {}
+  }
+}
+```
+
+## CRITICAL LIMITATIONS [DOCUMENTED]
+
+### Generate-Design Content Paraphrasing
+The `generate-design` tool **does NOT preserve exact text**. It summarizes and paraphrases content:
+- Dollar figures are converted to generic descriptions
+- Detailed comparison tables become simplified cards
+- Specific pricing becomes "from $X" or ranges
+
+### Browser Automation Limitations
+Canva's web interface is **extremely difficult to automate**:
+- Complex DOM structure with dynamically generated refs
+- Keyboard shortcuts (Ctrl+F, Ctrl+H, Ctrl+G) don't work as expected
+- Page navigation requires finding specific dynamic element refs
+- Find & Replace dialogs don't appear via keyboard shortcuts
+
+### RECOMMENDED APPROACH: Manual Edit Guide
+When `generate-design` fails to include critical content:
+
+1. **Create a Manual Edit Guide** in `docs/[PROJECT]_MANUAL_EDITS.md`
+2. Include:
+   - Direct design URL
+   - Page-by-page content to copy-paste
+   - Exact dollar figures and tables
+   - Logo placement instructions
+   - Checklist for verification
+3. User performs quick manual edits (~5-10 minutes)
+
+This is **faster and more reliable** than extended browser automation attempts.
+
+---
+
+## Role Responsibilities
+
+### DES (Designer)
+- Execute the Canva generation workflow
+- Review visual quality of generated designs
+- Identify design-related issues
+- Create manual edit guides when automation fails
+
+### SET (Software Engineering Team)
+- Maintain `canva_designs.json`
+- Troubleshoot MCP tool issues
+- Document workflow improvements
+
+### ES (Executive Secretary)
+- Ensure content file exists before design work
+- Track design status and approvals
+- Coordinate between roles
+
+## Enforcement
+
+This workflow is **MANDATORY** for all Canva document creation. Skipping steps will result in:
+- Inconsistent branding
+- Missing content
+- Placeholder data in final documents
+- Lost design tracking
+
+### Token Expiration Enforcement [CRITICAL]
+
+**ALL ROLES** must watch for these error patterns from Canva MCP tools:
+- "Access token is invalid"
+- "Token expired"
+- "Authentication failed"
+- "Unauthorized"
+- HTTP 401 or 403 errors
+
+**Upon detecting ANY of these errors**: IMMEDIATELY stop Canva work and initiate the Token Expiration Handling protocol at the top of this document. This is NON-NEGOTIABLE.
+
+## Quick Reference Commands
+
+```bash
+# Get brand kit ID
+mcp_Canva_list-brand-kits
+
+# Generate design
+mcp_Canva_generate-design (brand_kit_id, design_type, comprehensive query)
+
+# Make editable
+mcp_Canva_create-design-from-candidate (job_id, candidate_id)
+
+# Verify content
+mcp_Canva_get-design-content (design_id, ["richtexts"])
+
+# Export final
+mcp_Canva_export-design (design_id, {type: "pdf"})
+```
+
+---
+
+## Bulk Create CSV Workflow [RECOMMENDED FOR PROPOSALS]
+
+For **repeatable proposals** and documents that will be generated multiple times with different client data, use the **Bulk Create CSV workflow** documented in:
+
+**`340-PROJECT-proposal-bulk-create-workflow.mdc`**
+
+### Quick Overview
+
+1. **Prepare CSV data**: `templates/proposal_data_{client}.csv`
+2. **Open Brand Template** in Canva
+3. **Apps → Bulk Create** → Upload CSV
+4. **Generate** → Review → Export
+
+### When to Use
+
+| Scenario | Recommended Approach |
+|----------|---------------------|
+| One-off custom design | `generate-design` MCP tool |
+| Repeatable proposals | Bulk Create CSV workflow |
+| Quick updates to existing | Manual edit with guide |
+| Multiple clients, same format | Bulk Create with template |
+
+### Files Reference
+
+- **CSV Template**: `templates/proposal_data_template.csv`
+- **README**: `templates/README.md`
+- **Workflow Rule**: `.cursor/rules/340-PROJECT-proposal-bulk-create-workflow.mdc`
+- **Content Standard**: `.cursor/rules/330-PROJECT-proposal-template-standard.mdc`
+
+---
+
+## Reference Documentation [CRITICAL]
+
+### Canva For Dummies PDF [PRIMARY REFERENCE]
+**Location**: `.cursor/docs/Canva® For Dummies®.pdf`
+
+**MANDATORY REFERENCE**: When encountering Canva UI automation challenges, Bulk Create workflow issues, or need to understand Canva feature capabilities:
+
+1. **CONSULT THE PDF FIRST** before attempting complex automation
+2. **Search the PDF** for relevant feature documentation (Bulk Create, field mapping, data connections)
+3. **Use PDF guidance** to understand proper UI workflows before automating
+4. **Reference PDF** when explaining manual steps to users
+
+**Key Sections for Automation**:
+- Bulk Create and CSV mapping workflows
+- Field connection and data binding
+- Template creation and placeholder usage
+- Design editing and text manipulation
+
+**When to Use**:
+- Understanding Bulk Create field mapping process
+- Learning how to connect CSV data to design elements
+- Troubleshooting automation failures
+- Planning manual workflow steps
+
+---
+
+## Related Rules
+
+- `330-PROJECT-proposal-template-standard.mdc` - Content structure and branding
+- `340-PROJECT-proposal-bulk-create-workflow.mdc` - CSV-based Bulk Create process
+- `OWNER-jesse-stay-profile.mdc` - Contact information and profile
+
+---
+
+*Rule Version: 2.1.0*
+*Last Updated: December 8, 2024*
+*Changes: 
+- Added Canva For Dummies PDF reference section
+- Mandated PDF consultation for automation challenges
+- Updated version to 2.1.0*

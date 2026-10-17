@@ -1,0 +1,113 @@
+---
+description: Enforces mandatory pre-development checks for SET, including Git status, test suite status (temporarily excluding PHPCS), and dependency checks.
+globs: []
+alwaysApply: true
+topic: Workflow Standards
+version: 1.0.0
+---
+---
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Pre-Development Check System
+
+## Overview
+This rule enforces mandatory checks before any code development or modifications. The Software Engineering Team (SET) must perform these checks before proceeding with any development work.
+
+## Required Checks
+
+### 1. Git Status Check
+- Verify clean working directory
+- Check for uncommitted changes
+- Ensure on correct branch
+
+### 2. Test Suite Status
+- Run full test suite
+- Verify all tests pass
+- Check test coverage meets minimum requirements (50%)
+
+### 3. Code Standards Check
+# Note: PHPCS check is temporarily removed due to execution issues/timeouts.
+# It should be reinstated once the underlying problems are resolved (See US-TD-005, US-TD-006, US-TD-007, US-TD-008)
+# - Run PHP CodeSniffer
+# - Verify PSR-12 compliance
+# - Check WordPress coding standards
+
+### 4. Dependency Check
+- Verify composer.json is up to date
+- Check for security vulnerabilities
+- Ensure all required packages are installed
+
+## Implementation Process
+
+### Before Any Code Changes
+```bash
+# 1. Git Status Check
+git status
+git fetch origin
+# Consider pulling changes from the main branch if necessary
+# git pull origin [your-main-branch]
+
+# 2. Test Suite Status
+# Run PHPUnit tests using the configured bootstrap
+# Adjust bootstrap path and options as needed per project
+vendor/bin/phpunit --bootstrap [path/to/bootstrap.php]
+
+# 3. Code Standards Check
+# Ensure you are in the correct directory for the project/plugin being tested
+# vendor/bin/phpcs --standard=WordPress .
+
+# 4. Dependency Check
+# Ensure you are in the correct directory for the project/plugin being tested
+composer validate
+composer install --dry-run # Check if updates are needed without installing
+composer audit
+```
+
+### Failure Conditions
+Development MUST NOT proceed if:
+- Any tests are failing
+# - Code standards checks fail
+- Security vulnerabilities are found
+- Dependencies are missing or invalid
+
+### Error Resolution
+1. Document all errors found
+2. Fix each error before proceeding
+3. Re-run all checks after fixes
+4. Only proceed when all checks pass
+
+## SET Response Protocol
+
+When starting any development task, SET must:
+
+1. Run the pre-development check script (excluding PHPCS for now)
+2. Report results in the following format:
+```
+🟠 **Software Engineering Team (SET)**: Pre-development checks completed:
+- Git Status: ✅ Clean
+- Test Suite: ✅ All 157 tests passing
+# - Code Standards: 🟡 SKIPPED (Known issue)
+- Dependencies: ✅ All up to date
+```
+
+3. If any checks fail:
+```
+🟠 **Software Engineering Team (SET)**: Pre-development checks failed:
+- Git Status: ❌ Uncommitted changes present
+- Test Suite: ❌ 2 tests failing
+# - Code Standards: 🟡 SKIPPED (Known issue)
+- Dependencies: ❌ Security vulnerability found
+
+Action Required: Must resolve all issues before proceeding with development.
+```
+
+## Integration with Cursor
+
+This rule requires SET to:
+1. Run checks before any file modifications (excluding PHPCS for now)
+2. Report check results in all responses
+3. Refuse to proceed with development if checks fail
+4. Document any failures and required fixes 

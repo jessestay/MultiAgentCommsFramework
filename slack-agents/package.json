@@ -1,0 +1,49 @@
+{
+  "name": "jesse-slack-agents-macf-v3",
+  "version": "3.0.0",
+  "description": "MACF Slack Adapter — 8 MACF-aligned agents on Railway Socket Mode",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test": "jest --forceExit --detectOpenHandles",
+    "test:watch": "jest --watch",
+    "test:ci": "jest --forceExit --detectOpenHandles --ci --coverage"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "agents/**/*.js",
+      "utils/**/*.js",
+      "config.js"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "functions": 30,
+        "lines": 45
+      }
+    },
+    "testTimeout": 15000
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@hatchet-dev/typescript-sdk": "^1.33.2",
+    "@modelcontextprotocol/sdk": "^1.31.0",
+    "@octokit/rest": "18.12.0",
+    "@slack/bolt": "^4.4.0",
+    "cheerio": "0.22.0",
+    "dotenv": "^16.4.5",
+    "http-proxy-agent": "^9.1.0",
+    "node-cron": "^3.0.3",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

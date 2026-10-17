@@ -1,0 +1,5 @@
+## Testing Pyramid Adherence (testing_pyramid.rule)
+
+- Development for all user stories must prioritize a strong testing pyramid.
+- Before implementing end-to-end UI tests (e.g., Behat), ensure that underlying logic, business rules, and component interactions are thoroughly covered by unit tests (e.g., PHPUnit) and integration tests (e.g., PHPUnit with a framework-specific test harness like the WordPress Test Harness).
+- Behat tests should primarily focus on user flows, acceptance criteria verification from a user perspective, and visual confirmation once core functionality is verified at lower levels. 

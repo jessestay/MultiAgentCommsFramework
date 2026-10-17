@@ -1,0 +1,191 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Directory Structure Standards
+
+## Overview
+
+This document defines the standard directory structure for all projects within the Multi-agent Communications Framework. It ensures consistency across projects and makes navigation easier for all team members.
+
+## Core Directory Structure
+
+Every project should maintain the following standard directory structure:
+
+```
+project-root/
+├── src/              # Source code
+├── docs/             # Documentation
+│   ├── user-stories/ # User stories organized by sprint and ID
+│   ├── technical/    # Technical documentation
+│   ├── api/          # API documentation
+│   ├── design/       # General design documents not tied to a specific user story
+│   ├── logs/         # Central directory for all logs (troubleshooting, tool output, application, etc.)
+│   └── strategy/     # Strategic planning documents
+├── tests/            # Test files
+│   ├── unit/         # Unit tests
+│   ├── integration/  # Integration tests
+│   └── acceptance/   # Acceptance tests
+├── assets/           # Static assets (e.g., images, fonts not part of theme)
+├── backups/          # Backup and deleted files (NOT to be committed)
+├── .cursor/          # Cursor-specific files
+│   └── rules/        # Cursor rules
+└── README.md         # Project README
+```
+
+## README Requirement [CRITICAL]
+
+Every significant directory within the project structure (especially within `docs/` and `src/`) **MUST** contain a `README.md` file.
+
+This `README.md` should:
+1.  Briefly explain the purpose of the directory.
+2.  List the key subdirectories and files within it.
+3.  Provide links to important files or sub-READMEs.
+4.  Explain the expected structure and naming conventions within the directory.
+
+This ensures navigability and understanding of the project structure.
+
+## Documentation Directory Standard
+
+Documentation should follow this structure:
+
+```
+docs/
+├── README.md               # Explains docs structure, links to areas
+├── user-stories/
+│   ├── README.md           # Explains user story organization
+│   └── {sprint_number}/    # e.g., sprint-1, sprint-2
+│       ├── README.md       # Lists stories in this sprint
+│       └── {US-ID}/        # e.g., US-TH-002
+│           ├── README.md   # Overview of story, links to artifacts
+│           ├── {US-ID}.md  # The main user story file
+│           ├── design/     # Design assets/docs specific to this story
+│           ├── technical/  # Technical docs specific to this story
+│           ├── assets/     # Assets specific to this story
+│           └── troubleshooting.md # [NEW] Log of troubleshooting steps for this story (to be moved under docs/logs/troubleshooting/)
+├── technical/
+│   ├── README.md           # Explains technical docs structure
+│   ├── architecture/
+│   ├── apis/
+│   └── RELEASE_PLAN.md     # Release planning document
+├── design/                 # General design docs (brand guides, overall style)
+│   ├── README.md
+│   └── brand-guidelines.md
+├── logs/
+│   ├── README.md           # Explains log organization (e.g., subdirs for behat, composer, troubleshooting, app)
+│   ├── troubleshooting/    # User story specific troubleshooting logs (e.g., US-TH-001-troubleshooting.log)
+│   ├── behat/              # Output logs from Behat runs
+│   ├── composer/           # Output logs from Composer commands
+│   └── application/        # Application-specific logs (if any)
+├── strategy/
+│   └── README.md           # Standard location for strategic planning documents
+└── INDEX.md                # Master documentation index (optional, can be replaced by READMEs)
+```
+
+## API Log Directory Standard [NEW]
+
+API transaction logs, such as outputs from interactions with external services (e.g., `canva_*.json` files), should be stored in a dedicated subdirectory to keep the project root and other documentation areas clean. This also centralizes logs for easier review and debugging.
+
+```
+docs/
+├── design/ 
+│   ├── canva-api-logs/     # Logs specific to Canva API interactions
+│   │   └── README.md       # Explains contents (e.g., raw JSON responses)
+│   └── ...                 # Other design subdirectories
+└── api-logs/               # Alternative general location for other API logs
+    ├── [service-name]/     # e.g., stripe/, google-maps/
+    │   └── README.md
+    └── README.md           # Explains api-logs structure
+```
+
+- **Preferred for design-related APIs (like Canva)**: `docs/design/[service-name]-api-logs/`
+- **General API logs**: `docs/api-logs/[service-name]/`
+- These directories should contain raw request/response logs, typically in JSON or text format.
+- Ensure a `README.md` in each new log directory explains its contents and naming conventions.
+
+## Backup Directory Standard [CRITICAL]
+
+### Purpose
+
+The `/backups/` directory at the project root serves as a centralized location for:
+- Files that are no longer needed but may be referenced later
+- Older versions of files that have been replaced
+- Generated files that are not part of the main project
+- Temporary files created during development
+- Any content not intended for long-term storage in the repository
+
+### Usage Rules
+
+1. **Mandatory Usage**: All files not intended to be part of the permanent project structure MUST be stored in the backups directory
+2. **Never Commit**: The backups directory should be added to .gitignore
+3. **Automatic Cleanup**: During project cleanup, all unused files MUST be moved to the backups directory, not deleted
+4. **Directory Structure**: Within the backups directory, maintain a logical structure reflecting the original location:
+   ```
+   backups/
+   ├── docs/
+   │   └── US-TH-002/
+   ├── src/
+   ├── tests/
+   └── scripts/
+   ```
+5. **Documentation**: Important backups should include a README.md file explaining the contents
+
+### Implementation by Roles
+
+**Executive Secretary (ES)**:
+- Coordinates backup strategy
+- Ensures files are properly organized within the backups directory
+- Maintains any necessary documentation of backed-up files
+
+**Software Engineering Team (SET)**:
+- Moves all replaced code files to the backups directory
+- Creates appropriate subdirectories within backups to maintain organization
+- Updates .gitignore to exclude the backups directory
+
+**Copy/Technical Writer (CTW)**:
+- Documents important backup decisions
+- Creates README files when needed
+
+## Source Code Directory Standard
+
+Source code should follow this structure:
+
+```
+src/
+├── core/                   # Core functionality
+├── features/               # Feature-specific code
+├── utils/                  # Utility functions
+├── assets/                 # Assets used by the code
+└── index.js                # Main entry point
+```
+
+## Test Directory Standard
+
+Tests should follow this structure:
+
+```
+tests/
+├── unit/                   # Unit tests matching src structure
+├── integration/            # Integration tests
+├── acceptance/             # Acceptance tests (Behat features)
+├── fixtures/               # Test fixtures
+└── utils/                  # Test utilities
+```
+
+## Enforcement
+
+All roles must adhere to these directory structure standards:
+
+1. **ES**: Enforces proper structure organization
+2. **SET**: Implements and maintains directory structure
+3. **CTW**: Documents directory structure
+4. **DES**: Organizes design assets following standards
+
+## Best Practices
+
+1. Maintain clean project structure by regularly moving unused files to the backups directory
+2. Use descriptive directory names that clearly indicate content
+3. Minimize directory depth where possible
+4. **Always include README.md files** in key directories to explain purpose and structure
+5. When working with temporary files, always use the backups directory

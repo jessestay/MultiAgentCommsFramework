@@ -1,0 +1,457 @@
+// index.js — MACF Slack Adapter v3
+// 9 MACF-aligned agents running as one Bolt Socket Mode process on Railway.
+// Each agent has an isolated persona, memory, and responsibility set.
+// Inter-agent communication: [from: {Agent} → {Agent}] {message} pattern.
+
+require('dotenv').config();
+
+const { App } = require('@slack/bolt');
+const { AGENTS, CHANNELS, CHANNEL_IDS, DELEGATION_TARGETS, CEO_AGENT_ID } = require('./config');
+const state = require('./utils/state');
+const delegation = require('./utils/delegation');
+const { isDMEvent } = require('./utils/dm');
+const workEngine = require('./engine/workEngine');
+
+// ─── Validate environment ─────────────────────────────────────────────────────
+const REQUIRED_ENV = ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET', 'SLACK_APP_TOKEN', 'ANTHROPIC_API_KEY'];
+const missing = REQUIRED_ENV.filter(k => !process.env[k]);
+if (missing.length > 0) {
+  console.error('❌ Missing required env vars:', missing.join(', '));
+  process.exit(1);
+}
+
+// ─── Bolt App (Socket Mode) ───────────────────────────────────────────────────
+const app = new App({
+  token: process.env.SLACK_BOT_TOKEN,
+  signingSecret: process.env.SLACK_SIGNING_SECRET,
+  socketMode: true,
+  appToken: process.env.SLACK_APP_TOKEN,
+  logLevel: process.env.LOG_LEVEL || 'info',
+});
+
+// ─── Load all 11 agent modules ─────────────────────────────────────────────────
+const execPM   = require('./agents/execPM');
+const cmo      = require('./agents/cmo');
+const cco      = require('./agents/cco');
+const jobcoach = require('./agents/jobcoach');
+const cuxo     = require('./agents/cuxo');
+const cro      = require('./agents/cro');
+const lawyer   = require('./agents/lawyer');
+const cfo      = require('./agents/cfo');
+const cto      = require('./agents/cto');
+const facebook = require('./agents/facebook');
+const hr       = require('./agents/hr');
+
+// Map agentId → module (for delegation routing)
+const AGENT_MODULES = {
+  execPM,
+  cmo,
+  cco,
+  jobcoach,
+  cuxo,
+  cro,
+  lawyer,
+  cfo,
+  cto,
+  facebook,
+  hr,
+};
+
+// ─── Channel → Primary Agent routing ─────────────────────────────────────────
+// When a message arrives in a channel, this determines which agent "owns" it.
+const CHANNEL_PRIMARY_AGENT = {
+  [CHANNELS.marketing]: 'cmo',
+  [CHANNELS.research]:  'cro',
+  [CHANNELS.content]:   'cco',
+  [CHANNELS.jobs]:      'jobcoach',
+  [CHANNELS.it]:        'cto',     // #cto — CTO owns this channel
+  [CHANNELS.management]:'execPM',  // #management — exec-pm is the coordinator
+};
+
+// ─── Thread history helpers ───────────────────────────────────────────────────
+// Fetches full thread when anyone replies in a thread so agents have full
+// conversational context, not just the latest isolated message.
+async function fetchThreadHistory(event, client) {
+  if (!event.thread_ts) return null;
+  try {
+    const result = await client.conversations.replies({
+      channel: event.channel,
+      ts: event.thread_ts,
+      limit: 30,
+    });
+    return result.messages || null;
+  } catch (err) {
+    console.warn('[index] Could not fetch thread history:', err.message);
+    return null;
+  }
+}
+
+function formatThreadContext(messages) {
+  if (!messages || messages.length <= 1) return '';
+  return '\n\nThread history (oldest first):\n' +
+    messages.map(m => {
+      const name = m.username || m.bot_profile?.name || (m.user ? `<@${m.user}>` : 'User');
+      return `${name}: ${(m.text || '').replace(/<@[A-Z0-9]+>/g, '[Jesse]').slice(0, 600)}`;
+    }).join('\n');
+}
+
+// ─── Channel name cache ───────────────────────────────────────────────────────
+// Reverse lookup: ID → name, using static map to avoid channels:read scope
+const CHANNEL_ID_TO_NAME = Object.fromEntries(
+  Object.entries(CHANNEL_IDS).map(([name, id]) => [id, name])
+);
+async function resolveChannelName(channelId, client) {
+  if (CHANNEL_ID_TO_NAME[channelId]) return CHANNEL_ID_TO_NAME[channelId];
+  try {
+    const info = await client.conversations.info({ channel: channelId });
+    const name = info.channel?.name || channelId;
+    return name;
+  } catch {
+    return channelId;
+  }
+}
+
+// ─── Detect explicit agent addressing in message text ────────────────────────
+// Allows Jesse (or any agent) to address a specific agent by name or handle
+// e.g. "@cmo can you..." or "CMO:" or "[from: X → CMO]"
+function detectAddressedAgent(text) {
+  if (!text) return null;
+
+  // Check for delegation pattern: [from: X → Target]
+  const delegMatch = text.match(/\[from:\s*.+?\s*→\s*(.+?)\]/i);
+  if (delegMatch) {
+    const target = delegMatch[1].trim().toLowerCase().replace(/[\s-]+/g, '');
+    return DELEGATION_TARGETS[target] || null;
+  }
+
+  // Check for @handle or "AgentName:" addressing
+  const handleMap = {
+    'exec-pm': 'execPM', 'execpm': 'execPM', 'exec pm': 'execPM',
+    'cmo': 'cmo',
+    'cco': 'cco',
+    'jobcoach': 'jobcoach', 'job coach': 'jobcoach',
+    'cuxo': 'cuxo',
+    'cro': 'cro',
+    'lawyer': 'lawyer', 'counsel': 'lawyer',
+    'cfo': 'cfo',
+    'cto': 'cto', 'tech': 'cto',
+    'facebook': 'facebook', 'facebook expert': 'facebook', 'fb expert': 'facebook',
+    'hr': 'hr', 'head of hr': 'hr',
+  };
+  for (const [pattern, agentId] of Object.entries(handleMap)) {
+    // Match @handle or "AgentName:" at start of message
+    if (new RegExp(`(@|\\b)${pattern.replace(' ', '[- ]?')}(:|\\b)`, 'i').test(text)) {
+      return agentId;
+    }
+  }
+  return null;
+}
+
+// ─── Thread-aware say wrapper ─────────────────────────────────────────────────
+// When a mention comes from inside a thread, replies should stay in that thread.
+// This wraps Bolt's say() so agents don't each need to handle thread_ts themselves.
+function makeThreadSay(say, event) {
+  if (!event.thread_ts) return say;
+  return (msg) => {
+    if (typeof msg === 'string') {
+      return say({ text: msg, thread_ts: event.thread_ts });
+    }
+    return say({ ...msg, thread_ts: event.thread_ts });
+  };
+}
+
+// ─── App mention handler ──────────────────────────────────────────────────────
+app.event('app_mention', async ({ event, say, client }) => {
+  const channelName = await resolveChannelName(event.channel, client);
+  const text = event.text || '';
+  console.log(`[index] Mention in #${channelName}: "${text.slice(0, 80)}"`);
+
+  state.updateChannelActivity(channelName);
+
+  // Enrich with thread history so agents see the full conversation
+  event.threadHistory = await fetchThreadHistory(event, client);
+  event.threadContext = formatThreadContext(event.threadHistory);
+
+  // Wrap say() to reply in-thread when the mention came from a thread
+  const threadSay = makeThreadSay(say, event);
+
+  // 1. Try to detect if a specific agent was addressed
+  const addressedId = detectAddressedAgent(text);
+
+  // 2. Fall back to the channel's primary agent
+  const primaryId = CHANNEL_PRIMARY_AGENT[channelName];
+
+  // 3. Resolve the agent to use
+  const agentId = addressedId || primaryId || 'execPM';
+  const agentModule = AGENT_MODULES[agentId];
+
+  if (agentModule?.handleMention) {
+    await agentModule.handleMention({ event, say: threadSay, client });
+  } else {
+    await execPM.handleMention({ event, say: threadSay, client });
+  }
+});
+
+// ─── Message handler (inter-agent delegation + @handle routing) ───────────────
+// CEO bot allowlist: the Jarvis Jr. CEO bot (U0C2QE4PGFR) posts delegation
+// directives like [from: CEO → CFO]. These MUST be processed — they are the
+// primary command channel. Infinite-loop protection is handled by the
+// visitedAgents set in each agent's handleDelegation, not by blanket bot filtering.
+const CEO_BOT_USER_ID = 'U0C2QE4PGFR';
+// FIX (Oct 2, 2026): Allow n8n-inbox bot (B0AUJU69KK8) to post delegations.
+// It was being filtered as a generic bot message, causing its [from: n8n-inbox → X]
+// messages to appear in channels but never get processed by agents.
+const ALLOWED_BOT_IDS = ['B0C39F2CNHJ', 'B0AUJU69KK8'];
+app.event('message', async ({ event, say, client }) => {
+  // Ignore bot messages to prevent infinite loops — EXCEPT the CEO bot's and
+  // n8n-inbox's, which carry delegation directives that must be routed.
+  const isAllowedBot = event.user === CEO_BOT_USER_ID || ALLOWED_BOT_IDS.includes(event.bot_id);
+  if (!isAllowedBot && (event.bot_id || event.subtype === 'bot_message')) return;
+
+  const channelName = await resolveChannelName(event.channel, client);
+  state.updateChannelActivity(channelName);
+
+  const text = event.text || '';
+
+  // Enrich with thread history so agents see the full conversation
+  event.threadHistory = await fetchThreadHistory(event, client);
+  event.threadContext = formatThreadContext(event.threadHistory);
+
+  // 1. Check for delegation pattern first — route to target agent
+  const delegMatch = text.match(/\[from:\s*(.+?)\s*→\s*(.+?)\]/i);
+  if (delegMatch) {
+    // SINGLE PROCESSOR (Oct 6, 2026): CEO directives are the VM poller's job.
+    // The Railway bot must SKIP them to avoid split-brain duplicates.
+    // (Oct 4 architecture: "poller is sole poster, VM handles directives.")
+    const fromName = delegMatch[1].trim().toLowerCase();
+    if (fromName === 'ceo') {
+      console.log(`[index] Skipping CEO directive (VM poller handles): "${text.slice(0, 80)}"`);
+      return;
+    }
+    const toName = delegMatch[2].trim().toLowerCase().replace(/[\s-]+/g, '');
+    const toAgentId = DELEGATION_TARGETS[toName];
+    if (toAgentId && AGENT_MODULES[toAgentId]?.handleDelegation) {
+      console.log(`[index] Delegation → ${toAgentId}: "${text.slice(0, 80)}"`);
+      await AGENT_MODULES[toAgentId].handleDelegation(text, new Set(), event.channel).catch(err =>
+        console.error(`[index] Delegation error for ${toAgentId}:`, err)
+      );
+    }
+    return; // delegation handled — don't double-process
+  }
+
+  // Wrap say() to reply in-thread when the message came from a thread
+  const threadSay = makeThreadSay(say, event);
+
+  // 2. Check for explicit @handle text mention (e.g. "@cmo", "exec-pm:")
+  const addressedId = detectAddressedAgent(text);
+  if (addressedId) {
+    const agentModule = AGENT_MODULES[addressedId];
+    if (agentModule?.handleMention) {
+      console.log(`[index] Text mention → ${addressedId} in #${channelName}: "${text.slice(0, 80)}"`);
+      await agentModule.handleMention({ event, say: threadSay, client }).catch(err =>
+        console.error(`[index] Text mention error for ${addressedId}:`, err)
+      );
+    }
+    return;
+  }
+
+  // 2b. DMs: no channel primary agent here — default to the CEO-role holder
+  // (Jesse's single point of contact) unless another agent was addressed above.
+  // Jesse may DM anyone directly; every member responds when that happens.
+  // (Requires the message.im / message.mpim event subscriptions — SETUP.md 1c.)
+  if (isDMEvent(event)) {
+    const ceoId = CEO_AGENT_ID && AGENT_MODULES[CEO_AGENT_ID] ? CEO_AGENT_ID : 'execPM';
+    console.log(`[index] DM → ${ceoId}: "${text.slice(0, 80)}"`);
+    await AGENT_MODULES[ceoId].handleMention({ event, say, client }).catch(err =>
+      console.error('[index] DM handling error:', err)
+    );
+    return;
+  }
+
+  // 3. If message is in a channel with a primary agent, respond to any substantive message
+  // (3+ chars filters out single-char noise, emoji reactions-as-text, bare punctuation)
+  const primaryId = CHANNEL_PRIMARY_AGENT[channelName];
+  if (primaryId && text.length >= 3) {
+    const agentModule = AGENT_MODULES[primaryId];
+    if (agentModule?.handleMention) {
+      console.log(`[index] Channel message → ${primaryId} in #${channelName}: "${text.slice(0, 80)}"`);
+      await agentModule.handleMention({ event, say: threadSay, client }).catch(err =>
+        console.error(`[index] Channel message error for ${primaryId}:`, err)
+      );
+    }
+  }
+});
+
+// ─── Reaction handler (content approval) ──────────────────────────────────────
+app.event('reaction_added', async ({ event, client }) => {
+  if (['white_check_mark', 'heavy_check_mark', 'x'].includes(event.reaction)) {
+    await cco.handleReaction({ event, client }).catch(err =>
+      console.error('[index] Reaction handling error:', err)
+    );
+  }
+});
+
+// ─── Slash commands ───────────────────────────────────────────────────────────
+app.command('/health', async ({ ack, say }) => {
+  await ack();
+  const agents = Object.keys(AGENT_MODULES);
+  const checks = agents.map(id => {
+    const mod = AGENT_MODULES[id];
+    return `• ${AGENTS[id]?.emoji || '🤖'} *${AGENTS[id]?.slackName || id}*: ✅ running`;
+  }).join('\n');
+
+  await say(`*🤖 MACF Slack Team — Health Status*\n\n${checks}\n\n• Process uptime: ${Math.round(process.uptime() / 60)} minutes\n• Memory files: Railway /data volume`);
+});
+
+app.command('/briefing', async ({ ack, say }) => {
+  await ack();
+  await say('Running morning briefing now...');
+  await execPM.runMorningBriefing().catch(err => {
+    console.error('[index] Manual briefing error:', err);
+    say('Briefing failed. Check Railway logs.');
+  });
+});
+
+app.command('/research', async ({ ack, say, command }) => {
+  await ack();
+  const query = command.text?.trim();
+  if (!query) { await say('Usage: `/research <topic>`'); return; }
+  await say(`🔍 Researching: _${query}_...`);
+  await cro.handleMention({ event: { text: query }, say }).catch(err =>
+    console.error('[index] Manual research error:', err)
+  );
+});
+
+app.command('/content', async ({ ack, say }) => {
+  await ack();
+  await say('Generating a content draft now...');
+  await cco.postDailyContentSuggestion().catch(err => {
+    console.error('[index] Manual content error:', err);
+    say('Content generation failed. Check Railway logs.');
+  });
+});
+
+app.command('/jobs', async ({ ack, say }) => {
+  await ack();
+  await say('Scanning for job opportunities...');
+  await jobcoach.searchJobs().catch(err => {
+    console.error('[index] Manual job scan error:', err);
+    say('Job scan failed. Check Railway logs.');
+  });
+});
+
+app.command('/tasks', async ({ ack, say }) => {
+  await ack();
+  const tasks = require('./utils/tasks');
+  const summary = await tasks.openTasksSummary().catch(err => {
+    console.error('[index] /tasks error:', err);
+    return null;
+  });
+  await say(summary || 'Task tracking is not configured yet — see SETUP.md Part 5 (Vikunja).');
+});
+
+app.command('/triage', async ({ ack, say }) => {
+  await ack();
+  await say('Triaging the task board...');
+  await execPM.triageBoard().catch(err => {
+    console.error('[index] Manual triage error:', err);
+    say('Triage failed. Check Railway logs.');
+  });
+});
+
+app.command('/engine', async ({ ack, say }) => {
+  await ack();
+  await say('Work engine: running a cycle now — pulling the board, working the top task (or idling into revenue mode).');
+  await workEngine.runCycle().catch(err => {
+    console.error('[index] Work engine cycle error:', err);
+    say('Work engine cycle failed. Check logs.');
+  });
+});
+
+// ─── Error handling ───────────────────────────────────────────────────────────
+app.error(async (error) => {
+  console.error('[bolt] Unhandled Bolt error:', error);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[process] Unhandled rejection:', reason);
+});
+
+process.on('SIGTERM', () => {
+  console.log('[process] SIGTERM — shutting down gracefully.');
+  process.exit(0);
+});
+
+// ─── Startup ──────────────────────────────────────────────────────────────────
+async function start() {
+  // Load all agent memory from disk
+  state.loadAll();
+
+  // Wire delegation module so agents can relay in-process
+  delegation.init(AGENT_MODULES, DELEGATION_TARGETS);
+
+  // Initialize all 11 agents (registers cron jobs, captures app.client)
+  execPM.init(app);
+  cmo.init(app);
+  cco.init(app);
+  jobcoach.init(app);
+  cuxo.init(app);
+  cro.init(app);
+  lawyer.init(app);
+  cfo.init(app);
+  cto.init(app);
+  facebook.init(app);
+  hr.init(app);
+
+  console.log('✅ All 11 MACF agents initialized');
+
+  // Open WebSocket connection to Slack
+  await app.start();
+
+  // ── MACF 24/7 Work Engine ──
+  // In-process service loop: PM-led, Vikunja-backed, idle-time revenue mode.
+  // Starts with the bot, so the team keeps working wherever the bot runs at boot.
+  workEngine.init(app);
+
+  // Auto-join all configured channels so the bot receives message.channels events
+  // Requires channels:join scope on the bot token
+  console.log('[index] Joining all configured channels...');
+  await Promise.allSettled(
+    Object.entries(CHANNEL_IDS).map(async ([name, channelId]) => {
+      try {
+        await app.client.conversations.join({ channel: channelId });
+        console.log(`[index] ✅ Joined #${name} (${channelId})`);
+      } catch (err) {
+        // already_in_channel is fine; missing_scope means channels:join not granted yet
+        if (err.data?.error === 'already_in_channel') {
+          console.log(`[index] Already in #${name}`);
+        } else {
+          console.warn(`[index] Could not join #${name}: ${err.message}`);
+        }
+      }
+    })
+  );
+
+  console.log('');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('🤖 MACF Slack Team v3 — LIVE via Socket Mode (9 agents)');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('  🔵 Exec PM    (@exec-pm)   — #exec-pm + ALL channels');
+  console.log('  📊 CMO        (@cmo)        — #marketing, #research');
+  console.log('  ✍️  CCO        (@cco)        — #content, #marketing');
+  console.log('  💼 Job Coach  (@jobcoach)   — #jobs');
+  console.log('  🟣 CUXO       (@cuxo)       — #marketing');
+  console.log('  🔍 CRO        (@cro)        — #research, #marketing');
+  console.log('  ⚖️  Lawyer     (@lawyer)     — #management');
+  console.log('  💰 CFO        (@cfo)        — #management');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('Slash commands: /health /briefing /research /content /jobs /tasks /triage');
+  console.log('Delegation: [from: AgentA → AgentB] message  (auto-tracked as a Vikunja task)');
+  console.log('DMs: DM the bot — prefix with @handle to reach a specific agent, else the CEO role answers');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+}
+
+start().catch(err => {
+  console.error('❌ Fatal startup error:', err);
+  process.exit(1);
+});

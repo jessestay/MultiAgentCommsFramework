@@ -1,0 +1,96 @@
+---
+description: 
+globs: .cursor/shared_tools/*,.cursor/shared_tools/proposal_designer_tool/*,canva*,*canva*,*proposal*
+alwaysApply: false
+---
+# 067: Canva Proposal Designer Tool Usage [SHARED TOOLING]
+
+## 1. Purpose
+
+This rule documents the shared Canva Proposal Designer tool, located in `.cursor/shared_tools/proposal_designer_tool/`. The tool automates the creation of branded proposal PDFs by populating a Canva Brand Template with data from a CSV file using the Canva Autofill API, and then exporting the result.
+
+## 2. Tool Location
+
+-   **Source Code**: `.cursor/shared_tools/proposal_designer_tool/`
+-   **Main Script (module path)**: `.cursor.shared_tools.proposal_designer_tool.autofill_proposal_from_template`
+-   **Configuration**: `.cursor/shared_tools/proposal_designer_tool/config.json` (user must create this from `config.json.example`)
+-   **Detailed README**: `.cursor/shared_tools/proposal_designer_tool/README.md`
+
+## 3. Project Setup & Activation
+
+To use this tool within any project:
+
+1.  **Ensure Tool Availability**: The `.cursor/shared_tools/proposal_designer_tool/` directory must be accessible. If `.cursor/` is managed globally or symlinked, this should be automatic. Otherwise, copy/symlink this specific tool directory into your project's `.cursor/shared_tools/`.
+
+2.  **Python Virtual Environment**: It is **strongly recommended** to use a dedicated Python virtual environment for your project to manage dependencies.
+    ```bash
+    # In your project's root directory
+    python3 -m venv .venv-myproject  # Or your preferred venv name
+    source .venv-myproject/bin/activate # On Windows: .venv-myproject\Scripts\activate
+    ```
+
+3.  **Install Requirements**: Install the tool's Python dependencies into your project's active virtual environment.
+    ```bash
+    pip install -r .cursor/shared_tools/proposal_designer_tool/requirements.txt
+    ```
+
+## 4. Tool Configuration (`config.json`)
+
+1.  Navigate to the tool's directory: `.cursor/shared_tools/proposal_designer_tool/`
+2.  Copy `config.json.example` to `config.json`:
+    ```bash
+    cp config.json.example config.json
+    ```
+3.  **Edit `config.json`** and populate it with your specific Canva App credentials, API keys, Brand Template ID, and desired file paths for input CSV, output PDF, and logs. Refer to the comments in `config.json.example` and the tool's `README.md` for details on each field.
+    -   **CRITICAL**: Ensure your `canva_client_id`, `canva_client_secret`, and `redirect_uri` are correct.
+    -   You may provide an existing `canva_refresh_token` for non-interactive authentication.
+    -   Paths like `input_csv_path`, `output_pdf_path`, `output_log_path`, and `canva_token_cache_path` are relative to the tool's directory (`.cursor/shared_tools/proposal_designer_tool/`) by default if not specified as absolute paths.
+
+4.  **Security**: **DO NOT COMMIT `config.json` to version control if it contains sensitive credentials.** Add it to your project's `.gitignore` file.
+
+## 5. Running the Tool
+
+Once set up and configured, run the tool from your project's root directory (or any directory, as long as your Python environment can find the module path) using the Python module execution flag (`-m`):
+
+```bash
+# Ensure your project's virtual environment is active
+python3 -u -m .cursor.shared_tools.proposal_designer_tool.autofill_proposal_from_template
+```
+
+-   The `-u` flag ensures unbuffered output, which is helpful for real-time logging to the console.
+-   The tool will read its configuration from `.cursor/shared_tools/proposal_designer_tool/config.json`.
+-   On the first run (or if tokens expire and no valid refresh token is available), it will guide you through the OAuth browser authentication flow.
+-   Output PDFs and log files will be placed according to the paths specified in `config.json`.
+
+## 6. Input CSV Format
+
+The tool expects a CSV file where:
+-   The **first row** contains header names that correspond to the **data tags** or **field names** in your Canva Brand Template.
+-   The **second row** contains the values to populate those fields.
+-   Only the first data row (row 2) is processed.
+
+Example (`input.csv`):
+```csv
+CLIENT_NAME,PROJECT_SCOPE,PROPOSAL_DATE
+ACME Corp,Website Redesign,"August 15, 2024"
+```
+Refer to the tool's `README.md` and Canva's documentation on Brand Templates and Autofill for more details on preparing your template and CSV data.
+
+## 7. Running Tests
+
+Unit tests for the tool are written using `pytest`.
+
+1.  Ensure your project's virtual environment (with `pytest` and `pytest-mock` installed) is active.
+2.  Navigate to the tool's directory:
+    ```bash
+    cd .cursor/shared_tools/proposal_designer_tool/
+    ```
+3.  Run pytest:
+    ```bash
+    pytest
+    ```
+    Pytest will automatically discover and run tests from the `tests/` subdirectory.
+
+## 8. Troubleshooting
+
+Refer to the `README.md` inside `.cursor/shared_tools/proposal_designer_tool/` for troubleshooting tips related to Python environment, configuration, Canva API errors, etc.

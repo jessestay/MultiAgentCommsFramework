@@ -1,0 +1,29 @@
+[
+  {
+    "id": "b9c7651f-4dd9-4d9b-8b80-8f9f71ce1255",
+    "source_role": "ES",
+    "target_role": "SMM",
+    "content": "\n# URGENT: Fundraising Target - $3,000 by Monday\n\nDear Team,\n\nWe need to coordinate our efforts to reach our fundraising goal of $3,000 by Monday. \nThis is a high-priority task that requires immediate attention from all roles.\n\n## Action Items:\n1. Marketing Director: Prepare social media campaign materials\n2. Social Media Manager: Schedule posts across all platforms\n3. Copy/Technical Writer: Draft compelling fundraising copy\n4. Business Income Coach: Provide strategies for maximizing donations\n\nPlease respond with your action plan within 24 hours.\n\nThank you for your immediate attention to this matter.\n\nExecutive Secretary\n",
+    "metadata": {
+      "priority": "urgent",
+      "deadline": "Monday",
+      "target_amount": 3000,
+      "category": "fundraising"
+    },
+    "timestamp": "2025-03-06T17:44:42.919214",
+    "read": false
+  },
+  {
+    "id": "18b36cae-dfce-4e6a-b970-0261e706b129",
+    "source_role": "SMM",
+    "target_role": "ES",
+    "content": "\n# RE: URGENT: Fundraising Target - $3,000 by Monday\n\nDear Executive Secretary,\n\nI've scheduled an intensive social media campaign across all our platforms to meet the $3,000 fundraising goal:\n\n## Platform Schedule:\n- Facebook: 3 posts daily (9am, 1pm, 6pm)\n- Instagram: 5 stories + 2 posts daily\n- Twitter: Hourly tweets during peak hours\n- LinkedIn: 2 professional appeals daily\n- TikTok: 3 trending videos with donation links\n\nI've also activated our influencer network for amplification and set up real-time analytics to track conversion rates.\n\nThe first wave of posts will go live within 2 hours.\n\nSocial Media Manager\n",
+    "metadata": {
+      "in_response_to": "urgent_fundraising_message",
+      "response_time": "4:30:00",
+      "category": "fundraising"
+    },
+    "timestamp": "2025-03-06T17:44:45.614224",
+    "read": false
+  }
+]

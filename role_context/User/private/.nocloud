@@ -1,0 +1,4 @@
+DO NOT PROCESS WITH CLOUD LLMs
+This directory contains private, personally identifiable information (PII) and personal privacy information (PPI).
+This information must ONLY be processed by local LLMs (e.g., Ollama).
+NEVER upload or process these files with Claude or any other cloud-based AI service. 

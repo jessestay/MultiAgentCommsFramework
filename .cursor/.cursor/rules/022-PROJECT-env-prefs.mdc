@@ -1,0 +1,11 @@
+---
+description: Environment Preferences
+globs: 
+alwaysApply: false
+---
+# Environment Preferences
+
+## Shell Preferences (In Order)
+1. Bash (preferred)
+2. CMD.exe (Windows fallback)
+3. PowerShell (avoid)

@@ -1,0 +1,55 @@
+---
+description: Provides the locations of all sprint-related documentation for the Austin Shows Events project.
+globs: []
+alwaysApply: false
+topic: Documentation Standards
+version: 1.0.0
+---
+# Sprint Documentation Locations
+
+This document provides the locations of all sprint-related documentation in the Austin Shows Events project.
+
+## Current Sprint
+
+**Sprint 2: Ticketmaster API Integration**
+
+The current sprint documentation can be found at:
+
+- Primary sprint status document: `docs/sprint-status.md`
+- Sprint 2 user stories:
+  - US-D-001: Ticketmaster Import - `docs/user-stories/data/US-D-001-ticketmaster-import.md`
+  - US-TH-001: Minimal Theme - `docs/user-stories/theme/US-TH-001-minimal-theme.md`
+
+## Sprint History
+
+- Sprint 1 summary: `docs/sprint1-summary.md`
+
+## Sprint Planning
+
+New sprint planning documents are created in the `docs/planning/` directory:
+- Sprint planning template: `docs/planning/sprint-planning-template.md`
+- Sprint 2 planning: `docs/planning/sprint2-planning.md`
+
+## User Stories
+
+User stories are organized by functional area:
+- Data-related stories: `docs/user-stories/data/`
+- Theme-related stories: `docs/user-stories/theme/`
+- WordPress integration stories: `docs/user-stories/wordpress/`
+- Technical infrastructure stories: `docs/user-stories/technical/`
+- Search functionality stories: `docs/user-stories/search/`
+
+## Acceptance Criteria
+
+Each user story includes specific acceptance criteria that must be met for the story to be considered complete. These criteria are documented in the individual user story files.
+
+## Test Documentation
+
+Test documentation is available at:
+- Test plans: `tests/docs/test-plans/`
+- Test cases: `tests/docs/test-cases/`
+- Test results: `tests/docs/test-results/`
+
+## Updating Documentation
+
+When working on the Austin Shows Events project, always refer to the most up-to-date documentation in the locations specified above. The `docs/sprint-status.md` file is the single source of truth for the current sprint status. 

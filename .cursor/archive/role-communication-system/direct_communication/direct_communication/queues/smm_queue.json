@@ -1,0 +1,16 @@
+[
+  {
+    "id": "b9c7651f-4dd9-4d9b-8b80-8f9f71ce1255",
+    "source_role": "ES",
+    "target_role": "SMM",
+    "content": "\n# URGENT: Fundraising Target - $3,000 by Monday\n\nDear Team,\n\nWe need to coordinate our efforts to reach our fundraising goal of $3,000 by Monday. \nThis is a high-priority task that requires immediate attention from all roles.\n\n## Action Items:\n1. Marketing Director: Prepare social media campaign materials\n2. Social Media Manager: Schedule posts across all platforms\n3. Copy/Technical Writer: Draft compelling fundraising copy\n4. Business Income Coach: Provide strategies for maximizing donations\n\nPlease respond with your action plan within 24 hours.\n\nThank you for your immediate attention to this matter.\n\nExecutive Secretary\n",
+    "metadata": {
+      "priority": "urgent",
+      "deadline": "Monday",
+      "target_amount": 3000,
+      "category": "fundraising"
+    },
+    "timestamp": "2025-03-06T17:44:42.919214",
+    "read": true
+  }
+]

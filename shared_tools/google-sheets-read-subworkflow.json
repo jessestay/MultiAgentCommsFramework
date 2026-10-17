@@ -1,0 +1,44 @@
+{
+  "name": "Google Sheets Read Subworkflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "execute-trigger-001",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 320]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": "={{ $json.sheetId }}",
+        "sheetName": "={{ $json.sheetName || 'Sheet1' }}",
+        "options": {
+          "range": "={{ $json.range || 'A1:Z1000' }}"
+        }
+      },
+      "id": "sheets-read-001",
+      "name": "Read Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [460, 320]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

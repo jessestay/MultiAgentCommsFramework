@@ -1,0 +1,24 @@
+{
+  "name": "multi-agent-comms-framework",
+  "version": "2.0.0",
+  "description": "MACF — AI team framework: shared core, swappable AI backends, multiple platform adapters (Slack, Cursor MCP, Discord, Teams). Open source.",
+  "private": true,
+  "scripts": {
+    "start:slack": "node slack-agents/index.js",
+    "start:mcp":   "node adapters/mcp/index.js",
+    "test":        "cd slack-agents && npm test",
+    "lint":        "node --check slack-agents/agents/*.js slack-agents/utils/*.js slack-agents/index.js slack-agents/config.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "ai-agents", "multi-agent", "slack-bot", "mcp", "claude",
+    "anthropic", "cursor", "open-source", "framework"
+  ],
+  "author": "Jesse Stay",
+  "license": "MIT",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}
